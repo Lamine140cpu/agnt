@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGNT — Agent IA Autonome</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7c3aed;
+    --accent2: #06b6d4;
+    --text: #e2e8f0;
+    --muted: #475569;
+    --success: #10b981;
+    --error: #ef4444;
+    --warn: #f59e0b;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    overflow: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.5;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr 360px;
+    height: 100vh;
+    gap: 0;
+  }
+
+  /* HEADER */
+  header {
+    grid-column: 1 / -1;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--surface);
+  }
+
+  .logo {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.05em;
+    color: #fff;
+  }
+
+  .logo span {
+    color: var(--accent);
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 100px;
+    letter-spacing: 0.15em;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    margin-left: auto;
+    transition: background 0.3s;
+  }
+  .status-dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 1.5s infinite; }
+  .status-dot.error { background: var(--error); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .status-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* MAIN LOG AREA */
+  .log-area {
+    grid-column: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .log-area::-webkit-scrollbar { width: 4px; }
+  .log-area::-webkit-scrollbar-track { background: transparent; }
+  .log-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .empty-state .big {
+    font-family: var(--sans);
+    font-size: 64px;
+    font-weight: 800;
+    color: var(--border);
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+
+  .empty-state p {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+
+  /* LOG ENTRIES */
+  .log-entry {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    animation: fadeSlide 0.3s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .entry-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .entry-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .entry-type {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .entry-content {
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  /* Types */
+  .log-start .entry-icon { background: rgba(124,58,237,0.15); color: var(--accent); }
+  .log-thinking .entry-icon { background: rgba(6,182,212,0.1); color: var(--accent2); }
+  .log-action .entry-icon { background: rgba(245,158,11,0.1); color: var(--warn); }
+  .log-screenshot .entry-icon { background: rgba(30,30,46,1); color: var(--muted); }
+  .log-done .entry-icon { background: rgba(16,185,129,0.15); color: var(--success); }
+  .log-error .entry-icon { background: rgba(239,68,68,0.1); color: var(--error); }
+
+  .log-done .entry-content { color: var(--success); }
+  .log-error .entry-content { color: var(--error); }
+
+  .action-badge {
+    display: inline-block;
+    background: var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: var(--warn);
+    margin-right: 6px;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    grid-column: 2;
+    grid-row: 2;
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar-title {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .screenshot-box {
+    background: var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16/10;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .screenshot-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .screenshot-box .no-img {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .step-counter {
+    font-family: var(--sans);
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.05em;
+    line-height: 1;
+  }
+
+  .step-counter span {
+    font-size: 14px;
+    font-family: var(--mono);
+    font-weight: 400;
+    color: var(--muted);
+  }
+
+  .task-display {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  .task-display strong {
+    display: block;
+    color: var(--text);
+    margin-bottom: 6px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* BOTTOM INPUT */
+  .input-bar {
+    grid-column: 1 / -1;
+    padding: 16px 28px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .input-wrap {
+    flex: 1;
+    position: relative;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px 16px;
+    resize: none;
+    outline: none;
+    line-height: 1.6;
+    max-height: 120px;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus {
+    border-color: var(--accent);
+  }
+
+  textarea::placeholder {
+    color: var(--muted);
+  }
+
+  .send-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+
+  .send-btn:hover { background: #6d28d9; transform: translateY(-1px); }
+  .send-btn:active { transform: translateY(0); }
+  .send-btn:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+
+  .examples {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .example-chip {
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    font-family: var(--mono);
+  }
+
+  .example-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <header>
+    <div class="logo">AG<span>N</span>T</div>
+    <div class="badge">ALPHA</div>
+    <div style="margin-left: 8px; color: var(--muted); font-size: 12px;">Agent IA autonome</div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+      <span class="status-label" id="statusLabel">En attente</span>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+  </header>
+
+  <main class="log-area" id="logArea">
+    <div class="empty-state" id="emptyState">
+      <div class="big">AGNT</div>
+      <p>Donne une tâche à l'agent pour démarrer.</p>
+      <p style="margin-top:6px; font-size:11px;">Il naviguera sur le web de manière autonome.</p>
+    </div>
+  </main>
+
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-title">Dernière capture</div>
+      <div class="screenshot-box" id="screenshotBox">
+        <span class="no-img">Aucune capture</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-title">Étapes</div>
+      <div class="step-counter" id="stepCounter">0 <span>/ 30</span></div>
+    </div>
+
+    <div id="taskBox" style="display:none">
+      <div class="task-display">
+        <strong>Tâche en cours</strong>
+        <span id="taskText"></span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="input-bar">
+    <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+      <div class="examples">
+        <button class="example-chip" onclick="setExample(this)">Va sur google.com et recherche 'météo Paris'</button>
+        <button class="example-chip" onclick="setExample(this)">Va sur wikipedia.org et trouve l'article sur l'IA</button>
+        <button class="example-chip" onclick="setExample(this)">Va sur hacker news et donne-moi le top 3</button>
+      </div>
+      <div class="input-wrap">
+        <textarea id="taskInput" rows="2" placeholder="Décris la tâche à accomplir... (ex: Va sur indeed.com et cherche des offres Python à Paris)"></textarea>
+      </div>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="sendTask()">▶ Lancer</button>
+  </div>
+</div>
+
+<script>
+let stepCount = 0;
+let eventSource = null;
+
+function setExample(btn) {
+  document.getElementById('taskInput').value = btn.textContent;
+}
+
+function setStatus(type, label) {
+  const dot = document.getElementById('statusDot');
+  const lbl = document.getElementById('statusLabel');
+  dot.className = 'status-dot ' + (type || '');
+  lbl.textContent = label;
+}
+
+function addLogEntry(type, icon, content) {
+  const emptyState = document.getElementById('emptyState');
+  if (emptyState) emptyState.remove();
+
+  const area = document.getElementById('logArea');
+  const div = document.createElement('div');
+  div.className = `log-entry log-${type}`;
+
+  div.innerHTML = `
+    <div class="entry-icon">${icon}</div>
+    <div class="entry-body">
+      <div class="entry-type">${type}</div>
+      <div class="entry-content">${content}</div>
+    </div>
+  `;
+
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function handleEntry(entry) {
+  const { type, content } = entry;
+
+  if (type === 'ping') return;
+
+  if (type === 'start') {
+    addLogEntry('start', '◈', content);
+    stepCount = 0;
+    document.getElementById('stepCounter').innerHTML = `0 <span>/ 30</span>`;
+    document.getElementById('taskText').textContent = content.replace('Démarrage de l\'agent pour : ', '');
+    document.getElementById('taskBox').style.display = 'block';
+  }
+
+  else if (type === 'screenshot') {
+    stepCount++;
+    document.getElementById('stepCounter').innerHTML = `${stepCount} <span>/ 30</span>`;
+    // En prod, on afficherait l'image via une route /screenshot
+  }
+
+  else if (type === 'thinking') {
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+      const action = parsed.action;
+      const details = Object.entries(parsed)
+        .filter(([k]) => k !== 'action')
+        .map(([k,v]) => `<span style="color:var(--muted)">${k}:</span> ${v}`)
+        .join('  ');
+      addLogEntry('action', '→', `<span class="action-badge">${action}</span>${details}`);
+    } catch {
+      addLogEntry('thinking', '◦', content.substring(0, 200));
+    }
+  }
+
+  else if (type === 'action') {
+    // Déjà géré dans thinking
+  }
+
+  else if (type === 'done') {
+    addLogEntry('done', '✓', content);
+    setStatus('', 'Terminé');
+    document.getElementById('sendBtn').disabled = false;
+  }
+
+  else if (type === 'error') {
+    addLogEntry('error', '✕', content);
+    setStatus('error', 'Erreur');
+    document.getElementById('sendBtn').disabled = false;
+  }
+
+  else if (type === 'end') {
+    if (eventSource) eventSource.close();
+    document.getElementById('sendBtn').disabled = false;
+    if (content.success) {
+      setStatus('', 'Terminé');
+    } else {
+      setStatus('error', 'Échoué');
+    }
+  }
+}
+
+async function sendTask() {
+  const input = document.getElementById('taskInput');
+  const task = input.value.trim();
+  if (!task) return;
+
+  // Reset
+  document.getElementById('logArea').innerHTML = '';
+  document.getElementById('screenshotBox').innerHTML = '<span class="no-img">En cours...</span>';
+  stepCount = 0;
+
+  document.getElementById('sendBtn').disabled = true;
+  setStatus('active', 'Agent actif');
+
+  input.value = '';
+
+  // Lancer la tâche
+  let taskId;
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task })
+    });
+    const data = await res.json();
+    taskId = data.task_id;
+  } catch (e) {
+    addLogEntry('error', '✕', 'Impossible de contacter le serveur.');
+    setStatus('error', 'Erreur serveur');
+    document.getElementById('sendBtn').disabled = false;
+    return;
+  }
+
+  // Écouter le stream SSE
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource(`/api/stream/${taskId}`);
+  eventSource.onmessage = (e) => {
+    try {
+      const entry = JSON.parse(e.data);
+      handleEntry(entry);
+    } catch {}
+  };
+  eventSource.onerror = () => {
+    setStatus('error', 'Connexion perdue');
+    document.getElementById('sendBtn').disabled = false;
+  };
+}
+
+// Enter pour envoyer
+document.getElementById('taskInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendTask();
+  }
+});
+</script>
+</body>
+</html>
