@@ -814,7 +814,9 @@ async function boot(){
     carousel.position = lerp(carousel.position, carousel.target, k);
     pointer.sx = lerp(pointer.sx, pointer.x, k);
     pointer.sy = lerp(pointer.sy, pointer.y, k);
-    if (!reduce) { spinVel *= Math.exp(-2.4 * dt); idle += (0.20 + spinVel) * dt; }
+    // rotation libre ramenée d'un facteur 3 : la référence a un bougé médian de
+    // 1,92 contre 6,24 ici, et c'est cette rotation qui tourne en permanence
+    if (!reduce) { spinVel *= Math.exp(-2.4 * dt); idle += (0.062 + spinVel) * dt; }
     setActive(Math.max(0, Math.min(FLAVOURS.length - 1, Math.round(carousel.position))));
 
     cans.forEach((c, i) => {
@@ -824,9 +826,9 @@ async function boot(){
       const y = -Math.abs(d) * 0.10 + near * 0.06 + cur.panY;
       const z = -Math.abs(d) * 1.0;
       const s = cur.scale + near * 0.20;
-      const rotY = idle + d * 0.55 + (reduce ? 0 : pointer.sx * 0.28 * near);
+      const rotY = idle + d * 0.55 + (reduce ? 0 : pointer.sx * 0.10 * near);
       const rotZ = cur.tilt - d * 0.05;
-      const rotX = 0.02 + (reduce ? 0 : pointer.sy * 0.10 * near);
+      const rotX = 0.02 + (reduce ? 0 : pointer.sy * 0.045 * near);
       for (const g of [c.real, c.refl]) {
         g.position.set(x, y, z);
         g.scale.setScalar(s);
@@ -841,8 +843,8 @@ async function boot(){
     camera.fov = cur.fov;
     camera.updateProjectionMatrix();
     camera.position.set(
-      (reduce ? 0 : pointer.sx * 0.16),
-      cur.camY + (reduce ? 0 : -pointer.sy * 0.08),
+      (reduce ? 0 : pointer.sx * 0.065),
+      cur.camY + (reduce ? 0 : -pointer.sy * 0.035),
       cur.camZ
     );
     camera.lookAt(0, cur.look + cur.panY * 0.85, 0);
