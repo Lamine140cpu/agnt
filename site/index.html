@@ -17,13 +17,34 @@
 
 :root{
   --glow:#8B2ED6;
-  --ink:#F4F2F7;
-  --ink-soft:#A79FB6;
-  --ground:#050506;
+  /* Thème clair par défaut. Basculer en sombre : data-scene="dark" sur <html>,
+     et THEME = 'dark' dans le script, les deux devant rester d'accord. */
+  --ground:#EFEEF2;
+  --ink:#17151C;
+  --ink-soft:#4A4657;
+  --line:rgba(23,21,28,.16);
+  --line-fort:rgba(23,21,28,.24);
+  --panel:rgba(23,21,28,.05);
+  --scrim-a:rgba(239,238,242,.95);
+  --scrim-b:rgba(239,238,242,.62);
+  --lueur:.40;
+  --grain-op:.07;
   --display:'Anton','Haettenschweiler','Arial Narrow',sans-serif;
   --body:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --gut:clamp(18px,5vw,60px);
+}
+:root[data-scene="dark"]{
+  --ground:#050506;
+  --ink:#F4F2F7;
+  --ink-soft:#A79FB6;
+  --line:rgba(255,255,255,.14);
+  --line-fort:rgba(255,255,255,.20);
+  --panel:rgba(255,255,255,.05);
+  --scrim-a:rgba(5,5,6,.82);
+  --scrim-b:rgba(5,5,6,.45);
+  --lueur:.90;
+  --grain-op:.15;
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:auto}
@@ -39,7 +60,7 @@ body{
   background:
     radial-gradient(78% 58% at 50% 38%, var(--glow) 0%, transparent 76%),
     radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--glow) 42%, transparent) 0%, transparent 70%);
-  opacity:.9;
+  opacity:var(--lueur);
   /* La saturation tombe avant l'opacité : assombrir un orange donne un marron,
      alors qu'un orange désaturé passe par le gris puis par le noir. */
   filter:blur(18px) saturate(var(--glow-sat, 1));
@@ -47,7 +68,7 @@ body{
 }
 #webgl{position:fixed; inset:0; z-index:1; display:block; width:100%; height:100%}
 #grain{
-  position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.15;
+  position:fixed; inset:0; z-index:2; pointer-events:none; opacity:var(--grain-op);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -60,26 +81,26 @@ body{
   font-family:var(--mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
   color:var(--ink-soft);
 }
-.mark{font-family:var(--display); font-size:22px; letter-spacing:.03em; color:#fff; text-transform:uppercase}
+.mark{font-family:var(--display); font-size:22px; letter-spacing:.03em; color:var(--ink); text-transform:uppercase}
 .mark i{font-style:normal; color:var(--glow); transition:color 1s ease}
 
 .dock{right:clamp(10px,2.2vw,24px); top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:9px}
 .dock button{
   width:40px; height:40px; border-radius:50%;
-  border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05);
-  backdrop-filter:blur(6px); color:#CFC9DA; cursor:pointer;
+  border:1px solid var(--line); background:var(--panel);
+  backdrop-filter:blur(6px); color:var(--ink-soft); cursor:pointer;
   display:grid; place-items:center; font-family:var(--mono); font-size:9px;
   transition:border-color .25s ease, color .25s ease, background .25s ease;
 }
-.dock button:hover,.dock button[aria-current="true"]{border-color:var(--glow); color:#fff; background:rgba(255,255,255,.1)}
+.dock button:hover,.dock button[aria-current="true"]{border-color:var(--glow); color:var(--ink); background:var(--panel)}
 .dock button:focus-visible{outline:2px solid var(--glow); outline-offset:3px}
 
-.rail{left:50%; transform:translateX(-50%); bottom:22px; width:min(240px,44vw); height:2px; background:rgba(255,255,255,.16); border-radius:2px}
+.rail{left:50%; transform:translateX(-50%); bottom:22px; width:min(240px,44vw); height:2px; background:var(--line-fort); border-radius:2px}
 .rail span{display:block; height:100%; width:0; border-radius:2px; background:var(--glow); transition:width .2s linear, background 1s ease}
 .hint{
   left:0; right:0; bottom:38px; text-align:center;
   font-family:var(--mono); font-size:9px; letter-spacing:.24em; text-transform:uppercase;
-  color:#6E6880; transition:opacity .4s ease;
+  color:var(--ink-soft); transition:opacity .4s ease;
 }
 @media (max-width:640px){ .dock{display:none} }
 
@@ -95,7 +116,7 @@ main{position:relative; z-index:4}
 .act > *{pointer-events:auto; position:relative}
 .act::after{
   content:""; position:absolute; left:0; right:0; bottom:0; height:46vh;
-  background:linear-gradient(to top, rgba(5,5,6,.82), rgba(5,5,6,.45) 42%, transparent);
+  background:linear-gradient(to top, var(--scrim-a), var(--scrim-b) 42%, transparent);
   pointer-events:none; z-index:-1;
 }
 .act-read::after{display:none}
@@ -121,7 +142,7 @@ main{position:relative; z-index:4}
 .act.posed .chip{opacity:1; transform:none}
 .act p.lede{
   margin:14px auto 0; max-width:36ch;
-  font-size:clamp(14px,1.6vw,17px); color:#C6BFD2; line-height:1.55;
+  font-size:clamp(14px,1.6vw,17px); color:var(--ink-soft); line-height:1.55;
 }
 
 /* acte d'ouverture : rien à lire, la scène parle */
@@ -130,7 +151,7 @@ main{position:relative; z-index:4}
   font-family:var(--display); font-weight:400; text-transform:uppercase;
   font-size:clamp(2.6rem,9vw,6rem); line-height:.86; margin:0; text-wrap:balance;
 }
-.act-intro .sub{margin-top:18px; color:#B4ACC4; font-size:clamp(14px,1.7vw,18px)}
+.act-intro .sub{margin-top:18px; color:var(--ink-soft); font-size:clamp(14px,1.7vw,18px)}
 
 /* bénéfices : la puce barrée, calée en bas comme sur la référence */
 .act-arg{justify-content:flex-end}
@@ -157,12 +178,12 @@ main{position:relative; z-index:4}
 .act-read{
   justify-content:center; text-align:left;
   padding-block:clamp(80px,12vh,140px);
-  background:linear-gradient(to bottom, transparent, rgba(5,5,6,.86) 18%, rgba(5,5,6,.94) 82%, transparent);
+  background:linear-gradient(to bottom, transparent, var(--scrim-a) 16%, var(--scrim-a) 84%, transparent);
 }
 .act-read .wrap{width:100%; max-width:760px; margin-inline:auto}
 .act-read h2{text-align:left}
 
-.faq details{border-bottom:1px solid rgba(255,255,255,.14)}
+.faq details{border-bottom:1px solid var(--line)}
 .faq summary{
   list-style:none; cursor:pointer; position:relative;
   padding:18px 44px 18px 0; font-size:clamp(15px,2vw,18px); font-weight:600;
@@ -174,23 +195,23 @@ main{position:relative; z-index:4}
 }
 .faq details[open] summary::after{content:"–"}
 .faq details[open] summary{color:var(--glow); transition:color 1s ease}
-.faq p{padding:0 44px 20px 0; color:#B7B0C4; font-size:15px; line-height:1.6; max-width:62ch}
+.faq p{padding:0 44px 20px 0; color:var(--ink-soft); font-size:15px; line-height:1.6; max-width:62ch}
 
 form{display:flex; flex-wrap:wrap; gap:10px; margin-top:24px}
 input[type=email]{
   flex:1 1 240px; font:inherit; font-size:16px; padding:14px 18px;
-  border-radius:999px; border:1px solid rgba(255,255,255,.2);
-  background:rgba(255,255,255,.06); color:var(--ink);
+  border-radius:999px; border:1px solid var(--line-fort);
+  background:var(--panel); color:var(--ink);
 }
-input[type=email]::placeholder{color:#8A8399}
+input[type=email]::placeholder{color:var(--ink-soft)}
 form button{
   border:none; border-radius:999px; padding:14px 28px;
   background:var(--glow); color:#fff; font:inherit; font-weight:600; cursor:pointer;
   transition:background 1s ease, transform .12s ease;
 }
 form button:hover{transform:translateY(-1px)}
-.form-msg{margin-top:12px; min-height:1.3em; font-size:14px; color:#CFC8DA}
-.small{margin-top:16px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:#7E7791; line-height:1.9}
+.form-msg{margin-top:12px; min-height:1.3em; font-size:14px; color:var(--ink-soft)}
+.small{margin-top:16px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--ink-soft); line-height:1.9}
 .small a{color:inherit}
 
 @media (prefers-reduced-motion:reduce){
@@ -315,6 +336,11 @@ const ARGS = [
    'wrap'  : artworks de packaging complets, utilisés tels quels. */
 const ARTWORK = 'label';
 
+/* 'light' ou 'dark'. Doit rester d'accord avec data-scene sur <html>. */
+const THEME = 'light';
+if (THEME === 'dark') document.documentElement.dataset.scene = 'dark';
+const CLAIR = THEME === 'light';
+
 const CAN_H = 1.334;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -391,7 +417,7 @@ async function boot(){
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // six canettes, leurs reflets et six passes d'écran : au-delà on perd les 60 images
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = CLAIR ? 1.18 : 1.05;
   /* Sans ombre portée, un objet flotte : c'est le premier signal de synthèse,
      avant même la matière. Une seule source projette, ce qui suffit ici. */
   renderer.shadowMap.enabled = true;
@@ -436,11 +462,11 @@ async function boot(){
     if (!tex) return;
     scene.environment = pmrem.fromEquirectangular(tex).texture;
     scene.environmentRotation = new THREE.Euler(0, -1.15, 0);
-    scene.environmentIntensity = 1.05;
+    scene.environmentIntensity = CLAIR ? 1.45 : 1.05;
     tex.dispose();
   });
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.32));
+  scene.add(new THREE.AmbientLight(0xffffff, CLAIR ? 0.62 : 0.32));
   const key  = new THREE.DirectionalLight(0xffffff, 1.15); key.position.set(2.2, 3.2, 3.4);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
@@ -641,7 +667,7 @@ async function boot(){
     const x = c.getContext('2d');
     x.scale(2, 2);
     if (wrap) x.drawImage(wrap, 0, 0, W, H); else { x.fillStyle = tint; x.fillRect(0, 0, W, H); }
-    x.fillStyle = 'rgba(8,6,12,.80)'; x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(8,6,12,.82)'; x.fillRect(0, 0, W, H);
 
     ARGS.forEach((a, i) => {
       const cx = W * argU(i);
@@ -724,8 +750,11 @@ async function boot(){
   fadeCanvas.width = 4; fadeCanvas.height = 256;
   {
     const g = fadeCanvas.getContext('2d');
+    const fond = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim();
+    const n = parseInt(fond.slice(1), 16);
+    const rgb = `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
     const grad = g.createLinearGradient(0, 0, 0, 256);
-    grad.addColorStop(0, 'rgba(5,5,6,0)'); grad.addColorStop(0.55, 'rgba(5,5,6,.88)'); grad.addColorStop(1, 'rgba(5,5,6,1)');
+    grad.addColorStop(0, `rgba(${rgb},0)`); grad.addColorStop(0.55, `rgba(${rgb},.88)`); grad.addColorStop(1, `rgba(${rgb},1)`);
     g.fillStyle = grad; g.fillRect(0, 0, 4, 256);
   }
   const veilTex = new THREE.CanvasTexture(fadeCanvas);
@@ -743,15 +772,16 @@ async function boot(){
   const disc = new THREE.Mesh(
     new THREE.CylinderGeometry(2.6, 2.6, 0.05, 64),
     new THREE.MeshPhysicalMaterial({
-      color:0x0B0A10, metalness:0.9, roughness:0.16, envMapIntensity:0.8,
-      transparent:true, opacity:0.55,
+      color: CLAIR ? 0xD8D6DE : 0x0B0A10,
+      metalness:0.9, roughness: CLAIR ? 0.22 : 0.16, envMapIntensity:0.8,
+      transparent:true, opacity: CLAIR ? 0.45 : 0.55,
     })
   );
   disc.position.y = FLOOR_Y - 0.025;
   disc.receiveShadow = true;
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(2.6, 0.018, 8, 72),
-    new THREE.MeshPhysicalMaterial({ color:0x6E747E, metalness:1, roughness:0.34, envMapIntensity:0.7 })
+    new THREE.MeshPhysicalMaterial({ color: CLAIR ? 0xA8A6B0 : 0x6E747E, metalness:1, roughness:0.34, envMapIntensity:0.7 })
   );
   ring.rotation.x = Math.PI/2; ring.position.y = FLOOR_Y;
   podium.add(disc, ring);
@@ -862,7 +892,10 @@ async function boot(){
   function post(){
     renderer.setRenderTarget(rtScene);
     renderer.clear();
-    renderer.toneMappingExposure = 1.05 * (1 - sortie) * (1 - sortie);
+    /* Sur fond clair, baisser l'exposition noircirait la canette avant qu'elle
+       ne disparaisse : c'est l'opacité qui l'emporte. Sur fond sombre, l'inverse. */
+    const plein = mode === 'spec' ? 0.62 : 1;   // on ferme d'un diaphragme sur les arguments
+    renderer.toneMappingExposure = (CLAIR ? 1.18 : 1.05) * plein * (CLAIR ? 1 : (1 - sortie) * (1 - sortie));
     renderer.render(scene, camera);
 
     matBright.uniforms.tSrc.value = rtScene.texture;
@@ -916,7 +949,7 @@ async function boot(){
        disparaître, puisqu'elle se mélange au fond noir. On éteint donc la
        lumière — l'exposition tombe — et l'opacité ne sert qu'en toute fin. */
     sortie = Math.min(Math.max((progress - (T_ARGSE + P(0.10))) / P(0.45), 0), 1);
-    document.getElementById('webgl').style.opacity = String(Math.min(1, (1 - sortie) * 3));
+    document.getElementById('webgl').style.opacity = String(CLAIR ? 1 - sortie : Math.min(1, (1 - sortie) * 3));
     document.getElementById('glow').style.opacity = String((1 - sortie) * 0.9);
     document.documentElement.style.setProperty('--glow-sat', String(Math.max(0, 1 - sortie * 2.2)));
     document.getElementById('hint').style.opacity = scrollY > 40 ? 0 : 1;
