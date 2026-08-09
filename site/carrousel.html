@@ -182,7 +182,7 @@ async function boot(){
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(20, innerWidth / innerHeight, 0.1, 100);
-  camera.position.set(0, 0.12, 7.2);
+  camera.position.set(0, 0.30, 8.0);
 
   /* La HDRI est encodée en RGBE : mantisse dans la moitié haute, exposant
      dans la moitié basse. On la redécode ici en flottants — un JPEG plafonne
@@ -259,38 +259,86 @@ async function boot(){
   await document.fonts.ready;
 
   function compose(img, name, tint){
-    const W = 2528, H = 1696;      // pleine résolution de l'étiquette : le zoom ne ramollit pas
+    const W = 2528, H = 1696;
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
-    /* Duotone : la couleur vive est posée EN DESSOUS et l'artwork multiplié
-       par-dessus. Le fond papier, presque blanc, prend donc la couleur pleine,
-       tandis que les traits sombres du dessin restent sombres. Assombrir
-       l'artwork par-dessus, à l'inverse, ne fait que le désaturer. */
+
+    /* Aplat de couleur : la canette est imprimée sur de l'aluminium, pas
+       habillée d'une étiquette en papier. L'artwork de fruits ne sert plus que
+       de texture de fond, très en retrait — c'est le logotype qui porte. */
     x.fillStyle = tint; x.fillRect(0, 0, W, H);
-    x.globalCompositeOperation = 'multiply';
+    x.save();
+    x.globalAlpha = 0.16; x.globalCompositeOperation = 'multiply';
     x.drawImage(img, 0, 0, W, H);
-    x.globalCompositeOperation = 'source-over';
+    x.restore();
 
-    /* La typographie est tracée ici, jamais dans l'image source : elle reste
-       nette quel que soit le grossissement, et renommer une saveur ne demande
-       pas de regénérer une texture. */
-    for (const cx of [W*0.25, W*0.75]) {
-      x.save(); x.translate(cx, H*0.5); x.textAlign = 'center'; x.fillStyle = '#FFFFFF';
-      x.font = '400 310px Anton, sans-serif';   x.fillText('HOLA', 0, 26);
-      x.letterSpacing = '18px';
-      x.font = '400 65px Archivo, sans-serif';  x.fillText('ENERGY', 0, 120);
-      x.font = '400 46px Archivo, sans-serif';  x.fillText(name.toUpperCase(), 0, 232);
+    // bande longitudinale plus claire : reflet d'atelier sur le métal
+    const sheen = x.createLinearGradient(0, 0, 0, H);
+    sheen.addColorStop(0.00, 'rgba(255,255,255,0.00)');
+    sheen.addColorStop(0.42, 'rgba(255,255,255,0.16)');
+    sheen.addColorStop(0.55, 'rgba(255,255,255,0.05)');
+    sheen.addColorStop(1.00, 'rgba(0,0,0,0.28)');
+    x.fillStyle = sheen; x.fillRect(0, 0, W, H);
 
-      x.globalAlpha = 0.5;
-      x.fillRect(-190, 268, 380, 3);
-      x.globalAlpha = 0.88;
-      x.letterSpacing = '7px';
-      x.font = '400 30px Archivo, sans-serif';
-      x.fillText('25 CL · 80 MG DE CAFÉINE', 0, 330);
-      x.fillText('11 G DE SUCRES · SANS TAURINE', 0, 378);
-      x.letterSpacing = '0px'; x.globalAlpha = 1;
+    const face = (cx) => {
+      x.save();
+      x.translate(cx, H * 0.5);
+
+      // logotype : Anton penché, rempli d'un dégradé argent
+      x.save();
+      x.transform(1, 0, -0.20, 1, 0, 0);          // inclinaison italique
+      x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+      x.font = '400 620px Anton, sans-serif';
+      const m = x.measureText('HOLA');
+      const k = (W * 0.30) / m.width;              // 30 % du tour : tient dans la face visible
+      x.scale(k, k);
+      const g = x.createLinearGradient(0, -420, 0, 260);
+      g.addColorStop(0.00, '#FFFFFF');
+      g.addColorStop(0.34, '#EDEDF2');
+      g.addColorStop(0.52, '#9EA2AE');
+      g.addColorStop(0.62, '#FFFFFF');
+      g.addColorStop(1.00, '#C8CCD6');
+      x.fillStyle = g;
+      x.fillText('HOLA', 0, 60);
       x.restore();
-    }
+
+      // ENERGY, en contour
+      x.textAlign = 'center';
+      x.font = '400 150px Anton, sans-serif';
+      x.letterSpacing = '26px';
+      x.lineWidth = 5; x.strokeStyle = 'rgba(255,255,255,0.78)';
+      x.strokeText('ENERGY', 12, 300);
+      x.letterSpacing = '0px';
+
+      // mention légale, comme sur une vraie canette
+      x.fillStyle = 'rgba(255,255,255,0.72)';
+      x.font = '400 42px Archivo, sans-serif';
+      x.fillText('25 CL  |  ZÉRO TAURINE', 0, 392);
+
+      // goût, à la verticale sur le flanc
+      x.save();
+      x.translate(-W * 0.135, 0); x.rotate(-Math.PI / 2);
+      x.textAlign = 'center';
+      x.font = '400 78px Anton, sans-serif';
+      x.letterSpacing = '6px';
+      x.fillStyle = 'rgba(255,255,255,0.94)';
+      x.fillText('GOÛT ' + name.toUpperCase(), 0, 0);
+      x.letterSpacing = '0px';
+      x.restore();
+
+      // bloc d'arguments, en petit : c'est la cible des gros plans
+      x.save();
+      x.translate(W * 0.135, 0); x.rotate(-Math.PI / 2);
+      x.textAlign = 'center';
+      x.font = '400 34px Archivo, sans-serif';
+      x.fillStyle = 'rgba(255,255,255,0.60)';
+      x.fillText('ARÔMES NATURELS  ·  CAFÉINE DE GRAINS DE CAFÉ  ·  STÉVIA', 0, 0);
+      x.restore();
+
+      x.restore();
+    };
+    face(W * 0.25); face(W * 0.75);
+
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
     return t;
@@ -321,11 +369,12 @@ async function boot(){
       const rivet = new THREE.Mesh(rivetGeo, alu);
       rivet.position.set(-0.01, CAN_H/2 - 0.010, 0);
       const mat = new THREE.MeshPhysicalMaterial({
-        map: textures[i], roughness:0.28, metalness:0, envMapIntensity:1.0,
-        clearcoat:0.6, clearcoatRoughness:0.32,
+        map: textures[i], roughness:0.26, metalness:0.85, envMapIntensity:1.15,
+        clearcoat:0.5, clearcoatRoughness:0.22,
       });
       const sleeve = new THREE.Mesh(sleeveGeo, mat);
       sleeve.position.y = 0.615 - CAN_H/2;
+      sleeve.rotation.y = -Math.PI / 2;   // amène u=0,25 de face : le logotype n'est plus coupé par la couture
       g.add(tab, rivet, sleeve);
       return g;
     };
@@ -444,8 +493,8 @@ async function boot(){
       const z = -Math.abs(d) * 1.0;                  // et reculent
       const s = 0.90 + near * 0.20;
       const rotY = idle + d * 0.55 + (reduce ? 0 : pointer.sx * 0.28 * near);
-      const rotZ = 0.10 - d * 0.06;
-      const rotX = 0.04 + (reduce ? 0 : pointer.sy * 0.10 * near);
+      const rotZ = 0.055 - d * 0.05;
+      const rotX = 0.02 + (reduce ? 0 : pointer.sy * 0.10 * near);
 
       for (const g of [c.real, c.refl]) {
         g.position.set(x, y, z);
@@ -460,7 +509,7 @@ async function boot(){
 
     camera.position.x = lerp(camera.position.x, (reduce ? 0 : pointer.sx * 0.16), k);
     camera.position.y = lerp(camera.position.y, 0.12 + (reduce ? 0 : -pointer.sy * 0.08), k);
-    camera.lookAt(0, -0.34, 0);   // vise sous le socle : les canettes remontent, le nom respire
+    camera.lookAt(0, -0.16, 0);   // vise sous le socle : les canettes remontent, le nom respire
 
     renderer.render(scene, camera);
   });
