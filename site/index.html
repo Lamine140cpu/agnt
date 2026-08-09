@@ -130,10 +130,10 @@ main{position:relative; z-index:4}
 
 /* bénéfices : la puce barrée, calée en bas comme sur la référence */
 .act-arg{justify-content:flex-end}
-/* Le texte est imprimé sur la canette et c'est lui qu'on lit : le DOM ne
-   garde que la puce barrée. Titre et accroche restent dans le document pour
-   le référencement et les lecteurs d'écran, hors du champ visuel. */
-.act-arg h2, .act-arg p.lede{
+/* Rien n'est écrit par-dessus la canette : le texte imprimé se suffit. Titre,
+   accroche et mention barrée restent dans le document, hors du champ visuel,
+   pour le référencement et les lecteurs d'écran. */
+.act-arg h2, .act-arg p.lede, .act-arg .chip{
   position:absolute; width:1px; height:1px; overflow:hidden;
   clip-path:inset(50%); white-space:nowrap;
 }
@@ -316,21 +316,42 @@ const T_FLAVE = P(ACTS.intro + ACTS.flavours);
 const T_ARGS0 = T_FLAVE + P(0.35);          // la plongée occupe un tiers d'écran
 const T_ARGSE = P(ACTS.intro + ACTS.flavours + ACTS.args);
 
-/* Piste de plans. Chaque entrée est un instant du scroll et l'état de la scène
-   à cet instant ; le reste est interpolé. */
+/* Position de chaque argument sur la canette, en unités monde. Le manchon
+   d'étiquette est centré sur LABEL_C et haut de LABEL_H ; composeSpec dessine
+   le bloc i à la hauteur relative 0,145 + 0,225·i. Caméra et texture lisent
+   donc la même formule, elles ne peuvent pas se désaccorder. */
+const LABEL_C = 0.615 - CAN_H / 2;
+const LABEL_H = 1.02;
+/* Un argument par quart de tour, tous à mi-hauteur. Empilés verticalement ils
+   tenaient tous dans le cadre à la fois — 13 cm de canette ne suffisent pas à
+   les séparer. La canette pivote donc pour présenter celui qu'on lit.
+   Le manchon étant tourné de -π/2, la coordonnée u qui fait face à la caméra
+   vaut 0,25 - θ/2π ; d'où la rotation qui amène l'argument i de face. */
+const argU = (i) => 0.125 + 0.25 * i;
+const argSpin = (i) => 2 * Math.PI * (0.25 - argU(i));
+
+/* Piste de plans. Chaque entrée est un instant du scroll et l'état de la
+   scène à cet instant ; le reste est interpolé. */
 const SHOTS = [
-  { at: 0.000, camY: 0.55, camZ: 11.5, look: -0.10, fov: 22, spread: 2.10, scale: 0.74, tilt: 0.05, panY: 0.00, veil: 1.0 },
-  { at: T_FLAV0 * 0.75, camY: 0.30, camZ: 8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, panY: 0.00, veil: 1.0 },
-  { at: T_FLAVE, camY: 0.30, camZ: 8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, panY: 0.00, veil: 1.0 },
-  // plongée : la caméra rentre, la canette se redresse et remplit l'écran
-  { at: T_ARGS0, camY: 0.10, camZ: 4.30, look: 0.02, fov: 20, spread: 3.60, scale: 1.06, tilt: 0.02, panY: -0.34, veil: 0.0 },
-  // remontée le long du métal pendant les arguments
-  { at: T_ARGSE, camY: 0.10, camZ: 4.30, look: 0.02, fov: 20, spread: 3.60, scale: 1.06, tilt: 0.02, panY: 0.34, veil: 0.0 },
-  // sortie : recul pour laisser lire
-  { at: T_ARGSE + P(0.5), camY: 0.34, camZ: 9.2, look: -0.14, fov: 20, spread: 1.90, scale: 0.80, tilt: 0.06, panY: 0.00, veil: 1.0 },
-  { at: 1.000, camY: 0.34, camZ: 10.5, look: -0.14, fov: 20, spread: 1.90, scale: 0.74, tilt: 0.06, panY: 0.00, veil: 1.0 },
+  { at: 0.000,          camY: 0.55, camZ: 11.5, look: -0.10, fov: 22, spread: 2.10, scale: 0.74, tilt: 0.05, veil: 1.0, spin: argSpin(0) },
+  { at: T_FLAV0 * 0.75, camY: 0.30, camZ:  8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
+  { at: T_FLAVE,        camY: 0.30, camZ:  8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
+  // plongée : on arrive au pied de la canette, premier argument
+  { at: T_ARGS0,        camY: LABEL_C, camZ: 2.35, look: LABEL_C, fov: 20, spread: 5.0, scale: 1.0, tilt: 0.0, veil: 0.0, spin: argSpin(0) },
 ];
-const KEYS = ['camY','camZ','look','fov','spread','scale','tilt','panY','veil'];
+// un arrêt par argument : la caméra remonte d'un bloc au suivant et s'y pose
+for (let i = 1; i < 4; i++) {
+  SHOTS.push({
+    at: T_ARGS0 + (i / 3) * (T_ARGSE - T_ARGS0),
+    camY: LABEL_C, camZ: 2.35, look: LABEL_C,
+    fov: 20, spread: 5.0, scale: 1.0, tilt: 0.0, veil: 0.0, spin: argSpin(i),
+  });
+}
+SHOTS.push(
+  { at: T_ARGSE + P(0.5), camY: 0.34, camZ:  9.2, look: -0.14, fov: 20, spread: 1.90, scale: 0.80, tilt: 0.06, veil: 1.0, spin: argSpin(3) },
+  { at: 1.000,            camY: 0.34, camZ: 10.5, look: -0.14, fov: 20, spread: 1.90, scale: 0.74, tilt: 0.06, veil: 1.0, spin: argSpin(3) },
+);
+const KEYS = ['camY','camZ','look','fov','spread','scale','tilt','veil','spin'];
 
 const ease = (t) => t * t * (3 - 2 * t);
 function sampleShots(p){
@@ -486,35 +507,39 @@ async function boot(){
 
   /* étiquette « arguments » : c'est elle que la caméra remonte au plus près */
   function composeSpec(img, tint){
-    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    /* Deux fois plus fine que l'étiquette vitrine : la caméra vient à 2,15
+       unités, on ne voit plus qu'un huitième du tour, donc chaque pixel de
+       texture compte huit fois plus. */
+    const SW = W * 2, SH = H * 2;
+    const c = document.createElement('canvas'); c.width = SW; c.height = SH;
     const x = c.getContext('2d');
-    base(x, tint, img);
+    x.scale(2, 2);
+    // pas de reflet peint ici : sur du métal il entre en conflit avec les
+    // vrais reflets de l'environnement et se lit comme des bandes plates
+    x.fillStyle = tint; x.fillRect(0, 0, W, H);
+    if (img) { x.save(); x.globalAlpha = 0.10; x.globalCompositeOperation = 'multiply'; x.drawImage(img, 0, 0, W, H); x.restore(); }
     x.save(); x.fillStyle = 'rgba(6,4,10,.90)'; x.fillRect(0, 0, W, H); x.restore();
 
-    const face = (cx) => {
-      ARGS.forEach((a, i) => {
-        // premier argument en bas : la caméra remonte pendant la séquence
-        const y = H * (0.855 - i * 0.225);
-        x.save(); x.translate(cx, y); x.textAlign = 'center';
+    ARGS.forEach((a, i) => {
+      const cx = W * argU(i);
+      x.save(); x.translate(cx, H * 0.5); x.textAlign = 'center';
 
-        x.fillStyle = '#FFFFFF';
-        x.font = '400 96px Anton, sans-serif'; x.letterSpacing = '2px';
-        x.fillText(a.title, 0, 0);
+      x.fillStyle = '#FFFFFF';
+      x.font = '400 38px Anton, sans-serif'; x.letterSpacing = '1px';
+      x.fillText(a.title, 0, 0);
 
-        x.font = '400 44px Archivo, sans-serif'; x.letterSpacing = '5px';
-        x.fillStyle = 'rgba(255,255,255,.62)';
-        const wCross = x.measureText(a.crossed).width;
-        x.fillText(a.crossed, 0, 62);
-        x.strokeStyle = 'rgba(255,255,255,.62)'; x.lineWidth = 4;
-        x.beginPath(); x.moveTo(-wCross/2 - 6, 47); x.lineTo(wCross/2 + 6, 47); x.stroke();
+      x.font = '400 17px Archivo, sans-serif'; x.letterSpacing = '2px';
+      x.fillStyle = 'rgba(255,255,255,.58)';
+      const wCross = x.measureText(a.crossed).width;
+      x.fillText(a.crossed, 0, 26);
+      x.strokeStyle = 'rgba(255,255,255,.58)'; x.lineWidth = 1.6;
+      x.beginPath(); x.moveTo(-wCross/2 - 3, 20); x.lineTo(wCross/2 + 3, 20); x.stroke();
 
-        x.letterSpacing = '0px';
-        x.font = '400 40px Archivo, sans-serif'; x.fillStyle = 'rgba(255,255,255,.82)';
-        x.fillText(a.body, 0, 128);
-        x.restore();
-      });
-    };
-    face(W * 0.25); face(W * 0.75);
+      x.letterSpacing = '0px';
+      x.font = '400 16px Archivo, sans-serif'; x.fillStyle = 'rgba(255,255,255,.80)';
+      x.fillText(a.body, 0, 56);
+      x.restore();
+    });
     return finish(c);
   }
 
@@ -639,7 +664,7 @@ async function boot(){
   allocate();
 
   const matBright = new THREE.ShaderMaterial({
-    uniforms:{ tSrc:{value:null}, seuil:{value:0.72} },
+    uniforms:{ tSrc:{value:null}, seuil:{value:0.86} },
     vertexShader: VERT,
     fragmentShader: `
       varying vec2 vUv; uniform sampler2D tSrc; uniform float seuil;
@@ -667,7 +692,7 @@ async function boot(){
   const matMix = new THREE.ShaderMaterial({
     uniforms:{
       tScene:{value:null}, tFlou:{value:null}, tBloom:{value:null}, tDepth:{value:null},
-      force:{value:0.62}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
+      force:{value:0.40}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
     },
     vertexShader: VERT,
     fragmentShader: `
@@ -841,10 +866,10 @@ async function boot(){
       const d = i - carousel.position;
       const near = Math.max(0, 1 - Math.abs(d));
       const x = d * cur.spread;
-      const y = -Math.abs(d) * 0.10 + near * 0.06 + cur.panY;
+      const y = -Math.abs(d) * 0.10 + near * 0.06;
       const z = -Math.abs(d) * 1.0;
       const s = cur.scale + near * 0.20;
-      const rotY = idle + d * 0.55 + (reduce ? 0 : pointer.sx * 0.10 * near);
+      const rotY = (mode === 'spec' ? cur.spin : idle + d * 0.55) + (reduce ? 0 : pointer.sx * 0.10 * near);
       const rotZ = cur.tilt - d * 0.05;
       const rotX = 0.02 + (reduce ? 0 : pointer.sy * 0.045 * near);
       for (const g of [c.real, c.refl]) {
@@ -865,7 +890,7 @@ async function boot(){
       cur.camY + (reduce ? 0 : -pointer.sy * 0.035),
       cur.camZ
     );
-    camera.lookAt(0, cur.look + cur.panY * 0.85, 0);
+    camera.lookAt(0, cur.look, 0);
 
     post();
   });
