@@ -39,7 +39,10 @@ body{
   background:
     radial-gradient(78% 58% at 50% 38%, var(--glow) 0%, transparent 76%),
     radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--glow) 42%, transparent) 0%, transparent 70%);
-  opacity:.9; filter:blur(18px);
+  opacity:.9;
+  /* La saturation tombe avant l'opacité : assombrir un orange donne un marron,
+     alors qu'un orange désaturé passe par le gris puis par le noir. */
+  filter:blur(18px) saturate(var(--glow-sat, 1));
   transition:background 1s ease;
 }
 #webgl{position:fixed; inset:0; z-index:1; display:block; width:100%; height:100%}
@@ -881,6 +884,7 @@ async function boot(){
     sortie = Math.min(Math.max((progress - (T_ARGSE + P(0.10))) / P(0.45), 0), 1);
     document.getElementById('webgl').style.opacity = String(Math.min(1, (1 - sortie) * 3));
     document.getElementById('glow').style.opacity = String((1 - sortie) * 0.9);
+    document.documentElement.style.setProperty('--glow-sat', String(Math.max(0, 1 - sortie * 2.2)));
     document.getElementById('hint').style.opacity = scrollY > 40 ? 0 : 1;
 
     // au-delà de la plongée, la canette montre ses arguments
