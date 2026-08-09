@@ -121,7 +121,7 @@ main{position:relative; z-index:4}
 }
 
 /* acte d'ouverture : rien à lire, la scène parle */
-.act-intro{justify-content:center}
+.act-intro{justify-content:flex-end}   /* le titre passe sous la canette, pas dessus */
 .act-intro h1{
   font-family:var(--display); font-weight:400; text-transform:uppercase;
   font-size:clamp(2.6rem,9vw,6rem); line-height:.86; margin:0; text-wrap:balance;
@@ -618,7 +618,11 @@ async function boot(){
 
   let rtScene, rtHalf, rtBlurA, rtBlurB;
   function allocate(){
-    const w = innerWidth, h = innerHeight;
+    /* En pixels physiques, pas en pixels CSS : le canvas dessine à la densité
+       de l'écran. Allouer en CSS revenait à rendre la scène en 1x puis à
+       l'étirer sur un canvas 2 à 3 fois plus fin — d'où le flou. */
+    const pr = renderer.getPixelRatio();
+    const w = innerWidth * pr, h = innerHeight * pr;
     for (const t of [rtScene, rtHalf, rtBlurA, rtBlurB]) if (t) t.dispose();
     rtScene = target(w, h, true);
     rtHalf  = target(w / 2, h / 2, false);
@@ -656,7 +660,7 @@ async function boot(){
   const matMix = new THREE.ShaderMaterial({
     uniforms:{
       tScene:{value:null}, tFlou:{value:null}, tBloom:{value:null}, tDepth:{value:null},
-      force:{value:0.62}, focus:{value:8.0}, plage:{value:2.6}, near:{value:0.1}, far:{value:100.0},
+      force:{value:0.62}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
     },
     vertexShader: VERT,
     fragmentShader: `
@@ -671,10 +675,10 @@ async function boot(){
         float z = -viewZ(texture2D(tDepth, vUv).x);
         float coc = clamp(abs(z - focus) / plage, 0.0, 1.0);
         coc = coc * coc;                       // net plus longtemps autour du plan de mise au point
-        vec3 c = mix(net.rgb, flou.rgb, coc * 0.85);
+        vec3 c = mix(net.rgb, flou.rgb, coc * 0.70);
         c += blm.rgb * force;
         // l'alpha est conservé : le dégradé de couleur en CSS doit rester visible
-        float a = clamp(mix(net.a, flou.a, coc * 0.85) + blm.a * force, 0.0, 1.0);
+        float a = clamp(mix(net.a, flou.a, coc * 0.70) + blm.a * force, 0.0, 1.0);
         gl_FragColor = vec4(c, a);
       }`,
     transparent: true,
