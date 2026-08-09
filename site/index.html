@@ -105,7 +105,7 @@ main{position:relative; z-index:4}
    remonte entre 780 et 1000 ms, une fois le mouvement principal amorti. */
 .act[data-flavour] h2,
 .act[data-flavour] p.lede,
-.act-arg h2, .act-arg p.lede, .act-arg .chip{
+.act-arg .chip{
   opacity:0; transform:translateY(16px);
   transition:opacity .34s ease, transform .34s cubic-bezier(.22,1,.36,1);
 }
@@ -130,6 +130,13 @@ main{position:relative; z-index:4}
 
 /* bénéfices : la puce barrée, calée en bas comme sur la référence */
 .act-arg{justify-content:flex-end}
+/* Le texte est imprimé sur la canette et c'est lui qu'on lit : le DOM ne
+   garde que la puce barrée. Titre et accroche restent dans le document pour
+   le référencement et les lecteurs d'écran, hors du champ visuel. */
+.act-arg h2, .act-arg p.lede{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip-path:inset(50%); white-space:nowrap;
+}
 .chip{
   display:inline-flex; align-items:center; gap:12px;
   margin:22px auto 0; padding:10px 18px 10px 10px;
@@ -316,9 +323,9 @@ const SHOTS = [
   { at: T_FLAV0 * 0.75, camY: 0.30, camZ: 8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, panY: 0.00, veil: 1.0 },
   { at: T_FLAVE, camY: 0.30, camZ: 8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, panY: 0.00, veil: 1.0 },
   // plongée : la caméra rentre, la canette se redresse et remplit l'écran
-  { at: T_ARGS0, camY: 0.10, camZ: 3.15, look: 0.02, fov: 20, spread: 3.60, scale: 1.06, tilt: 0.02, panY: -0.34, veil: 0.0 },
+  { at: T_ARGS0, camY: 0.10, camZ: 4.30, look: 0.02, fov: 20, spread: 3.60, scale: 1.06, tilt: 0.02, panY: -0.34, veil: 0.0 },
   // remontée le long du métal pendant les arguments
-  { at: T_ARGSE, camY: 0.10, camZ: 3.15, look: 0.02, fov: 20, spread: 3.60, scale: 1.06, tilt: 0.02, panY: 0.34, veil: 0.0 },
+  { at: T_ARGSE, camY: 0.10, camZ: 4.30, look: 0.02, fov: 20, spread: 3.60, scale: 1.06, tilt: 0.02, panY: 0.34, veil: 0.0 },
   // sortie : recul pour laisser lire
   { at: T_ARGSE + P(0.5), camY: 0.34, camZ: 9.2, look: -0.14, fov: 20, spread: 1.90, scale: 0.80, tilt: 0.06, panY: 0.00, veil: 1.0 },
   { at: 1.000, camY: 0.34, camZ: 10.5, look: -0.14, fov: 20, spread: 1.90, scale: 0.74, tilt: 0.06, panY: 0.00, veil: 1.0 },
@@ -482,7 +489,7 @@ async function boot(){
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
     base(x, tint, img);
-    x.save(); x.fillStyle = 'rgba(10,6,18,.66)'; x.fillRect(0, 0, W, H); x.restore();
+    x.save(); x.fillStyle = 'rgba(6,4,10,.90)'; x.fillRect(0, 0, W, H); x.restore();
 
     const face = (cx) => {
       ARGS.forEach((a, i) => {
@@ -740,6 +747,13 @@ async function boot(){
     const f = (progress - T_FLAV0) / (T_FLAVE - T_FLAV0);
     carousel.target = Math.min(Math.max(f, 0), 1) * (FLAVOURS.length - 1);
     document.getElementById('bar').style.width = (progress * 100) + '%';
+
+    // au-delà des arguments, la 3D s'efface : les sections à lire ont un fond
+    // propre sur la référence, pas une canette derrière
+    const sortie = Math.min(Math.max((progress - (T_ARGSE + P(0.10))) / P(0.45), 0), 1);
+    const opacite = String(1 - sortie);
+    document.getElementById('webgl').style.opacity = opacite;
+    document.getElementById('glow').style.opacity = String((1 - sortie) * 0.9);
     document.getElementById('hint').style.opacity = scrollY > 40 ? 0 : 1;
 
     // au-delà de la plongée, la canette montre ses arguments
