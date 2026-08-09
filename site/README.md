@@ -1,11 +1,12 @@
-# HOLA ENERGY — landing page
+# HOLA ENERGY — site vitrine
 
-Page vitrine statique pour une boisson énergisante, dans l'esprit des sites DTC
-type [ciaoenergy.com](https://www.ciaoenergy.com) : gamme de saveurs, bénéfices
-produit, composition, FAQ, newsletter.
+Page unique pour une boisson énergisante, dans l'esprit des sites produit en
+3D temps réel du secteur. Le scroll traverse une scène WebGL continue : les six
+canettes défilent sur leur axe, la caméra plonge dans celle qui est active pour
+lire les arguments imprimés sur le métal, puis recule vers la FAQ.
 
 **La marque et le produit sont fictifs** — c'est une démo de design, pas le site
-d'une entreprise existante. Le pied de page le mentionne explicitement.
+d'une entreprise existante.
 
 ## Aperçu
 
@@ -14,87 +15,80 @@ cd site && python3 -m http.server 8000
 # http://localhost:8000
 ```
 
-Il faut bien un serveur : la canette 3D est un module ES, que le navigateur
-refuse de charger depuis `file://`. Sans lui, la page reste parfaitement
-fonctionnelle et affiche les canettes SVG à la place.
+Un serveur est nécessaire : la scène est un module ES, que le navigateur refuse
+de charger depuis `file://`.
 
-## Contenu
+## Arborescence
 
 ```
 site/
-  index.html            la page, un seul fichier
+  index.html            le site
   vendor/               three.js r185 (module + core)
-  assets/labels/        étiquettes sources, pleine résolution
-  assets/web/           mêmes étiquettes en 1280 px + carte d'environnement
+  assets/labels/        artworks d'étiquettes, sources pleine résolution
+  assets/web/           artworks remontés en 2528 px + environnement RGBE
+  assets/fonts/         Anton et Archivo
+  upscale_labels.py     régénère assets/web/label-*.jpg
+  encode_env.py         convertit une HDRI Radiance en PNG RGBE
+  build_artifact.py     produit une version d'un seul fichier dans dist/
 ```
 
-Aucune requête vers un CDN : les polices **Anton** (titres) et **Archivo**
-(texte) sont embarquées en base64, et three.js est vendorisé.
+## La chorégraphie
 
-## Sections
+Le scroll ne déplace jamais directement la caméra ni les canettes. Il
+échantillonne une **piste de plans** (`SHOTS`) — position et hauteur de caméra,
+point visé, focale, écartement, échelle, inclinaison, balayage vertical — et la
+boucle de rendu rattrape ces valeurs par interpolation à taux constant
+(`1 - exp(-k·dt)`, indépendante du framerate). C'est ce retard qui donne
+l'inertie : rien ne s'arrête net, et le parallaxe souris s'additionne sans
+conflit.
 
-| Ancre | Contenu |
-| --- | --- |
-| `#top` | Héro, bandeau défilant, canette |
-| `#gamme` | 6 saveurs — cliquer sur une carte repeint toute la page |
-| `#benefices` | 4 différences + comparatif des sucres en barres |
-| `#composition` | Tableau nutritionnel et liste d'ingrédients |
-| `#faq` | 9 questions en accordéon (`<details>`) |
-| `#newsletter` | Inscription e-mail avec validation côté client |
+Les actes, dans l'ordre : ouverture large, six saveurs (une par écran, chacune
+imposant sa couleur au fond), plongée dans la canette, quatre arguments pendant
+que la caméra remonte le long du métal, puis recul pour la FAQ et la
+newsletter. Ajouter un plan revient à ajouter une entrée dans `SHOTS`.
 
-## Détails d'implémentation
+## La canette
 
-- **Thèmes** : palette complète en tokens sur `:root`, redéfinie sous
-  `@media (prefers-color-scheme: dark)` et sous `:root[data-theme="dark"]`.
-  Aucune couleur n'est déclarée uniquement dans un bloc de thème.
-- **Saveur active** : le clic sur une carte écrit `--accent` / `--on-accent` sur
-  `documentElement` ; héro, boutons, FAQ, tableau et newsletter suivent.
-- **Canettes SVG** : un `<symbol>` unique réutilisé via `<use>`. Les styles sont
-  écrits en inline dans le symbole — les sélecteurs de classe du document ne
-  traversent pas le shadow tree créé par `<use>`, seules les variables CSS
-  héritent.
-- **Riso** : grain en `feTurbulence` sur `body::after`, plus un calque de
-  canette décalé en `mix-blend-mode` (`multiply` en clair, `screen` en sombre)
-  qui imite une erreur de repérage d'impression.
-- **Accessibilité** : navigation au clavier avec `:focus-visible`, cartes de
-  saveur en `<button aria-pressed>`, messages de formulaire en `aria-live`,
-  animations désactivées sous `prefers-reduced-motion`.
+Aucun modèle 3D n'est téléchargé. La silhouette est un profil de 24 points aux
+cotes d'une canette sleek 25 cl (Ø 58 mm, 133 mm) passé en `LatheGeometry` :
+dôme concave du fond, cercle d'appui, épaule, rétreint du col, bord roulé. La
+languette est un tore aplati, avec son rivet.
 
-## La canette 3D
+Le corps est en métal (`metalness` 0,85) : la couleur est imprimée sur
+l'aluminium, elle n'est pas collée en papier.
 
-Le héro affiche une canette en WebGL. Aucun modèle `.glb` n'est téléchargé :
+## Les étiquettes
 
-- **Géométrie** générée en `LatheGeometry` à partir d'un profil de 12 points,
-  plus un manchon `CylinderGeometry` pour l'étiquette et un tore pour la
-  languette.
-- **Étiquettes** composées à la volée dans un `<canvas>` : l'artwork généré,
-  puis la typographie dessinée par-dessus, répétée à un demi-tour d'écart pour
-  rester lisible de face comme de dos. La typo n'est donc jamais dans l'image
-  source — changer un nom de saveur ne demande pas de regénérer une texture.
-- **Reflets** : `assets/web/env-studio.jpg` passée en `PMREMGenerator`, plus
-  deux directionnelles. `MeshPhysicalMaterial` métal pour le corps, avec
-  vernis pour l'étiquette.
-- **Position** : la canette est ancrée sur le `getBoundingClientRect()` du bloc
-  `.hero-can` et mise à l'échelle pour occuper la même hauteur que le SVG
-  qu'elle remplace. Elle suit donc la mise en page à tous les points de rupture,
-  sans valeur codée en dur par breakpoint.
+Deux textures par saveur, composées dans un `<canvas>` à 2528 × 1696 :
 
-Le scroll ne pilote pas la canette directement : il déplace des valeurs
-**cibles**, que la boucle de rendu rattrape par interpolation à taux constant
-(`1 - exp(-k·dt)`, indépendant du framerate). C'est ce retard qui donne
-l'inertie, et il permet d'additionner le parallaxe souris sans conflit. Même
-principe que le site qui a servi de référence.
+- **vitrine** — aplat teinté, reflet longitudinal, logotype Anton incliné
+  rempli d'un dégradé argent, `ENERGY` en contour, goût à la verticale sur le
+  flanc, mentions légales ;
+- **arguments** — les quatre bénéfices empilés avec leur mention barrée, que la
+  caméra remonte pendant la séquence.
 
-Le rendu est suspendu dès que le héro sort du champ, et la page retombe sur les
-canettes SVG si le contexte WebGL n'est pas disponible.
+La typographie est **tracée au code, jamais contenue dans l'image source** :
+elle reste nette à n'importe quel grossissement, et renommer une saveur ne
+demande pas de regénérer une texture. Les artworks de fruits ne servent plus
+que de texture de fond à 16 %.
 
-### Points d'attention
+## Points d'implémentation à connaître
 
-- `#webgl` doit garder ses `width`/`height` explicites. Un `<canvas>` est un
-  élément remplacé : avec `inset:0` seul, il prend la taille de son buffer de
-  dessin, soit le double de la fenêtre sur un écran en DPR 2.
-- Les raccords gauche/droite des étiquettes ne sont pas parfaitement continus.
-  La couture est placée à l'arrière de la canette, hors du champ de la caméra.
+- **Couture du manchon** : `CylinderGeometry` place `u = 0` face caméra. Sans
+  rotation, la couture tomberait au milieu du logotype — d'où le
+  `sleeve.rotation.y = -π/2` qui amène `u = 0,25` de face.
+- **Environnement** : une HDRI est indispensable, un JPEG plafonne à 1 et
+  laisse le métal mou. Elle est encodée en RGBE — mantisse en haut, exposant en
+  bas — plutôt que livrée en `.hdr`, ce qui éviterait de vendoriser
+  `RGBELoader`. L'exposant n'est pas dans le canal alpha : un canvas 2D le
+  prémultiplierait et détruirait les valeurs.
+- **Taille du canvas** : `#webgl` doit garder ses `width`/`height` explicites.
+  Un `<canvas>` est un élément remplacé — avec `inset:0` seul, il prend la
+  taille de son buffer de dessin, soit le double de la fenêtre en DPR 2.
+- **Reflets** : obtenus par duplication miroir des canettes sous un voile
+  dégradé, pas par un rendu de réflexion.
+- La page retombe sur un fond statique si le contexte WebGL est indisponible,
+  et les animations sont neutralisées sous `prefers-reduced-motion`.
 
 ## Version d'un seul fichier
 
@@ -102,21 +96,16 @@ canettes SVG si le contexte WebGL n'est pas disponible.
 cd site && python3 build_artifact.py   # -> site/dist/index.html
 ```
 
-Produit une page unique, sans aucun fichier voisin ni requête réseau : three.js
-et les textures y sont repliés. C'est la version à déposer sur un hébergeur
-statique ou dans un contexte qui interdit les ressources externes.
-
-Le repli de three.js n'est pas un simple `import` depuis une URL `data:` — une
-CSP stricte refuse ce schéma pour les scripts. Les deux fichiers de la lib sont
-donc enveloppés chacun dans une IIFE, sans quoi leurs noms minifiés de haut
-niveau entreraient en collision ; leur `export {}` devient un `return {}`, et
-l'`import` du coeur par le module devient une déstructuration. Attention au
-`export {...} from "./three.core.min.js"` : c'est une ré-exportation, elle ne
-crée pas de liaison locale et doit être reprise depuis l'objet du coeur.
+three.js et les textures y sont repliés, sans aucune requête réseau. Le repli
+n'est pas un `import` depuis une URL `data:` — une CSP stricte refuse ce schéma
+pour les scripts. Les deux fichiers de la lib sont enveloppés chacun dans une
+IIFE, sans quoi leurs noms minifiés de haut niveau entreraient en collision ;
+leur `export {}` devient un `return {}`, et l'`import` du coeur devient une
+déstructuration. Attention au `export {...} from "./three.core.min.js"` : c'est
+une ré-exportation, elle ne crée pas de liaison locale.
 
 ## À brancher
 
 Le formulaire newsletter valide l'adresse puis affiche une confirmation, sans
-appel réseau. Pour le rendre réel, remplacer le corps du `submit` par un `fetch`
-vers le service d'e-mailing choisi. Les liens `#mentions`, `#cgu` et
-`#confidentialite` sont des ancres à remplacer par de vraies pages.
+appel réseau. Pour le rendre réel, remplacer le corps du `submit` par un
+`fetch` vers le service d'e-mailing choisi.
