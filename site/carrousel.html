@@ -178,23 +178,64 @@ async function boot(){
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.22;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(20, innerWidth / innerHeight, 0.1, 100);
   camera.position.set(0, 0.12, 7.2);
 
+  /* La HDRI est encodée en RGBE : mantisse dans la moitié haute, exposant
+     dans la moitié basse. On la redécode ici en flottants — un JPEG plafonne
+     à 1, or ce sont les valeurs bien au-delà qui font les éclats durs sur le
+     métal. Les lignes sont relues à l'envers : une DataTexture n'applique pas
+     flipY, contrairement à une texture chargée depuis une image. */
   const pmrem = new THREE.PMREMGenerator(renderer);
-  new THREE.TextureLoader().load('assets/web/env-studio.jpg', (t) => {
-    t.mapping = THREE.EquirectangularReflectionMapping;
-    scene.environment = pmrem.fromEquirectangular(t).texture;
-    t.dispose();
+  function loadEnvironment(url){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const W = img.width, H = img.height / 2;
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(img, 0, 0);
+        const px = x.getImageData(0, 0, img.width, img.height).data;
+        const expo = W * H * 4;
+        const data = new Float32Array(W * H * 4);
+        for (let y = 0; y < H; y++) {
+          const src = (H - 1 - y) * W;
+          for (let xi = 0; xi < W; xi++) {
+            const i = src + xi, o = (y * W + xi) * 4;
+            const e = px[expo + i * 4];
+            const s = e ? Math.pow(2, e - 128) / 256 : 0;
+            data[o]     = px[i * 4]     * s;
+            data[o + 1] = px[i * 4 + 1] * s;
+            data[o + 2] = px[i * 4 + 2] * s;
+            data[o + 3] = 1;
+          }
+        }
+        const tex = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.FloatType);
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        tex.needsUpdate = true;
+        resolve(tex);
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+  loadEnvironment('assets/web/env-studio-rgbe.png').then((tex) => {
+    if (!tex) return;
+    scene.environment = pmrem.fromEquirectangular(tex).texture;
+    // ce studio a un plafond noir : on l'oriente pour amener les sources de face
+    scene.environmentRotation = new THREE.Euler(0, -1.15, 0);
+    scene.environmentIntensity = 1.5;
+    tex.dispose();
   });
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  const key  = new THREE.DirectionalLight(0xffffff, 3.4); key.position.set(2.2, 3.2, 3.4);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.32));
+  const key  = new THREE.DirectionalLight(0xffffff, 1.8); key.position.set(2.2, 3.2, 3.4);
   const fill = new THREE.DirectionalLight(0xffffff, 1.5); fill.position.set(0, 0.6, 6);  // face caméra : éclaire l'étiquette
-  const back = new THREE.DirectionalLight(0xffffff, 2.6); back.position.set(-2.6, 1.2, -2.2);
+  const back = new THREE.DirectionalLight(0xffffff, 1.2); back.position.set(-2.6, 1.2, -2.2);
   scene.add(key, fill, back);
 
   /* ---- géométrie : profil d'une sleek 25 cl -------------------------- */
@@ -211,7 +252,7 @@ async function boot(){
   const tabGeo   = new THREE.TorusGeometry(0.062, 0.009, 12, 40);
   const rivetGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14);
   const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 160, 1, true);
-  const alu = new THREE.MeshPhysicalMaterial({ color:0xB9BFC9, metalness:1, roughness:0.13, envMapIntensity:1.25 });
+  const alu = new THREE.MeshPhysicalMaterial({ color:0xC4CAD4, metalness:1, roughness:0.11, envMapIntensity:1.0 });
 
   /* ---- étiquettes : artwork + typo composés au canvas ----------------- */
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
