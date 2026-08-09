@@ -1087,7 +1087,7 @@ const FLAVORS = {
   abricot: { name: 'Abricot Framboise', tex: 'assets/web/label-abricot.jpg' },
 };
 
-const CAN_H = 1.345;                       // hauteur de la canette en unités monde
+const CAN_H = 1.334;                       // canette « sleek » 25 cl : Ø 58 mm, 133 mm
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canvas = document.getElementById('webgl');
 const anchorEl = document.querySelector('.hero-can');
@@ -1130,38 +1130,49 @@ async function boot(){
   scene.add(key, rim);
 
   /* ---- géométrie ------------------------------------------------------- */
+  /* Profil complet, du centre du fond au centre du couvercle : dôme du fond
+     concave, cercle d'appui, corps, épaule, rétreint du col, bord roulé. */
   const profile = [
-    [0, 0], [0.185, 0], [0.268, 0.016], [0.317, 0.058], [0.33, 0.105],
-    [0.33, 1.15], [0.323, 1.202], [0.298, 1.252], [0.261, 1.302],
-    [0.257, 1.335], [0.236, 1.345], [0, 1.345],
+    [0.000, 0.052], [0.090, 0.044], [0.160, 0.022], [0.205, 0.004],
+    [0.232, 0.000],
+    [0.258, 0.010], [0.278, 0.038], [0.288, 0.074], [0.290, 0.110],
+    [0.290, 1.115],
+    [0.288, 1.155], [0.279, 1.196], [0.262, 1.235],
+    [0.238, 1.268], [0.219, 1.296], [0.211, 1.312],
+    [0.216, 1.325], [0.223, 1.331], [0.220, 1.334],
+    [0.206, 1.331], [0.199, 1.323],
+    [0.150, 1.316], [0.060, 1.313], [0.000, 1.315],
   ];
   const lathe = new THREE.LatheGeometry(
-    profile.map(([x, y]) => new THREE.Vector2(x, y - CAN_H / 2)), 128
+    profile.map(([x, y]) => new THREE.Vector2(x, y - CAN_H / 2)), 160
   );
   lathe.computeVertexNormals();
 
   const alu = new THREE.MeshPhysicalMaterial({
-    color: 0xC9CED6, metalness: 1, roughness: 0.24, envMapIntensity: 1.5,
+    color: 0xCFD4DC, metalness: 1, roughness: 0.22, envMapIntensity: 1.6,
   });
 
   const group = new THREE.Group();
   const body = new THREE.Mesh(lathe, alu);
   group.add(body);
 
-  // languette d'ouverture
-  const tab = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.011, 10, 40), alu);
+  // languette d'ouverture : anneau aplati plus son rivet
+  const tab = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.009, 12, 48), alu);
   tab.rotation.x = -Math.PI / 2;
-  tab.position.set(0.05, CAN_H / 2 - 0.008, 0);
-  group.add(tab);
+  tab.scale.set(1, 1.35, 1);
+  tab.position.set(0.045, CAN_H / 2 - 0.012, 0);
+  const rivet = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 16), alu);
+  rivet.position.set(-0.01, CAN_H / 2 - 0.010, 0);
+  group.add(tab, rivet);
 
   // manchon d'étiquette, très légèrement au-dessus du corps
-  const sleeveGeo = new THREE.CylinderGeometry(0.3325, 0.3325, 1.045, 128, 1, true);
+  const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 160, 1, true);
   const sleeveMat = new THREE.MeshPhysicalMaterial({
     roughness: 0.44, metalness: 0, envMapIntensity: 0.5,
     clearcoat: 0.4, clearcoatRoughness: 0.35,
   });
   const sleeve = new THREE.Mesh(sleeveGeo, sleeveMat);
-  sleeve.position.y = 0.6275 - CAN_H / 2;
+  sleeve.position.y = 0.615 - CAN_H / 2;
   group.add(sleeve);
   scene.add(group);
 
