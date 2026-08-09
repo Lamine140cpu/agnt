@@ -300,10 +300,40 @@ p{margin:0}
 .blob-b{width:230px;height:230px;background:var(--f-kiwi);bottom:70px;left:-30px;opacity:.26}
 
 /* ============================================================
+   SCÈNE WEBGL
+   Le canvas est fixe et plein écran, derrière la page. Seul le
+   héro laisse voir au travers ; toutes les sections suivantes
+   sont opaques et recouvrent la canette.
+   ============================================================ */
+#webgl{
+  position:fixed; inset:0;
+  /* width/height explicites : sans eux, ce remplacé prend la taille de son
+     buffer de dessin, soit le double de la fenêtre sur un écran en DPR 2 */
+  display:block;
+  width:100%; height:100%;
+  z-index:0;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .6s ease;
+}
+:root[data-webgl="on"] #webgl{opacity:1}
+/* la canette SVG garde sa place dans la grille mais s'efface */
+:root[data-webgl="on"] .hero-can .can{opacity:0}
+.hero{position:relative;z-index:1}
+.hero-can{z-index:2}
+.sticker{z-index:3}
+
+/* ============================================================
    SECTIONS
    ============================================================ */
-.sec{padding:clamp(56px,8vw,110px) 0;scroll-margin-top:70px}
+.sec{
+  position:relative; z-index:1;
+  background:var(--paper);
+  padding:clamp(56px,8vw,110px) 0;
+  scroll-margin-top:70px;
+}
 .sec-alt{background:var(--paper-2);border-block:1px solid var(--line)}
+footer{position:relative;z-index:1;background:var(--paper)}
 .sec-head{
   display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 40px;
   margin-bottom:clamp(30px,4vw,52px);
@@ -639,6 +669,8 @@ footer{border-top:1px solid var(--line);padding:48px 0 60px}
     <ellipse cx="80" cy="34" rx="52" ry="13" style="fill:none;stroke:var(--ink);stroke-width:2.4"/>
   </symbol>
 </svg>
+
+<canvas id="webgl" aria-hidden="true"></canvas>
 
 <header class="top">
   <div class="wrap top-in">
@@ -1030,6 +1062,263 @@ footer{border-top:1px solid var(--line);padding:48px 0 60px}
     form.reset();
   });
 })();
+</script>
+
+<script type="module">
+/* ============================================================================
+   Canette 3D.
+   La géométrie est générée en LatheGeometry (aucun modèle à télécharger), les
+   étiquettes sont composées dans un <canvas> avec la typo par-dessus, et la
+   carte d'environnement fournit les reflets de l'aluminium.
+
+   Le scroll ne pilote pas la canette : il déplace des valeurs CIBLES, que la
+   boucle de rendu rattrape par interpolation. C'est ce décalage qui donne
+   l'inertie — rien ne s'arrête net, et le parallaxe souris peut s'additionner
+   au scroll sans conflit.
+   ============================================================================ */
+import * as THREE from './vendor/three.module.min.js';
+
+const FLAVORS = {
+  litchi:  { name: 'Double Litchi',     tex: 'assets/web/label-litchi.jpg'  },
+  coco:    { name: 'Coco Citron Vert',  tex: 'assets/web/label-coco.jpg'    },
+  kiwi:    { name: 'Kiwi Concombre',    tex: 'assets/web/label-kiwi.jpg'    },
+  peche:   { name: 'Pêche Blanche',     tex: 'assets/web/label-peche.jpg'   },
+  pomme:   { name: 'Pomme Rhubarbe',    tex: 'assets/web/label-pomme.jpg'   },
+  abricot: { name: 'Abricot Framboise', tex: 'assets/web/label-abricot.jpg' },
+};
+
+const CAN_H = 1.345;                       // hauteur de la canette en unités monde
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.getElementById('webgl');
+const anchorEl = document.querySelector('.hero-can');
+const heroEl = document.querySelector('.hero');
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+} catch (e) {
+  console.warn('WebGL indisponible, la canette SVG reste affichée.', e);
+}
+
+if (renderer) boot();
+
+async function boot(){
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  const scene = new THREE.Scene();
+  // focale longue : perspective aplatie, rendu packshot plutôt que grand-angle
+  const camera = new THREE.PerspectiveCamera(18, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 9);
+
+  /* ---- environnement : reflets de l'aluminium -------------------------- */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  new THREE.TextureLoader().load('assets/web/env-studio.jpg', (tex) => {
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = pmrem.fromEquirectangular(tex).texture;
+    tex.dispose();
+  });
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  const key = new THREE.DirectionalLight(0xffffff, 1.6);
+  key.position.set(2.5, 3.5, 4);
+  const rim = new THREE.DirectionalLight(0xfff3e0, 0.9);
+  rim.position.set(-3, 1.5, -2.5);
+  scene.add(key, rim);
+
+  /* ---- géométrie ------------------------------------------------------- */
+  const profile = [
+    [0, 0], [0.185, 0], [0.268, 0.016], [0.317, 0.058], [0.33, 0.105],
+    [0.33, 1.15], [0.323, 1.202], [0.298, 1.252], [0.261, 1.302],
+    [0.257, 1.335], [0.236, 1.345], [0, 1.345],
+  ];
+  const lathe = new THREE.LatheGeometry(
+    profile.map(([x, y]) => new THREE.Vector2(x, y - CAN_H / 2)), 128
+  );
+  lathe.computeVertexNormals();
+
+  const alu = new THREE.MeshPhysicalMaterial({
+    color: 0xC9CED6, metalness: 1, roughness: 0.24, envMapIntensity: 1.5,
+  });
+
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(lathe, alu);
+  group.add(body);
+
+  // languette d'ouverture
+  const tab = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.011, 10, 40), alu);
+  tab.rotation.x = -Math.PI / 2;
+  tab.position.set(0.05, CAN_H / 2 - 0.008, 0);
+  group.add(tab);
+
+  // manchon d'étiquette, très légèrement au-dessus du corps
+  const sleeveGeo = new THREE.CylinderGeometry(0.3325, 0.3325, 1.045, 128, 1, true);
+  const sleeveMat = new THREE.MeshPhysicalMaterial({
+    roughness: 0.44, metalness: 0, envMapIntensity: 0.5,
+    clearcoat: 0.4, clearcoatRoughness: 0.35,
+  });
+  const sleeve = new THREE.Mesh(sleeveGeo, sleeveMat);
+  sleeve.position.y = 0.6275 - CAN_H / 2;
+  group.add(sleeve);
+  scene.add(group);
+
+  /* ---- étiquettes : artwork + typo composés au canvas ------------------ */
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const texCache = new Map();
+  await document.fonts.ready;                 // Anton doit être prête avant de composer
+
+  function compose(img, flavourName){
+    const W = 2048, H = 1374;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const x = c.getContext('2d');
+    x.drawImage(img, 0, 0, W, H);
+
+    // la typo est répétée à un demi-tour d'écart : lisible de face comme de dos
+    for (const cx of [W * 0.25, W * 0.75]) {
+      x.save();
+      x.translate(cx, H * 0.5);
+      x.textAlign = 'center';
+      x.fillStyle = '#16190F';
+      x.font = '400 250px Anton, sans-serif';
+      x.fillText('HOLA', 0, 20);
+      x.letterSpacing = '14px';
+      x.font = '400 52px Archivo, sans-serif';
+      x.fillText('ENERGY', 0, 96);
+      x.font = '400 38px Archivo, sans-serif';
+      x.fillText(flavourName.toUpperCase(), 0, 186);
+      x.letterSpacing = '0px';
+      x.restore();
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = maxAniso;
+    t.wrapS = THREE.RepeatWrapping;
+    return t;
+  }
+
+  function loadFlavour(k){
+    if (texCache.has(k)) return Promise.resolve(texCache.get(k));
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => { const t = compose(img, FLAVORS[k].name); texCache.set(k, t); resolve(t); };
+      img.onerror = () => resolve(null);
+      img.src = FLAVORS[k].tex;
+    });
+  }
+
+  const first = await loadFlavour('litchi');
+  if (first) { sleeveMat.map = first; sleeveMat.needsUpdate = true; }
+  document.documentElement.dataset.webgl = 'on';
+
+  /* ---- état : cibles d'un côté, valeurs rattrapées de l'autre ---------- */
+  const target  = { rotX: 0.10, rotZ: 0.16, spin: 0, scale: 1, offY: 0 };
+  const current = { rotX: 0.10, rotZ: 0.16, scale: 1, offY: 0 };
+  const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
+  let idleSpin = 0;      // rotation libre : lente en continu, plus les impulsions
+  let scrollSpin = 0;    // rotation pilotée par le scroll, qui rattrape target.spin
+  let spinVel = 0;
+
+  addEventListener('pointermove', (e) => {
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = (e.clientY / innerHeight) * 2 - 1;
+  }, { passive: true });
+
+  function readScroll(){
+    const h = heroEl.offsetHeight || innerHeight;
+    const p = Math.min(Math.max(scrollY / h, 0), 1);
+    target.rotX = 0.10 - p * 0.26;
+    target.rotZ = 0.16 - p * 0.30;
+    target.spin = p * Math.PI * 1.35;
+    target.scale = 1 - p * 0.14;
+    target.offY = p * 0.22;
+  }
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+
+  /* ---- ancrage sur la position réelle du bloc HTML --------------------- */
+  const v = new THREE.Vector3();
+  function placeFromLayout(){
+    const r = anchorEl.getBoundingClientRect();
+    const ndcX = ((r.left + r.width / 2) / innerWidth) * 2 - 1;
+    const ndcY = -((r.top + r.height / 2) / innerHeight) * 2 + 1;
+    v.set(ndcX, ndcY, 0.5).unproject(camera);
+    v.sub(camera.position).normalize();
+    const p = camera.position.clone().addScaledVector(v, -camera.position.z / v.z);
+
+    // échelle : la canette 3D occupe la même hauteur que le bloc qu'elle remplace
+    const visibleH = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * camera.position.z;
+    const fit = (r.height / innerHeight) * visibleH / CAN_H;
+    // 0.72 : le SVG remplacé n'occupait que ~72 % de la hauteur de son bloc
+    return { x: p.x, y: p.y, fit: fit * 0.72 };
+  }
+
+  function resize(){
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight, false);
+  }
+  addEventListener('resize', resize, { passive: true });
+  resize();
+
+  /* ---- ne rend que si le héro est à l'écran ---------------------------- */
+  let visible = true;
+  new IntersectionObserver(
+    ([e]) => { visible = e.isIntersecting; },
+    { rootMargin: '120px' }
+  ).observe(heroEl);
+
+  /* ---- boucle ---------------------------------------------------------- */
+  const lerp = (a, b, t) => a + (b - a) * t;
+  let last = performance.now();
+
+  renderer.setAnimationLoop((now) => {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    if (!visible) return;
+
+    const k = 1 - Math.exp(-6 * dt);            // rattrapage indépendant du framerate
+    current.rotX  = lerp(current.rotX,  target.rotX,  k);
+    current.rotZ  = lerp(current.rotZ,  target.rotZ,  k);
+    current.scale = lerp(current.scale, target.scale, k);
+    current.offY  = lerp(current.offY,  target.offY,  k);
+    pointer.sx = lerp(pointer.sx, pointer.x, k);
+    pointer.sy = lerp(pointer.sy, pointer.y, k);
+
+    if (!reduce) {
+      spinVel *= Math.exp(-2.2 * dt);            // amortissement de l'impulsion
+      idleSpin += (0.22 + spinVel) * dt;
+    }
+    scrollSpin = lerp(scrollSpin, target.spin, k);
+
+    const a = placeFromLayout();
+    group.position.set(a.x, a.y + current.offY, 0);
+    group.scale.setScalar(a.fit * current.scale);
+    group.rotation.set(
+      current.rotX + (reduce ? 0 : pointer.sy * 0.12),
+      idleSpin + scrollSpin + (reduce ? 0 : pointer.sx * 0.30),
+      current.rotZ
+    );
+
+    renderer.render(scene, camera);
+  });
+
+  /* ---- la gamme pilote l'étiquette ------------------------------------- */
+  document.querySelectorAll('.flavor').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const k = btn.dataset.accent.replace('--f-', '');
+      const t = await loadFlavour(k);
+      if (!t) return;
+      sleeveMat.map = t;
+      sleeveMat.needsUpdate = true;
+      spinVel += 5.5;                            // coup de pouce : la canette pivote
+    });
+  });
+}
 </script>
 </body>
 </html>
