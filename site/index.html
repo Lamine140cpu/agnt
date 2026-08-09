@@ -381,7 +381,7 @@ async function boot(){
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // six canettes, leurs reflets et six passes d'écran : au-delà on perd les 60 images
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.22;
+  renderer.toneMappingExposure = 1.05;
   /* Sans ombre portée, un objet flotte : c'est le premier signal de synthèse,
      avant même la matière. Une seule source projette, ce qui suffit ici. */
   renderer.shadowMap.enabled = true;
@@ -426,12 +426,12 @@ async function boot(){
     if (!tex) return;
     scene.environment = pmrem.fromEquirectangular(tex).texture;
     scene.environmentRotation = new THREE.Euler(0, -1.15, 0);
-    scene.environmentIntensity = 1.9;
+    scene.environmentIntensity = 1.05;
     tex.dispose();
   });
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.32));
-  const key  = new THREE.DirectionalLight(0xffffff, 1.8); key.position.set(2.2, 3.2, 3.4);
+  const key  = new THREE.DirectionalLight(0xffffff, 1.15); key.position.set(2.2, 3.2, 3.4);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.camera.left = -3; key.shadow.camera.right = 3;
@@ -439,8 +439,8 @@ async function boot(){
   key.shadow.camera.near = 0.5; key.shadow.camera.far = 14;
   key.shadow.bias = -0.0012;
   key.shadow.radius = 3;
-  const fill = new THREE.DirectionalLight(0xffffff, 1.5); fill.position.set(0, 0.6, 6);
-  const back = new THREE.DirectionalLight(0xffffff, 1.2); back.position.set(-2.6, 1.2, -2.2);
+  const fill = new THREE.DirectionalLight(0xffffff, 1.1); fill.position.set(0, 0.6, 6);
+  const back = new THREE.DirectionalLight(0xffffff, 0.7); back.position.set(-2.6, 1.2, -2.2);
   scene.add(key, fill, back);
 
   /* ---- géométrie ------------------------------------------------------- */
@@ -532,10 +532,10 @@ async function boot(){
   const surface = surfaceMaps();
 
   const alu = new THREE.MeshPhysicalMaterial({
-    color:0xC4CAD4, metalness:1, roughness:0.16, envMapIntensity:1.0,
+    color:0xB9BEC7, metalness:1, roughness:0.26, envMapIntensity:0.85,
     roughnessMap: surface.rough,
-    normalMap: surface.normal, normalScale: new THREE.Vector2(0.30, 0.30),
-    anisotropy: 0.12,
+    normalMap: surface.normal, normalScale: new THREE.Vector2(0.18, 0.18),
+    anisotropy: 0.06,
   });
 
   /* ---- étiquettes composées au code ------------------------------------ */
@@ -653,11 +653,11 @@ async function boot(){
       const rivet = new THREE.Mesh(rivetGeo, alu);
       rivet.position.set(-0.01, CAN_H/2 - 0.010, 0);
       const mat = new THREE.MeshPhysicalMaterial({
-        map: fronts[i], roughness:0.19, metalness:0.85, envMapIntensity:1.45,
+        map: fronts[i],
+        roughness:0.42, metalness:0.12, envMapIntensity:0.42,
         roughnessMap: surface.rough,
-        normalMap: surface.normal, normalScale: new THREE.Vector2(0.22, 0.22),
-        anisotropy: 0.08,
-        clearcoat:0.5, clearcoatRoughness:0.22,
+        normalMap: surface.normal, normalScale: new THREE.Vector2(0.16, 0.16),
+        clearcoat:0.22, clearcoatRoughness:0.30,
       });
       const sleeve = new THREE.Mesh(sleeveGeo, mat);
       sleeve.position.y = 0.615 - CAN_H/2;
@@ -668,7 +668,7 @@ async function boot(){
     const real = build(), refl = build();
     refl.mat.transparent = true; refl.mat.opacity = 0.30;
     // un sol renvoie une image dégradée, pas une copie : on la salit
-    refl.mat.roughness = 0.62;
+    refl.mat.roughness = 0.78;
     refl.mat.envMapIntensity = 0.5;
     stage.add(real.group); mirror.add(refl.group);
     cans.push({ real:real.group, refl:refl.group, mats:[real.mat, refl.mat] });
@@ -706,7 +706,7 @@ async function boot(){
   disc.receiveShadow = true;
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(2.6, 0.018, 8, 72),
-    new THREE.MeshPhysicalMaterial({ color:0x9AA0AC, metalness:1, roughness:0.2, envMapIntensity:1.2 })
+    new THREE.MeshPhysicalMaterial({ color:0x6E747E, metalness:1, roughness:0.34, envMapIntensity:0.7 })
   );
   ring.rotation.x = Math.PI/2; ring.position.y = FLOOR_Y;
   podium.add(disc, ring);
@@ -751,7 +751,7 @@ async function boot(){
   allocate();
 
   const matBright = new THREE.ShaderMaterial({
-    uniforms:{ tSrc:{value:null}, seuil:{value:0.86} },
+    uniforms:{ tSrc:{value:null}, seuil:{value:0.92} },
     vertexShader: VERT,
     fragmentShader: `
       varying vec2 vUv; uniform sampler2D tSrc; uniform float seuil;
@@ -779,7 +779,7 @@ async function boot(){
   const matMix = new THREE.ShaderMaterial({
     uniforms:{
       tScene:{value:null}, tFlou:{value:null}, tBloom:{value:null}, tDepth:{value:null},
-      force:{value:0.40}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
+      force:{value:0.18}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
     },
     vertexShader: VERT,
     fragmentShader: `
@@ -814,7 +814,7 @@ async function boot(){
   function post(){
     renderer.setRenderTarget(rtScene);
     renderer.clear();
-    renderer.toneMappingExposure = 1.22 * (1 - sortie) * (1 - sortie);
+    renderer.toneMappingExposure = 1.05 * (1 - sortie) * (1 - sortie);
     renderer.render(scene, camera);
 
     matBright.uniforms.tSrc.value = rtScene.texture;
@@ -970,7 +970,7 @@ async function boot(){
       }
       c.real.visible = Math.abs(d) < 1.9;
       c.refl.visible = cur.veil > 0.02 && Math.abs(d) < 1.2;
-      c.mats[1].opacity = 0.17 * cur.veil * Math.max(0, 1 - Math.abs(d) * 0.5);
+      c.mats[1].opacity = 0.10 * cur.veil * Math.max(0, 1 - Math.abs(d) * 0.5);
     });
     veil.visible = cur.veil > 0.02;
     mirror.visible = cur.veil > 0.02;
