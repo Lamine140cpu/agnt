@@ -13,7 +13,8 @@ déstructuration.
 import base64, os, re, sys
 
 SITE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(SITE, "dist", "index.html")
+PAGE = sys.argv[1] if len(sys.argv) > 1 else "index.html"
+OUT = os.path.join(SITE, "dist", PAGE)
 
 
 def parse_specifiers(block):
@@ -85,7 +86,7 @@ def main():
         "const THREE = " + wrap_module(open("vendor/three.module.min.js").read(), "__threeCore") + ";\n"
     )
 
-    src = open("index.html").read()
+    src = open(PAGE).read()
     head = src.split("<head>", 1)[1].split("</head>", 1)[0]
     body = src.split("<body>", 1)[1].rsplit("</body>", 1)[0]
     head = re.sub(r'<meta charset[^>]*>\s*', "", head)
@@ -100,8 +101,19 @@ def main():
     for name in sorted(os.listdir("assets/web")):
         uri = "data:image/jpeg;base64," + b64("assets/web/" + name)
         page = page.replace(f"'assets/web/{name}'", f"'{uri}'")
+        page = page.replace(f"`assets/web/label-${{f.key}}.jpg`",
+                            "`data:image/jpeg;base64,${LABEL_B64[f.key]}`")
 
-    for leftover in ("vendor/", "assets/web/", "data:text/javascript"):
+    labels = {n[6:-4]: b64("assets/web/" + n) for n in os.listdir("assets/web") if n.startswith("label-")}
+    if "LABEL_B64" in page:
+        page = page.replace("const FLAVOURS = [",
+            "const LABEL_B64 = " + __import__("json").dumps(labels) + ";\nconst FLAVOURS = [", 1)
+
+    for font in ("anton", "archivo"):
+        uri = "data:font/woff2;base64," + b64(f"assets/fonts/{font}.woff2")
+        page = page.replace(f"url('assets/fonts/{font}.woff2')", f"url({uri})")
+
+    for leftover in ("vendor/", "assets/web/", "assets/fonts/", "data:text/javascript"):
         if leftover in page:
             sys.exit(f"référence externe restante : {leftover}")
 
