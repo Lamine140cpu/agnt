@@ -218,7 +218,7 @@ async function boot(){
   await document.fonts.ready;
 
   function compose(img, name, tint){
-    const W = 1600, H = 1073;
+    const W = 2528, H = 1696;      // pleine résolution de l'étiquette : le zoom ne ramollit pas
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
     /* Duotone : la couleur vive est posée EN DESSOUS et l'artwork multiplié
@@ -230,13 +230,25 @@ async function boot(){
     x.drawImage(img, 0, 0, W, H);
     x.globalCompositeOperation = 'source-over';
 
+    /* La typographie est tracée ici, jamais dans l'image source : elle reste
+       nette quel que soit le grossissement, et renommer une saveur ne demande
+       pas de regénérer une texture. */
     for (const cx of [W*0.25, W*0.75]) {
       x.save(); x.translate(cx, H*0.5); x.textAlign = 'center'; x.fillStyle = '#FFFFFF';
-      x.font = '400 196px Anton, sans-serif';   x.fillText('HOLA', 0, 16);
-      x.letterSpacing = '11px';
-      x.font = '400 41px Archivo, sans-serif';  x.fillText('ENERGY', 0, 75);
-      x.font = '400 29px Archivo, sans-serif';  x.fillText(name.toUpperCase(), 0, 146);
-      x.letterSpacing = '0px'; x.restore();
+      x.font = '400 310px Anton, sans-serif';   x.fillText('HOLA', 0, 26);
+      x.letterSpacing = '18px';
+      x.font = '400 65px Archivo, sans-serif';  x.fillText('ENERGY', 0, 120);
+      x.font = '400 46px Archivo, sans-serif';  x.fillText(name.toUpperCase(), 0, 232);
+
+      x.globalAlpha = 0.5;
+      x.fillRect(-190, 268, 380, 3);
+      x.globalAlpha = 0.88;
+      x.letterSpacing = '7px';
+      x.font = '400 30px Archivo, sans-serif';
+      x.fillText('25 CL · 80 MG DE CAFÉINE', 0, 330);
+      x.fillText('11 G DE SUCRES · SANS TAURINE', 0, 378);
+      x.letterSpacing = '0px'; x.globalAlpha = 1;
+      x.restore();
     }
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
