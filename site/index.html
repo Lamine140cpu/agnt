@@ -375,10 +375,14 @@ try {
 if (renderer) boot();
 
 async function boot(){
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // six canettes, leurs reflets et six passes d'écran : au-delà on perd les 60 images
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.22;
+  /* Sans ombre portée, un objet flotte : c'est le premier signal de synthèse,
+     avant même la matière. Une seule source projette, ce qui suffit ici. */
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(20, innerWidth / innerHeight, 0.1, 100);
@@ -419,12 +423,19 @@ async function boot(){
     if (!tex) return;
     scene.environment = pmrem.fromEquirectangular(tex).texture;
     scene.environmentRotation = new THREE.Euler(0, -1.15, 0);
-    scene.environmentIntensity = 1.5;
+    scene.environmentIntensity = 1.9;
     tex.dispose();
   });
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.32));
   const key  = new THREE.DirectionalLight(0xffffff, 1.8); key.position.set(2.2, 3.2, 3.4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -3; key.shadow.camera.right = 3;
+  key.shadow.camera.top = 3;   key.shadow.camera.bottom = -3;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 14;
+  key.shadow.bias = -0.0012;
+  key.shadow.radius = 3;
   const fill = new THREE.DirectionalLight(0xffffff, 1.5); fill.position.set(0, 0.6, 6);
   const back = new THREE.DirectionalLight(0xffffff, 1.2); back.position.set(-2.6, 1.2, -2.2);
   scene.add(key, fill, back);
@@ -438,12 +449,12 @@ async function boot(){
     [0.216,1.325],[0.223,1.331],[0.220,1.334],[0.206,1.331],[0.199,1.323],
     [0.150,1.316],[0.060,1.313],[0.000,1.315],
   ];
-  const lathe = new THREE.LatheGeometry(profile.map(([x,y]) => new THREE.Vector2(x, y - CAN_H/2)), 160);
+  const lathe = new THREE.LatheGeometry(profile.map(([x,y]) => new THREE.Vector2(x, y - CAN_H/2)), 96);
   lathe.computeVertexNormals();
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
   const tabGeo    = new THREE.TorusGeometry(0.062, 0.009, 12, 40);
   const rivetGeo  = new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14);
-  const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 160, 1, true);
+  const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 96, 1, true);
   /* ---- fini du métal ---------------------------------------------------
      Des reflets parfaitement lisses sont la signature du métal en synthèse.
      Une vraie canette est satinée : stries verticales d'emboutissage, légères
@@ -519,7 +530,7 @@ async function boot(){
   const surface = surfaceMaps();
 
   const alu = new THREE.MeshPhysicalMaterial({
-    color:0xC4CAD4, metalness:1, roughness:0.30, envMapIntensity:1.0,
+    color:0xC4CAD4, metalness:1, roughness:0.16, envMapIntensity:1.0,
     roughnessMap: surface.rough,
     normalMap: surface.normal, normalScale: new THREE.Vector2(0.055, 0.055),
     anisotropy: 0.12,
@@ -645,14 +656,16 @@ async function boot(){
   FLAVOURS.forEach((f, i) => {
     const build = () => {
       const g = new THREE.Group();
-      g.add(new THREE.Mesh(lathe, alu));
+      const corps = new THREE.Mesh(lathe, alu);
+      corps.castShadow = true;
+      g.add(corps);
       const tab = new THREE.Mesh(tabGeo, alu);
       tab.rotation.x = -Math.PI/2; tab.scale.set(1, 1.35, 1);
       tab.position.set(0.045, CAN_H/2 - 0.012, 0);
       const rivet = new THREE.Mesh(rivetGeo, alu);
       rivet.position.set(-0.01, CAN_H/2 - 0.010, 0);
       const mat = new THREE.MeshPhysicalMaterial({
-        map: fronts[i], roughness:0.34, metalness:0.85, envMapIntensity:1.15,
+        map: fronts[i], roughness:0.19, metalness:0.85, envMapIntensity:1.45,
         roughnessMap: surface.rough,
         normalMap: surface.normal, normalScale: new THREE.Vector2(0.035, 0.035),
         anisotropy: 0.08,
@@ -666,6 +679,9 @@ async function boot(){
     };
     const real = build(), refl = build();
     refl.mat.transparent = true; refl.mat.opacity = 0.30;
+    // un sol renvoie une image dégradée, pas une copie : on la salit
+    refl.mat.roughness = 0.62;
+    refl.mat.envMapIntensity = 0.5;
     stage.add(real.group); mirror.add(refl.group);
     cans.push({ real:real.group, refl:refl.group, mats:[real.mat, refl.mat] });
   });
@@ -692,15 +708,16 @@ async function boot(){
      dupliqué en dessous le traverse et se lise comme un poli. */
   const podium = new THREE.Group();
   const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.6, 2.6, 0.05, 96),
+    new THREE.CylinderGeometry(2.6, 2.6, 0.05, 64),
     new THREE.MeshPhysicalMaterial({
       color:0x0B0A10, metalness:0.9, roughness:0.16, envMapIntensity:0.8,
       transparent:true, opacity:0.55,
     })
   );
   disc.position.y = FLOOR_Y - 0.025;
+  disc.receiveShadow = true;
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(2.6, 0.018, 10, 128),
+    new THREE.TorusGeometry(2.6, 0.018, 8, 72),
     new THREE.MeshPhysicalMaterial({ color:0x9AA0AC, metalness:1, roughness:0.2, envMapIntensity:1.2 })
   );
   ring.rotation.x = Math.PI/2; ring.position.y = FLOOR_Y;
@@ -809,6 +826,7 @@ async function boot(){
   function post(){
     renderer.setRenderTarget(rtScene);
     renderer.clear();
+    renderer.toneMappingExposure = 1.22 * (1 - sortie) * (1 - sortie);
     renderer.render(scene, camera);
 
     matBright.uniforms.tSrc.value = rtScene.texture;
@@ -841,7 +859,7 @@ async function boot(){
   const cur = Object.assign({}, shot);
   const carousel = { position: 0, target: 0 };
   const pointer = { x:0, y:0, sx:0, sy:0 };
-  let idle = 0, spinVel = 0, active = -1, mode = 'front', progress = 0;
+  let idle = 0, spinVel = 0, active = -1, mode = 'front', progress = 0, sortie = 0;
 
   addEventListener('pointermove', (e) => {
     pointer.x = (e.clientX / innerWidth) * 2 - 1;
@@ -857,9 +875,11 @@ async function boot(){
 
     // au-delà des arguments, la 3D s'efface : les sections à lire ont un fond
     // propre sur la référence, pas une canette derrière
-    const sortie = Math.min(Math.max((progress - (T_ARGSE + P(0.10))) / P(0.45), 0), 1);
-    const opacite = String(1 - sortie);
-    document.getElementById('webgl').style.opacity = opacite;
+    /* Baisser l'opacité fait passer une canette orange par le marron avant de
+       disparaître, puisqu'elle se mélange au fond noir. On éteint donc la
+       lumière — l'exposition tombe — et l'opacité ne sert qu'en toute fin. */
+    sortie = Math.min(Math.max((progress - (T_ARGSE + P(0.10))) / P(0.45), 0), 1);
+    document.getElementById('webgl').style.opacity = String(Math.min(1, (1 - sortie) * 3));
     document.getElementById('glow').style.opacity = String((1 - sortie) * 0.9);
     document.getElementById('hint').style.opacity = scrollY > 40 ? 0 : 1;
 
@@ -874,7 +894,7 @@ async function boot(){
   addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // six canettes, leurs reflets et six passes d'écran : au-delà on perd les 60 images
     renderer.setSize(innerWidth, innerHeight, false);
     allocate();
     readScroll();
@@ -958,9 +978,10 @@ async function boot(){
         g.position.set(x, y, z);
         g.scale.setScalar(s);
         g.rotation.set(rotX, rotY, rotZ);
-        g.visible = Math.abs(d) < 3.2;
       }
-      c.mats[1].opacity = 0.30 * cur.veil * Math.max(0, 1 - Math.abs(d) * 0.5);
+      c.real.visible = Math.abs(d) < 1.9;
+      c.refl.visible = cur.veil > 0.02 && Math.abs(d) < 1.2;
+      c.mats[1].opacity = 0.17 * cur.veil * Math.max(0, 1 - Math.abs(d) * 0.5);
     });
     veil.visible = cur.veil > 0.02;
     mirror.visible = cur.veil > 0.02;
