@@ -306,6 +306,10 @@ const ARGS = [
   { title:'STÉVIA',              crossed:'ASPARTAME · SUCRALOSE',  body:"Un édulcorant d'origine végétale." },
 ];
 
+/* 'label' : artworks risographiques, typographie tracée au code.
+   'wrap'  : artworks de packaging complets, utilisés tels quels. */
+const ARTWORK = 'label';
+
 const CAN_H = 1.334;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -561,6 +565,41 @@ async function boot(){
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
 
+    if (ARTWORK === 'label') {
+      /* Ces artworks ne portent aucun texte : on compose la typographie. */
+      base(x, tint, wrap);
+      const face = (cx) => {
+        x.save(); x.translate(cx, H * 0.5);
+        x.save();
+        x.transform(1, 0, -0.20, 1, 0, 0);
+        x.textAlign = 'center';
+        x.font = '400 620px Anton, sans-serif';
+        const k = (W * 0.30) / x.measureText('HOLA').width;
+        x.scale(k, k);
+        const g = x.createLinearGradient(0, -420, 0, 260);
+        g.addColorStop(0.00, '#FFFFFF'); g.addColorStop(0.34, '#EDEDF2');
+        g.addColorStop(0.52, '#9EA2AE'); g.addColorStop(0.62, '#FFFFFF');
+        g.addColorStop(1.00, '#C8CCD6');
+        x.fillStyle = g; x.fillText('HOLA', 0, 60);
+        x.restore();
+        x.textAlign = 'center';
+        x.font = '400 150px Anton, sans-serif'; x.letterSpacing = '26px';
+        x.lineWidth = 5; x.strokeStyle = 'rgba(255,255,255,.78)';
+        x.strokeText('ENERGY', 12, 300); x.letterSpacing = '0px';
+        x.fillStyle = 'rgba(255,255,255,.72)';
+        x.font = '400 42px Archivo, sans-serif';
+        x.fillText('25 CL  |  ZÉRO TAURINE', 0, 392);
+        x.save(); x.translate(-W * 0.135, 0); x.rotate(-Math.PI/2);
+        x.textAlign = 'center'; x.font = '400 78px Anton, sans-serif';
+        x.letterSpacing = '6px'; x.fillStyle = 'rgba(255,255,255,.94)';
+        x.fillText('GOÛT ' + name.toUpperCase(), 0, 0); x.letterSpacing = '0px';
+        x.restore();
+        x.restore();
+      };
+      face(W * 0.25); face(W * 0.75);
+      return finish(c);
+    }
+
     if (!wrap) { base(x, tint, null); }
     else {
       x.drawImage(wrap, 0, 0, W, H);
@@ -629,7 +668,7 @@ async function boot(){
 
   const artwork = await Promise.all(FLAVOURS.map((f) => new Promise((res) => {
     const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null);
-    img.src = `assets/web/wrap-${f.key}.jpg`;
+    img.src = `assets/web/${ARTWORK}-${f.key}.jpg`;
   })));
   const fronts = FLAVOURS.map((f, i) => composeFront(artwork[i], f.name, f.tint));
   const specs  = FLAVOURS.map((f, i) => composeSpec(artwork[i], f.tint));
@@ -661,7 +700,7 @@ async function boot(){
       });
       const sleeve = new THREE.Mesh(sleeveGeo, mat);
       sleeve.position.y = 0.615 - CAN_H/2;
-      sleeve.rotation.y = Math.PI;       // la couture de l'artwork part au dos, hors du champ
+      sleeve.rotation.y = ARTWORK === 'label' ? -Math.PI/2 : Math.PI;   // couture hors du champ dans les deux cas
       g.add(tab, rivet, sleeve);
       return { group:g, mat };
     };
@@ -779,13 +818,13 @@ async function boot(){
   const matMix = new THREE.ShaderMaterial({
     uniforms:{
       tScene:{value:null}, tFlou:{value:null}, tBloom:{value:null}, tDepth:{value:null},
-      force:{value:0.18}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
+      force:{value:0.18}, desat:{value:0.0}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
     },
     vertexShader: VERT,
     fragmentShader: `
       varying vec2 vUv;
       uniform sampler2D tScene, tFlou, tBloom, tDepth;
-      uniform float force, focus, plage, near, far;
+      uniform float force, desat, focus, plage, near, far;
       float viewZ(float d){ return (near * far) / ((far - near) * d - far); }
       void main(){
         vec4 net  = texture2D(tScene, vUv);
@@ -797,6 +836,9 @@ async function boot(){
         vec3 c = mix(net.rgb, flou.rgb, coc * 0.70);
         c += blm.rgb * force;
         // l'alpha est conservé : le dégradé de couleur en CSS doit rester visible
+        /* Assombrir un orange donne un marron : c'est la même couleur. La
+           canette de fin doit donc être désaturée, pas seulement éteinte. */
+        c = mix(c, vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), desat);
         float a = clamp(mix(net.a, flou.a, coc * 0.70) + blm.a * force, 0.0, 1.0);
         gl_FragColor = vec4(c, a);
       }`,
@@ -838,6 +880,7 @@ async function boot(){
     matMix.uniforms.tDepth.value = rtScene.depthTexture;
     matMix.uniforms.near.value = camera.near;
     matMix.uniforms.far.value  = camera.far;
+    matMix.uniforms.desat.value = Math.min(1, sortie * 2.2);
     matMix.uniforms.focus.value = camera.position.z;   // la canette centrale est au plan z = 0
     draw(matMix, null);
   }

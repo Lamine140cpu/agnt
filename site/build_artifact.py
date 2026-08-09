@@ -101,10 +101,15 @@ def main():
     for name in sorted(os.listdir("assets/web")):
         uri = "data:image/jpeg;base64," + b64("assets/web/" + name)
         page = page.replace(f"'assets/web/{name}'", f"'{uri}'")
-        page = page.replace(f"`assets/web/wrap-${{f.key}}.jpg`",
-                            "`data:image/jpeg;base64,${LABEL_B64[f.key]}`")
+        page = page.replace("`assets/web/${ARTWORK}-${f.key}.jpg`",
+                            "`data:image/jpeg;base64,${LABEL_B64[ARTWORK + '-' + f.key]}`")
 
-    labels = {n[5:-4]: b64("assets/web/" + n) for n in os.listdir("assets/web") if n.startswith("wrap-")}
+    # seul le jeu d'étiquettes retenu par la page est embarqué
+    actif = re.search(r"const ARTWORK = '(\w+)'", src)
+    prefixe = (actif.group(1) if actif else "label") + "-"
+    labels = {n[:-4]: b64("assets/web/" + n)
+              for n in os.listdir("assets/web")
+              if n.startswith(prefixe) and n.endswith(".jpg")}
     if "LABEL_B64" in page:
         page = page.replace("const FLAVOURS = [",
             "const LABEL_B64 = " + __import__("json").dumps(labels) + ";\nconst FLAVOURS = [", 1)
