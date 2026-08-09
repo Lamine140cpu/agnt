@@ -440,13 +440,92 @@ async function boot(){
   ];
   const lathe = new THREE.LatheGeometry(profile.map(([x,y]) => new THREE.Vector2(x, y - CAN_H/2)), 160);
   lathe.computeVertexNormals();
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
   const tabGeo    = new THREE.TorusGeometry(0.062, 0.009, 12, 40);
   const rivetGeo  = new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14);
   const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 160, 1, true);
-  const alu = new THREE.MeshPhysicalMaterial({ color:0xC4CAD4, metalness:1, roughness:0.11, envMapIntensity:1.0 });
+  /* ---- fini du métal ---------------------------------------------------
+     Des reflets parfaitement lisses sont la signature du métal en synthèse.
+     Une vraie canette est satinée : stries verticales d'emboutissage, légères
+     ondulations, micro-grain. On fabrique donc un relief, puis on en tire une
+     carte de rugosité et une carte de normales. */
+  function surfaceMaps(){
+    const S = 1024;
+    const c = document.createElement('canvas'); c.width = S; c.height = S;
+    const x = c.getContext('2d');
+    x.fillStyle = '#808080'; x.fillRect(0, 0, S, S);
+
+    // Stries très fines et peu contrastées : une canette imprimée est satinée,
+    // pas brossée. Marquées, elles donnent du chrome strié, pas de l'aluminium.
+    for (let i = 0; i < 3400; i++) {
+      const px = Math.random() * S;
+      const w = 0.5 + Math.random() * 1.1;
+      const v = 128 + (Math.random() - 0.5) * 14;
+      x.fillStyle = `rgb(${v|0},${v|0},${v|0})`;
+      x.globalAlpha = 0.18 + Math.random() * 0.18;
+      x.fillRect(px, -10, w, S + 20);
+    }
+    // ondulations basse fréquence : le corps d'une canette n'est jamais droit
+    x.globalAlpha = 0.16;
+    for (let i = 0; i < 90; i++) {
+      const g = x.createRadialGradient(Math.random()*S, Math.random()*S, 0,
+                                       Math.random()*S, Math.random()*S, 60 + Math.random()*180);
+      const v = 128 + (Math.random() - 0.5) * 18;
+      g.addColorStop(0, `rgba(${v|0},${v|0},${v|0},1)`);
+      g.addColorStop(1, 'rgba(128,128,128,0)');
+      x.fillStyle = g; x.fillRect(0, 0, S, S);
+    }
+    x.globalAlpha = 1;
+
+    const h = x.getImageData(0, 0, S, S).data;
+    const at = (i, j) => h[((j & (S-1)) * S + (i & (S-1))) * 4];
+
+    // rugosité : le relief module la valeur autour de 0,5
+    const rc = document.createElement('canvas'); rc.width = S; rc.height = S;
+    const ri = rc.getContext('2d').createImageData(S, S);
+    // normales : gradient du relief, encodé en RGB
+    const nc = document.createElement('canvas'); nc.width = S; nc.height = S;
+    const ni = nc.getContext('2d').createImageData(S, S);
+    const force = 0.9;
+    for (let j = 0; j < S; j++) {
+      for (let i = 0; i < S; i++) {
+        const o = (j * S + i) * 4;
+        const v = at(i, j);
+        const r = Math.max(0, Math.min(255, 122 + (v - 128) * 0.8));
+        ri.data[o] = ri.data[o+1] = ri.data[o+2] = r; ri.data[o+3] = 255;
+
+        const dx = (at(i+1, j) - at(i-1, j)) / 255 * force;
+        const dy = (at(i, j+1) - at(i, j-1)) / 255 * force;
+        const len = Math.hypot(dx, dy, 1);
+        ni.data[o]   = ((-dx/len) * 0.5 + 0.5) * 255;
+        ni.data[o+1] = (( dy/len) * 0.5 + 0.5) * 255;
+        ni.data[o+2] = ((  1/len) * 0.5 + 0.5) * 255;
+        ni.data[o+3] = 255;
+      }
+    }
+    rc.getContext('2d').putImageData(ri, 0, 0);
+    nc.getContext('2d').putImageData(ni, 0, 0);
+
+    const tex = (canvas, srgb) => {
+      const t = new THREE.CanvasTexture(canvas);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(8, 2);            // motif fin : il doit se sentir, pas se voir
+      t.anisotropy = maxAniso;
+      if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    };
+    return { rough: tex(rc, false), normal: tex(nc, false) };
+  }
+  const surface = surfaceMaps();
+
+  const alu = new THREE.MeshPhysicalMaterial({
+    color:0xC4CAD4, metalness:1, roughness:0.30, envMapIntensity:1.0,
+    roughnessMap: surface.rough,
+    normalMap: surface.normal, normalScale: new THREE.Vector2(0.055, 0.055),
+    anisotropy: 0.12,
+  });
 
   /* ---- étiquettes composées au code ------------------------------------ */
-  const maxAniso = renderer.capabilities.getMaxAnisotropy();
   await document.fonts.ready;
 
   const W = 2528, H = 1696;
@@ -573,7 +652,10 @@ async function boot(){
       const rivet = new THREE.Mesh(rivetGeo, alu);
       rivet.position.set(-0.01, CAN_H/2 - 0.010, 0);
       const mat = new THREE.MeshPhysicalMaterial({
-        map: fronts[i], roughness:0.26, metalness:0.85, envMapIntensity:1.15,
+        map: fronts[i], roughness:0.34, metalness:0.85, envMapIntensity:1.15,
+        roughnessMap: surface.rough,
+        normalMap: surface.normal, normalScale: new THREE.Vector2(0.035, 0.035),
+        anisotropy: 0.08,
         clearcoat:0.5, clearcoatRoughness:0.22,
       });
       const sleeve = new THREE.Mesh(sleeveGeo, mat);
