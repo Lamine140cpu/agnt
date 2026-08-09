@@ -96,6 +96,24 @@ canettes SVG si le contexte WebGL n'est pas disponible.
 - Les raccords gauche/droite des étiquettes ne sont pas parfaitement continus.
   La couture est placée à l'arrière de la canette, hors du champ de la caméra.
 
+## Version d'un seul fichier
+
+```bash
+cd site && python3 build_artifact.py   # -> site/dist/index.html
+```
+
+Produit une page unique, sans aucun fichier voisin ni requête réseau : three.js
+et les textures y sont repliés. C'est la version à déposer sur un hébergeur
+statique ou dans un contexte qui interdit les ressources externes.
+
+Le repli de three.js n'est pas un simple `import` depuis une URL `data:` — une
+CSP stricte refuse ce schéma pour les scripts. Les deux fichiers de la lib sont
+donc enveloppés chacun dans une IIFE, sans quoi leurs noms minifiés de haut
+niveau entreraient en collision ; leur `export {}` devient un `return {}`, et
+l'`import` du coeur par le module devient une déstructuration. Attention au
+`export {...} from "./three.core.min.js"` : c'est une ré-exportation, elle ne
+crée pas de liaison locale et doit être reprise depuis l'objet du coeur.
+
 ## À brancher
 
 Le formulaire newsletter valide l'adresse puis affiche une confirmation, sans
