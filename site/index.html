@@ -100,6 +100,21 @@ main{position:relative; z-index:4}
   font-family:var(--display); font-weight:400; text-transform:uppercase;
   font-size:clamp(2.2rem,7vw,4.6rem); line-height:.9; margin:0; text-wrap:balance;
 }
+/* Le texte n'accompagne pas la canette : il entre une demi-seconde après
+   qu'elle s'est posée. La référence montre ce second temps — l'agitation y
+   remonte entre 780 et 1000 ms, une fois le mouvement principal amorti. */
+.act[data-flavour] h2,
+.act[data-flavour] p.lede,
+.act-arg h2, .act-arg p.lede, .act-arg .chip{
+  opacity:0; transform:translateY(16px);
+  transition:opacity .34s ease, transform .34s cubic-bezier(.22,1,.36,1);
+}
+.act.posed h2{transition-delay:.50s}
+.act.posed p.lede{transition-delay:.60s}
+.act.posed .chip{transition-delay:.70s}
+.act.posed h2,
+.act.posed p.lede,
+.act.posed .chip{opacity:1; transform:none}
 .act p.lede{
   margin:14px auto 0; max-width:36ch;
   font-size:clamp(14px,1.6vw,17px); color:#C6BFD2; line-height:1.55;
@@ -762,6 +777,12 @@ async function boot(){
     dockBtns.forEach((b, k) => b.setAttribute('aria-current', String(k === i)));
   }
 
+  /* ---- second temps : on marque l'acte posé quand il tient le centre ----- */
+  const staged = new IntersectionObserver((entries) => {
+    entries.forEach((e) => e.target.classList.toggle('posed', e.isIntersecting));
+  }, { rootMargin: '-38% 0px -38% 0px' });
+  document.querySelectorAll('.act[data-flavour], .act-arg').forEach((el) => staged.observe(el));
+
   /* ---- newsletter ------------------------------------------------------- */
   const form = document.getElementById('newsForm');
   const msg = document.getElementById('formMsg');
@@ -785,7 +806,7 @@ async function boot(){
   renderer.setAnimationLoop((now) => {
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
-    const k = 1 - Math.exp(-5.5 * dt);
+    const k = 1 - Math.exp(-5.0 * dt);   // constante de 200 ms, relevée sur la référence
 
     const want = sampleShots(progress);
     for (const key of KEYS) cur[key] = lerp(cur[key], want[key], k);
