@@ -99,6 +99,7 @@ main{position:relative; z-index:4}
   pointer-events:none; z-index:-1;
 }
 .act-read::after{display:none}
+.act-dive::after{display:none}
 .act h2{
   font-family:var(--display); font-weight:400; text-transform:uppercase;
   font-size:clamp(2.2rem,7vw,4.6rem); line-height:.9; margin:0; text-wrap:balance;
@@ -226,6 +227,10 @@ form button:hover{transform:translateY(-1px)}
   <section class="act" data-flavour="4"><h2>Pomme Rhubarbe</h2><p class="lede">Le verger en plus vif : pomme verte acidulée, rhubarbe franche.</p></section>
   <section class="act" data-flavour="5"><h2>Abricot Framboise</h2><p class="lede">Un duo plein soleil. Abricot mûr, framboise, soupçon de vanille.</p></section>
 
+  <!-- Écran de transition : la caméra plonge dans la canette. Rien à lire,
+       ce qui laisse le titre de la dernière saveur sortir du champ d'abord. -->
+  <section class="act act-dive" aria-hidden="true"></section>
+
   <section class="act act-arg">
     <h2>11 g de sucres</h2>
     <p class="lede">Par canette de 25 cl, contre 27 g en moyenne. Assez pour le goût du fruit, pas assez pour la chute de 16 h.</p>
@@ -315,13 +320,13 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* Découpage du scroll. Chaque acte occupe un écran ; ces bornes sont des
    fractions de la course totale, calculées à partir du nombre de sections. */
-const ACTS = { intro:1, flavours:6, args:4, read:2 };
+const ACTS = { intro:1, flavours:6, dive:1, args:4, read:2 };
 const TOTAL = ACTS.intro + ACTS.flavours + ACTS.args + ACTS.read;
 const P = (n) => n / TOTAL;
 const T_FLAV0 = P(ACTS.intro);
 const T_FLAVE = P(ACTS.intro + ACTS.flavours);
-const T_ARGS0 = T_FLAVE + P(0.35);          // la plongée occupe un tiers d'écran
-const T_ARGSE = P(ACTS.intro + ACTS.flavours + ACTS.args);
+const T_ARGS0 = P(ACTS.intro + ACTS.flavours + ACTS.dive);   // la plongée a son propre écran
+const T_ARGSE = P(ACTS.intro + ACTS.flavours + ACTS.dive + ACTS.args);
 
 /* Position de chaque argument sur la canette, en unités monde. Le manchon
    d'étiquette est centré sur LABEL_C et haut de LABEL_H ; composeSpec dessine
@@ -343,6 +348,7 @@ const SHOTS = [
   { at: 0.000,          camY: 0.55, camZ: 11.5, look: -0.10, fov: 22, spread: 2.10, scale: 0.74, tilt: 0.05, veil: 1.0, spin: argSpin(0) },
   { at: T_FLAV0 * 0.75, camY: 0.30, camZ:  8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
   { at: T_FLAVE,        camY: 0.30, camZ:  8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
+  { at: T_FLAVE + P(0.30), camY: 0.30, camZ: 8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
   // plongée : on arrive au pied de la canette, premier argument
   { at: T_ARGS0,        camY: LABEL_C, camZ: 2.35, look: LABEL_C, fov: 20, spread: 5.0, scale: 1.0, tilt: 0.0, veil: 0.0, spin: argSpin(0) },
 ];
@@ -635,7 +641,7 @@ async function boot(){
     const x = c.getContext('2d');
     x.scale(2, 2);
     if (wrap) x.drawImage(wrap, 0, 0, W, H); else { x.fillStyle = tint; x.fillRect(0, 0, W, H); }
-    x.fillStyle = 'rgba(6,4,10,.90)'; x.fillRect(0, 0, W, H);
+    x.fillStyle = 'rgba(8,6,12,.80)'; x.fillRect(0, 0, W, H);
 
     ARGS.forEach((a, i) => {
       const cx = W * argU(i);
@@ -916,7 +922,7 @@ async function boot(){
     document.getElementById('hint').style.opacity = scrollY > 40 ? 0 : 1;
 
     // au-delà de la plongée, la canette montre ses arguments
-    const wanted = progress > T_ARGS0 - P(0.25) && progress < T_ARGSE + P(0.25) ? 'spec' : 'front';
+    const wanted = progress > T_ARGS0 - P(0.30) && progress < T_ARGSE + P(0.25) ? 'spec' : 'front';
     if (wanted !== mode) {
       mode = wanted;
       cans.forEach((c, i) => c.mats.forEach((m) => { m.map = mode === 'spec' ? specs[i] : fronts[i]; m.needsUpdate = true; }));
