@@ -101,10 +101,10 @@ def main():
     for name in sorted(os.listdir("assets/web")):
         uri = "data:image/jpeg;base64," + b64("assets/web/" + name)
         page = page.replace(f"'assets/web/{name}'", f"'{uri}'")
-        page = page.replace(f"`assets/web/label-${{f.key}}.jpg`",
+        page = page.replace(f"`assets/web/wrap-${{f.key}}.jpg`",
                             "`data:image/jpeg;base64,${LABEL_B64[f.key]}`")
 
-    labels = {n[6:-4]: b64("assets/web/" + n) for n in os.listdir("assets/web") if n.startswith("label-")}
+    labels = {n[5:-4]: b64("assets/web/" + n) for n in os.listdir("assets/web") if n.startswith("wrap-")}
     if "LABEL_B64" in page:
         page = page.replace("const FLAVOURS = [",
             "const LABEL_B64 = " + __import__("json").dumps(labels) + ";\nconst FLAVOURS = [", 1)

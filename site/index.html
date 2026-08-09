@@ -459,57 +459,57 @@ async function boot(){
   const rivetGeo  = new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14);
   const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 96, 1, true);
   /* ---- fini du métal ---------------------------------------------------
-     Des reflets parfaitement lisses sont la signature du métal en synthèse.
-     Une vraie canette est satinée : stries verticales d'emboutissage, légères
-     ondulations, micro-grain. On fabrique donc un relief, puis on en tire une
-     carte de rugosité et une carte de normales. */
+     Deux images fournies servent de relief : le grain d'aluminium, très peu
+     contrasté, et la condensation. On en tire une carte de rugosité et une
+     carte de normales. Les gouttes sont lissées et légèrement bombées, le
+     grain ne fait que troubler le reflet. */
+  function chargerRelief(url){
+    return new Promise((res) => {
+      const img = new Image();
+      img.onload = () => {
+        const S = 1024;
+        const c = document.createElement('canvas'); c.width = c.height = S;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(img, 0, 0, S, S);
+        res(x.getImageData(0, 0, S, S).data);
+      };
+      img.onerror = () => res(null);
+      img.src = url;
+    });
+  }
+
+  const [grain, gouttes] = await Promise.all([
+    chargerRelief('assets/web/alu-grain.jpg'),
+    chargerRelief('assets/web/condensation.jpg'),
+  ]);
+
   function surfaceMaps(){
     const S = 1024;
-    const c = document.createElement('canvas'); c.width = S; c.height = S;
-    const x = c.getContext('2d');
-    x.fillStyle = '#808080'; x.fillRect(0, 0, S, S);
-
-    // Stries très fines et peu contrastées : une canette imprimée est satinée,
-    // pas brossée. Marquées, elles donnent du chrome strié, pas de l'aluminium.
-    for (let i = 0; i < 3400; i++) {
-      const px = Math.random() * S;
-      const w = 0.5 + Math.random() * 1.1;
-      const v = 128 + (Math.random() - 0.5) * 14;
-      x.fillStyle = `rgb(${v|0},${v|0},${v|0})`;
-      x.globalAlpha = 0.18 + Math.random() * 0.18;
-      x.fillRect(px, -10, w, S + 20);
+    const hauteur = new Float32Array(S * S);
+    for (let i = 0; i < S * S; i++) {
+      const g = grain   ? grain[i * 4]   : 128;
+      const d = gouttes ? gouttes[i * 4] : 128;
+      // le grain compte peu, les gouttes portent le relief
+      hauteur[i] = ((g - 128) * 0.18 + (d - 128) * 0.85) / 255;
     }
-    // ondulations basse fréquence : le corps d'une canette n'est jamais droit
-    x.globalAlpha = 0.16;
-    for (let i = 0; i < 90; i++) {
-      const g = x.createRadialGradient(Math.random()*S, Math.random()*S, 0,
-                                       Math.random()*S, Math.random()*S, 60 + Math.random()*180);
-      const v = 128 + (Math.random() - 0.5) * 18;
-      g.addColorStop(0, `rgba(${v|0},${v|0},${v|0},1)`);
-      g.addColorStop(1, 'rgba(128,128,128,0)');
-      x.fillStyle = g; x.fillRect(0, 0, S, S);
-    }
-    x.globalAlpha = 1;
+    const at = (i, j) => hauteur[(j & (S - 1)) * S + (i & (S - 1))];
 
-    const h = x.getImageData(0, 0, S, S).data;
-    const at = (i, j) => h[((j & (S-1)) * S + (i & (S-1))) * 4];
-
-    // rugosité : le relief module la valeur autour de 0,5
-    const rc = document.createElement('canvas'); rc.width = S; rc.height = S;
+    const rc = document.createElement('canvas'); rc.width = rc.height = S;
+    const nc = document.createElement('canvas'); nc.width = nc.height = S;
     const ri = rc.getContext('2d').createImageData(S, S);
-    // normales : gradient du relief, encodé en RGB
-    const nc = document.createElement('canvas'); nc.width = S; nc.height = S;
     const ni = nc.getContext('2d').createImageData(S, S);
-    const force = 0.9;
+    const force = 5.5;
+
     for (let j = 0; j < S; j++) {
       for (let i = 0; i < S; i++) {
         const o = (j * S + i) * 4;
-        const v = at(i, j);
-        const r = Math.max(0, Math.min(255, 122 + (v - 128) * 0.8));
+        // une goutte est plus lisse que le métal sec : elle abaisse la rugosité
+        const h = at(i, j);
+        const r = Math.max(0, Math.min(255, 132 - h * 210));
         ri.data[o] = ri.data[o+1] = ri.data[o+2] = r; ri.data[o+3] = 255;
 
-        const dx = (at(i+1, j) - at(i-1, j)) / 255 * force;
-        const dy = (at(i, j+1) - at(i, j-1)) / 255 * force;
+        const dx = (at(i+1, j) - at(i-1, j)) * force;
+        const dy = (at(i, j+1) - at(i, j-1)) * force;
         const len = Math.hypot(dx, dy, 1);
         ni.data[o]   = ((-dx/len) * 0.5 + 0.5) * 255;
         ni.data[o+1] = (( dy/len) * 0.5 + 0.5) * 255;
@@ -520,22 +520,21 @@ async function boot(){
     rc.getContext('2d').putImageData(ri, 0, 0);
     nc.getContext('2d').putImageData(ni, 0, 0);
 
-    const tex = (canvas, srgb) => {
+    const tex = (canvas) => {
       const t = new THREE.CanvasTexture(canvas);
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.repeat.set(8, 2);            // motif fin : il doit se sentir, pas se voir
+      t.repeat.set(2, 1.4);           // à l'échelle d'une canette de 25 cl
       t.anisotropy = maxAniso;
-      if (srgb) t.colorSpace = THREE.SRGBColorSpace;
       return t;
     };
-    return { rough: tex(rc, false), normal: tex(nc, false) };
+    return { rough: tex(rc), normal: tex(nc) };
   }
   const surface = surfaceMaps();
 
   const alu = new THREE.MeshPhysicalMaterial({
     color:0xC4CAD4, metalness:1, roughness:0.16, envMapIntensity:1.0,
     roughnessMap: surface.rough,
-    normalMap: surface.normal, normalScale: new THREE.Vector2(0.055, 0.055),
+    normalMap: surface.normal, normalScale: new THREE.Vector2(0.30, 0.30),
     anisotropy: 0.12,
   });
 
@@ -555,63 +554,49 @@ async function boot(){
     x.fillStyle = sheen; x.fillRect(0, 0, W, H);
   }
 
-  /* étiquette « vitrine » : le logotype domine, comme sur le packaging */
-  function composeFront(img, name, tint){
+  /* Étiquette vitrine : l'artwork de packaging est utilisé tel quel. Seule la
+     mention verticale est reprise — le gabarit « GOÛT [SAVEUR] » n'ayant pas
+     été substitué à la génération, on efface la bande et on la retrace. */
+  function composeFront(wrap, name, tint){
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const x = c.getContext('2d');
-    base(x, tint, img);
 
-    const face = (cx) => {
-      x.save(); x.translate(cx, H * 0.5);
+    if (!wrap) { base(x, tint, null); }
+    else {
+      x.drawImage(wrap, 0, 0, W, H);
+      // la bande de gauche est brouillée par un aller-retour en basse
+      // définition : le dégradé et les silhouettes restent, le texte part
+      const bw = Math.round(W * 0.24);
+      const tmp = document.createElement('canvas');
+      tmp.width = 14; tmp.height = Math.round(H / 14);
+      tmp.getContext('2d').drawImage(c, 0, 0, bw, H, 0, 0, tmp.width, tmp.height);
+      x.imageSmoothingQuality = 'high';
+      x.drawImage(tmp, 0, 0, tmp.width, tmp.height, 0, 0, bw, H);
+    }
 
-      x.save();
-      x.transform(1, 0, -0.20, 1, 0, 0);
-      x.textAlign = 'center';
-      x.font = '400 620px Anton, sans-serif';
-      const k = (W * 0.30) / x.measureText('HOLA').width;
-      x.scale(k, k);
-      const g = x.createLinearGradient(0, -420, 0, 260);
-      g.addColorStop(0.00, '#FFFFFF'); g.addColorStop(0.34, '#EDEDF2');
-      g.addColorStop(0.52, '#9EA2AE'); g.addColorStop(0.62, '#FFFFFF');
-      g.addColorStop(1.00, '#C8CCD6');
-      x.fillStyle = g; x.fillText('HOLA', 0, 60);
-      x.restore();
+    x.save();
+    x.translate(W * 0.055, H * 0.5);
+    x.rotate(-Math.PI / 2);
+    x.textAlign = 'center';
+    x.font = '400 30px Archivo, sans-serif';
+    x.letterSpacing = '6px';
+    x.fillStyle = 'rgba(255,255,255,.92)';
+    x.fillText('GOÛT ' + name.toUpperCase(), 0, 0);
+    x.letterSpacing = '0px';
+    x.restore();
 
-      x.textAlign = 'center';
-      x.font = '400 150px Anton, sans-serif'; x.letterSpacing = '26px';
-      x.lineWidth = 5; x.strokeStyle = 'rgba(255,255,255,.78)';
-      x.strokeText('ENERGY', 12, 300); x.letterSpacing = '0px';
-
-      x.fillStyle = 'rgba(255,255,255,.72)';
-      x.font = '400 42px Archivo, sans-serif';
-      x.fillText('25 CL  |  ZÉRO TAURINE', 0, 392);
-
-      x.save(); x.translate(-W * 0.135, 0); x.rotate(-Math.PI/2);
-      x.textAlign = 'center'; x.font = '400 78px Anton, sans-serif';
-      x.letterSpacing = '6px'; x.fillStyle = 'rgba(255,255,255,.94)';
-      x.fillText('GOÛT ' + name.toUpperCase(), 0, 0); x.letterSpacing = '0px';
-      x.restore();
-
-      x.restore();
-    };
-    face(W * 0.25); face(W * 0.75);
     return finish(c);
   }
 
-  /* étiquette « arguments » : c'est elle que la caméra remonte au plus près */
-  function composeSpec(img, tint){
-    /* Deux fois plus fine que l'étiquette vitrine : la caméra vient à 2,15
-       unités, on ne voit plus qu'un huitième du tour, donc chaque pixel de
-       texture compte huit fois plus. */
+  /* Étiquette d'arguments : l'artwork sert de fond, très assombri, et les
+     quatre arguments sont répartis sur le tour, un par quart. */
+  function composeSpec(wrap, tint){
     const SW = W * 2, SH = H * 2;
     const c = document.createElement('canvas'); c.width = SW; c.height = SH;
     const x = c.getContext('2d');
     x.scale(2, 2);
-    // pas de reflet peint ici : sur du métal il entre en conflit avec les
-    // vrais reflets de l'environnement et se lit comme des bandes plates
-    x.fillStyle = tint; x.fillRect(0, 0, W, H);
-    if (img) { x.save(); x.globalAlpha = 0.10; x.globalCompositeOperation = 'multiply'; x.drawImage(img, 0, 0, W, H); x.restore(); }
-    x.save(); x.fillStyle = 'rgba(6,4,10,.90)'; x.fillRect(0, 0, W, H); x.restore();
+    if (wrap) x.drawImage(wrap, 0, 0, W, H); else { x.fillStyle = tint; x.fillRect(0, 0, W, H); }
+    x.fillStyle = 'rgba(6,4,10,.90)'; x.fillRect(0, 0, W, H);
 
     ARGS.forEach((a, i) => {
       const cx = W * argU(i);
@@ -644,7 +629,7 @@ async function boot(){
 
   const artwork = await Promise.all(FLAVOURS.map((f) => new Promise((res) => {
     const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null);
-    img.src = `assets/web/label-${f.key}.jpg`;
+    img.src = `assets/web/wrap-${f.key}.jpg`;
   })));
   const fronts = FLAVOURS.map((f, i) => composeFront(artwork[i], f.name, f.tint));
   const specs  = FLAVOURS.map((f, i) => composeSpec(artwork[i], f.tint));
@@ -670,13 +655,13 @@ async function boot(){
       const mat = new THREE.MeshPhysicalMaterial({
         map: fronts[i], roughness:0.19, metalness:0.85, envMapIntensity:1.45,
         roughnessMap: surface.rough,
-        normalMap: surface.normal, normalScale: new THREE.Vector2(0.035, 0.035),
+        normalMap: surface.normal, normalScale: new THREE.Vector2(0.22, 0.22),
         anisotropy: 0.08,
         clearcoat:0.5, clearcoatRoughness:0.22,
       });
       const sleeve = new THREE.Mesh(sleeveGeo, mat);
       sleeve.position.y = 0.615 - CAN_H/2;
-      sleeve.rotation.y = -Math.PI/2;    // amène u=0,25 de face : le logotype n'est pas coupé
+      sleeve.rotation.y = Math.PI;       // la couture de l'artwork part au dos, hors du champ
       g.add(tab, rivet, sleeve);
       return { group:g, mat };
     };
