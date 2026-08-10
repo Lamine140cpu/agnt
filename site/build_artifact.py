@@ -102,6 +102,17 @@ def main():
         sys.exit("l'import de three.js est introuvable — le marqueur a changé")
     page = page.replace(marker, bundle)
 
+    # les matières sont nommées dans un gabarit `assets/web/${nom}.jpg`
+    # seules les matières réellement appelées par la page sont embarquées
+    utilisees = set(re.findall(r"matiere\('([\w-]+)'", page))
+    matieres = {n: "data:image/jpeg;base64," + b64(f"assets/web/{n}.jpg")
+                for n in sorted(utilisees) if os.path.exists(f"assets/web/{n}.jpg")}
+    if "`assets/web/${nom}.jpg`" in page:
+        page = page.replace("`assets/web/${nom}.jpg`", "MATIERES[nom]")
+        page = page.replace("const maxAniso = renderer.capabilities.getMaxAnisotropy();",
+                            "const MATIERES = " + __import__("json").dumps(matieres) +
+                            ";\n  const maxAniso = renderer.capabilities.getMaxAnisotropy();", 1)
+
     for name in sorted(os.listdir("assets/web")):
         uri = "data:image/jpeg;base64," + b64("assets/web/" + name)
         page = page.replace(f"'assets/web/{name}'", f"'{uri}'")

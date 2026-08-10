@@ -312,6 +312,67 @@ async function boot(){
     img.src = 'assets/web/env-studio-rgbe.png';
   });
 
+  /* ---- matières : couleur, plus un relief dérivé de la luminance --------
+     Les images fournies sont des cartes de couleur. On en tire une carte de
+     normales en lisant leur gradient : le tissu prend son tissage, le steak
+     sa croûte, le parquet ses joints. */
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+  function matiere(nom, repete = [1, 1], relief = 0.6){
+    return new Promise((res) => {
+      const img = new Image();
+      img.onload = () => {
+        const S = 512;
+        const c = document.createElement('canvas'); c.width = c.height = S;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(img, 0, 0, S, S);
+        const px = x.getImageData(0, 0, S, S).data;
+        const h = (i, j) => px[(((j + S) % S) * S + ((i + S) % S)) * 4] / 255;
+
+        const nc = document.createElement('canvas'); nc.width = nc.height = S;
+        const ni = nc.getContext('2d').createImageData(S, S);
+        for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+          const o = (j * S + i) * 4;
+          const dx = (h(i + 1, j) - h(i - 1, j)) * relief * 6;
+          const dy = (h(i, j + 1) - h(i, j - 1)) * relief * 6;
+          const l = Math.hypot(dx, dy, 1);
+          ni.data[o]   = ((-dx / l) * 0.5 + 0.5) * 255;
+          ni.data[o+1] = (( dy / l) * 0.5 + 0.5) * 255;
+          ni.data[o+2] = ((  1 / l) * 0.5 + 0.5) * 255;
+          ni.data[o+3] = 255;
+        }
+        nc.getContext('2d').putImageData(ni, 0, 0);
+
+        const prep = (source, srgb) => {
+          const t = source instanceof HTMLImageElement
+            ? new THREE.Texture(source) : new THREE.CanvasTexture(source);
+          t.wrapS = t.wrapT = THREE.RepeatWrapping;
+          t.repeat.set(repete[0], repete[1]);
+          t.anisotropy = maxAniso;
+          if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+          t.needsUpdate = true;
+          return t;
+        };
+        res({ map: prep(img, true), normalMap: prep(nc, false) });
+      };
+      img.onerror = () => res({});
+      img.src = `assets/web/${nom}.jpg`;
+    });
+  }
+
+  const [parquet, platre, tissuTex, marbre, painTex, steakTex, cheddarTex, saladeTex, tomateTex] =
+    await Promise.all([
+      matiere('bois-parquet', [3, 2.2], 0.5),
+      matiere('mur-platre',   [4, 1.4], 0.3),
+      matiere('tissu-canape', [3, 3],   0.9),
+      matiere('plan-travail', [2, 1.4], 0.25),
+      matiere('pain-brioche', [1.6, 1], 0.8),
+      matiere('steak-grille', [1.4, 1.4], 1.2),
+      matiere('cheddar',      [1.2, 1.2], 0.5),
+      matiere('salade',       [1.6, 1.6], 0.9),
+      matiere('tomate',       [1.2, 1.2], 0.5),
+    ]);
+
   /* ---- fabrique de scènes ---------------------------------------------- */
   function nouvelleScene(){
     const sc = new THREE.Scene();
@@ -336,11 +397,13 @@ async function boot(){
   /* ====================================================================== */
   const appart = nouvelleScene();
   {
-    const blanc = mat(0xF2F1F3, { roughness: 0.78 });
-    const bois  = mat(0xC49A63, { roughness: 0.55 });
-    const tissu = mat(0x8C93A8, { roughness: 0.9 });
+    const blanc  = mat(0xFFFFFF, { roughness: 0.86, ...platre, normalScale: new THREE.Vector2(0.3, 0.3) });
+    const bois   = mat(0xC49A63, { roughness: 0.55 });
+    const tissu  = mat(0xFFFFFF, { roughness: 0.94, ...tissuTex, normalScale: new THREE.Vector2(0.7, 0.7) });
+    const solMat = mat(0xFFFFFF, { roughness: 0.5, ...parquet, normalScale: new THREE.Vector2(0.45, 0.45) });
+    const pierre = mat(0xFFFFFF, { roughness: 0.28, ...marbre, normalScale: new THREE.Vector2(0.2, 0.2), clearcoat: 0.3 });
 
-    const sol = new THREE.Mesh(new THREE.BoxGeometry(11, 0.12, 8), bois);
+    const sol = new THREE.Mesh(new THREE.BoxGeometry(11, 0.12, 8), solMat);
     sol.position.y = -0.06; sol.receiveShadow = true;
     appart.add(sol);
 
@@ -371,8 +434,9 @@ async function boot(){
     meuble(-3.2, 0.4, -3.6, 2.2, 0.06, 0.35, blanc);      // étagère
     // cuisine
     meuble(2.4, 0, -3.2, 4.2, 0.9, 0.65, blanc);          // plan de travail
+    meuble(2.4, 0.9, -3.2, 4.2, 0.05, 0.65, pierre);      // dessus en pierre
     meuble(3.0, 0, -0.4, 2.2, 0.9, 1.0, blanc);           // îlot
-    meuble(3.0, 0.9, -0.4, 2.2, 0.06, 1.0, bois);         // plateau
+    meuble(3.0, 0.9, -0.4, 2.2, 0.06, 1.0, pierre);       // plateau
     // chambre
     meuble(2.6, 0, 2.4, 2.0, 0.45, 2.0, tissu);           // lit
     meuble(2.6, 0.45, 3.3, 2.0, 0.25, 0.3, blanc);        // tête de lit
@@ -429,12 +493,12 @@ async function boot(){
         .map(([x, y]) => new THREE.Vector2(x, y)), 64);
     painBas.computeVertexNormals();
 
-    const matPain   = mat(0xC98B45, { roughness: 0.82 });
-    const matSauce  = mat(0xE8C86A, { roughness: 0.45, clearcoat: 0.5 });
-    const matCheddar= mat(0xE9A227, { roughness: 0.42, clearcoat: 0.35 });
-    const matSteak  = mat(0x5B3220, { roughness: 0.86 });
-    const matSalade = mat(0x6FA83C, { roughness: 0.75 });
-    const matTomate = mat(0xC7332B, { roughness: 0.48, clearcoat: 0.4 });
+    const matPain   = mat(0xFFFFFF, { roughness: 0.74, ...painTex,   normalScale: new THREE.Vector2(0.5, 0.5) });
+    const matSauce  = mat(0xE8C86A, { roughness: 0.42, clearcoat: 0.5 });
+    const matCheddar= mat(0xFFFFFF, { roughness: 0.40, ...cheddarTex, normalScale: new THREE.Vector2(0.35, 0.35), clearcoat: 0.3 });
+    const matSteak  = mat(0xFFFFFF, { roughness: 0.88, ...steakTex,   normalScale: new THREE.Vector2(0.9, 0.9) });
+    const matSalade = mat(0xFFFFFF, { roughness: 0.70, ...saladeTex,  normalScale: new THREE.Vector2(0.7, 0.7) });
+    const matTomate = mat(0xFFFFFF, { roughness: 0.44, ...tomateTex,  normalScale: new THREE.Vector2(0.4, 0.4), clearcoat: 0.35 });
 
     const ajouter = (mesh) => { mesh.castShadow = mesh.receiveShadow = true; burger.add(mesh); couches.push(mesh); return mesh; };
 
