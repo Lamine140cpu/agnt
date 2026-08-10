@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ultra Motion — des sites qu'on traverse</title>
+<meta name="description" content="Ultra Motion construit des sites vitrines en 3D temps réel. Décrivez votre activité, l'objet se modélise, la page se met en mouvement.">
+<style>
+@font-face{
+  font-family:'Anton'; src:url('assets/fonts/anton.woff2') format('woff2');
+  font-weight:400; font-style:normal; font-display:block;
+}
+@font-face{
+  font-family:'Archivo'; src:url('assets/fonts/archivo.woff2') format('woff2');
+  font-weight:100 900; font-style:normal; font-display:block;
+}
+
+:root{
+  --accent:#3B5BFF;
+  --ground:#EDECEF;
+  --ink:#131218;
+  --ink-soft:#4E4A59;
+  --line:rgba(19,18,24,.14);
+  --panel:rgba(19,18,24,.045);
+  --display:'Anton','Haettenschweiler','Arial Narrow',sans-serif;
+  --body:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --gut:clamp(18px,5vw,64px);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--body); -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+#wash{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(72% 54% at 50% 34%, var(--accent) 0%, transparent 72%);
+  opacity:.20; filter:blur(30px); transition:background 1.1s ease;
+}
+#webgl{position:fixed; inset:0; z-index:1; display:block; width:100%; height:100%}
+#grain{
+  position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.bar{
+  position:fixed; top:0; left:0; right:0; z-index:6;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px var(--gut);
+  font-family:var(--mono); font-size:10px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.mark{font-family:var(--display); font-size:21px; letter-spacing:.03em; color:var(--ink); text-transform:uppercase}
+.mark i{font-style:normal; color:var(--accent); transition:color 1.1s ease}
+.bar a{
+  color:var(--ink); text-decoration:none; border:1px solid var(--line);
+  border-radius:999px; padding:7px 14px; font-size:10px;
+}
+.bar a:hover{border-color:var(--accent); color:var(--accent)}
+
+.rail{
+  position:fixed; z-index:6; left:50%; transform:translateX(-50%); bottom:20px;
+  width:min(220px,42vw); height:2px; background:var(--line); border-radius:2px;
+}
+.rail span{display:block; height:100%; width:0; background:var(--accent); border-radius:2px; transition:width .2s linear, background 1.1s ease}
+
+main{position:relative; z-index:4}
+section{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:flex-end;
+  padding:0 var(--gut) clamp(88px,14vh,170px); text-align:center; pointer-events:none;
+}
+section > *{pointer-events:auto; position:relative}
+section::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:44vh; z-index:-1;
+  background:linear-gradient(to top, color-mix(in srgb, var(--ground) 94%, transparent),
+                                     color-mix(in srgb, var(--ground) 58%, transparent) 44%, transparent);
+  pointer-events:none;
+}
+h1,h2{font-family:var(--display); font-weight:400; text-transform:uppercase; margin:0; text-wrap:balance; line-height:.88}
+h1{font-size:clamp(2.6rem,9vw,6.2rem)}
+h2{font-size:clamp(2rem,6.4vw,4.2rem)}
+.lede{margin:14px auto 0; max-width:38ch; font-size:clamp(14px,1.6vw,17px); color:var(--ink-soft); line-height:1.55}
+.eyebrow{
+  font-family:var(--mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 14px; transition:color 1.1s ease;
+}
+.reveal{opacity:0; transform:translateY(16px); transition:opacity .36s ease, transform .36s cubic-bezier(.22,1,.36,1)}
+.posed .reveal{opacity:1; transform:none}
+.posed h2.reveal{transition-delay:.42s}
+.posed .lede.reveal{transition-delay:.52s}
+.posed .eyebrow.reveal{transition-delay:.34s}
+
+/* section finale : on remonte au centre et on ouvre le produit */
+.cta{justify-content:center; text-align:center}
+.cta::after{display:none}
+.cta .box{
+  max-width:640px; margin-inline:auto;
+  background:color-mix(in srgb, var(--ground) 92%, transparent);
+  border:1px solid var(--line); border-radius:26px;
+  padding:clamp(28px,5vw,52px); backdrop-filter:blur(14px);
+}
+.cta form{display:flex; flex-wrap:wrap; gap:10px; margin-top:24px}
+.cta input{
+  flex:1 1 260px; font:inherit; font-size:16px; padding:15px 18px;
+  border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--ink);
+}
+.cta input::placeholder{color:var(--ink-soft)}
+.cta button{
+  border:none; border-radius:999px; padding:15px 30px; cursor:pointer;
+  background:var(--accent); color:#fff; font:inherit; font-weight:600;
+  transition:background 1.1s ease, transform .12s ease;
+}
+.cta button:hover{transform:translateY(-1px)}
+.cta .msg{margin-top:14px; min-height:1.3em; font-size:14px; color:var(--ink-soft)}
+.cta .fine{
+  margin-top:22px; font-family:var(--mono); font-size:10px; letter-spacing:.09em;
+  color:var(--ink-soft); line-height:1.9;
+}
+.steps{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:22px}
+.steps span{
+  font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  border:1px solid var(--line); border-radius:999px; padding:8px 14px; color:var(--ink-soft);
+}
+.legende{
+  position:fixed; z-index:6; left:50%; transform:translateX(-50%);
+  bottom:clamp(48px,8vh,86px); text-align:center; pointer-events:none;
+  opacity:0; transition:opacity .3s ease;
+}
+.legende.on{opacity:1}
+.legende b{
+  display:block; font-family:var(--display); font-weight:400; text-transform:uppercase;
+  font-size:clamp(1.5rem,4.6vw,2.6rem); line-height:1;
+}
+.legende span{
+  display:block; margin-top:6px; max-width:30ch; margin-inline:auto;
+  font-size:13px; color:var(--ink-soft); line-height:1.5;
+}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms !important}
+  .reveal{opacity:1; transform:none}
+}
+</style>
+</head>
+<body>
+
+<div id="wash"></div>
+<canvas id="webgl"></canvas>
+<div id="grain"></div>
+
+<div class="bar">
+  <span>Ultra Motion</span>
+  <span class="mark">ULTRA<i>·</i>MOTION</span>
+  <a href="#commencer">Commencer</a>
+</div>
+<div class="rail"><span id="bar"></span></div>
+<div class="legende" id="legende" aria-live="polite"><b></b><span></span></div>
+
+<main id="scene"></main>
+
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+
+/* ============================================================================
+   Vitrine Ultra Motion.
+
+   Trois démonstrations partagent un seul canvas fixe. Chacune est une scène
+   three.js autonome, construite entièrement par le code — aucun modèle 3D
+   n'est téléchargé. Le scroll échantillonne une piste de plans par démo, et
+   la boucle de rendu rattrape ces valeurs par interpolation : c'est ce retard
+   qui donne l'inertie.
+   ============================================================================ */
+
+const DEMOS = [
+  {
+    id: 'appart',
+    accent: '#3B5BFF',
+    eyebrow: 'Location · visite',
+    title: 'On traverse<br>l’appartement.',
+    lede: 'Le visiteur descend la page, la caméra passe d’une pièce à l’autre. Pas de galerie photo, pas de plan à déchiffrer.',
+    screens: 3,
+  },
+  {
+    id: 'canette',
+    accent: '#E0356B',
+    eyebrow: 'Marque · produit',
+    title: 'On tourne<br>autour du produit.',
+    lede: 'Chaque variante prend l’écran et impose sa couleur. Les arguments sont imprimés sur l’objet, la caméra vient les lire.',
+    screens: 3,
+    link: { href: 'index.html', label: 'Voir le site complet' },
+  },
+  {
+    id: 'burger',
+    accent: '#E8811F',
+    eyebrow: 'Restauration · carte',
+    title: 'On démonte<br>la recette.',
+    lede: 'Le burger s’ouvre au fil du scroll. Chaque ingrédient se détache et se nomme, du pain du haut jusqu’au pain du bas.',
+    screens: 4,
+  },
+];
+
+const INGREDIENTS = [
+  { nom: 'Pain brioché',   detail: 'Toasté au beurre, graines de sésame.' },
+  { nom: 'Sauce maison',   detail: 'Moutarde à l’ancienne, cornichon, aneth.' },
+  { nom: 'Cheddar affiné', detail: 'Douze mois, fondu à la cloche.' },
+  { nom: 'Steak 150 g',    detail: 'Race à viande, haché du jour, saisi à la plancha.' },
+  { nom: 'Tomate & salade',detail: 'Cœur de bœuf, sucrine croquante.' },
+  { nom: 'Pain du bas',    detail: 'Grillé côté mie pour ne pas s’imbiber.' },
+];
+
+const PIECES = [
+  { nom: 'Séjour',  detail: '32 m², double exposition, parquet point de Hongrie.' },
+  { nom: 'Cuisine', detail: 'Ouverte, îlot central, tout équipée.' },
+  { nom: 'Chambre', detail: '14 m², lit deux places, dressing intégré.' },
+];
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.getElementById('webgl');
+
+/* ---------------------------------------------------------------- la page */
+function construire(){
+  const d = document, main = d.getElementById('scene');
+  const bloc = (classe, html) => {
+    const s = d.createElement('section');
+    s.className = classe; s.innerHTML = html; return s;
+  };
+
+  main.append(bloc('intro',
+    `<p class="eyebrow reveal">Sites vitrines en 3D temps réel</p>
+     <h1 class="reveal">Des sites<br>qu’on traverse.</h1>
+     <p class="lede reveal">Décrivez votre activité. L’objet se modélise, la page se met en mouvement, le visiteur fait le tour. Trois exemples ci-dessous, construits sans aucun modèle 3D téléchargé.</p>`));
+
+  DEMOS.forEach((demo) => {
+    // append() ne renvoie rien : on garde la référence avant d'insérer
+    const tete = bloc('demo',
+      `<p class="eyebrow reveal">${demo.eyebrow}</p>
+       <h2 class="reveal">${demo.title}</h2>
+       <p class="lede reveal">${demo.lede}</p>` +
+      (demo.link ? `<p class="lede reveal" style="margin-top:10px"><a href="${demo.link.href}" style="color:var(--accent)">${demo.link.label} →</a></p>` : ''));
+    tete.dataset.demo = demo.id;
+    main.append(tete);
+    // écrans de respiration, où la démo se déroule sans texte
+    for (let i = 1; i < demo.screens; i++) {
+      const suite = bloc('demo-suite', '');
+      suite.dataset.demo = demo.id; suite.dataset.step = String(i);
+      main.append(suite);
+    }
+  });
+
+  main.append(bloc('cta',
+    `<div class="box" id="commencer">
+       <p class="eyebrow">Votre site</p>
+       <h2>Commencer maintenant</h2>
+       <p class="lede" style="margin-left:auto;margin-right:auto">Dites-nous ce que vous vendez. Notre IA écrit la page, modélise l’objet et met le tout en mouvement.</p>
+       <div class="steps">
+         <span>1 · On en parle</span><span>2 · Les visuels</span><span>3 · Le site</span>
+       </div>
+       <form id="go" novalidate>
+         <input id="activite" type="text" placeholder="Ex. torréfacteur à Lyon" aria-label="Votre activité" required>
+         <button type="submit">Lancer</button>
+       </form>
+       <p class="msg" id="msg" role="status" aria-live="polite"></p>
+       <p class="fine">Démonstration. Les trois exemples ci-dessus sont fictifs et construits pour cette page.</p>
+     </div>`));
+}
+construire();
+
+/* les sections portent leur démo, pour caler le scroll et les couleurs */
+const sections = [...document.querySelectorAll('main > section')];
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+} catch (e) { /* la page reste lisible sans la 3D */ }
+if (renderer) boot();
+
+async function boot(){
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 200);
+
+  /* ---- environnement partagé, décodé depuis le PNG RGBE ---------------- */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  let envMap = null;
+  await new Promise((res) => {
+    const img = new Image();
+    img.onload = () => {
+      const W = img.width, H = img.height / 2;
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      const x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(img, 0, 0);
+      const px = x.getImageData(0, 0, img.width, img.height).data;
+      const expo = W * H * 4, data = new Float32Array(W * H * 4);
+      for (let j = 0; j < H; j++) {
+        const src = (H - 1 - j) * W;
+        for (let i = 0; i < W; i++) {
+          const k = src + i, o = (j * W + i) * 4;
+          const e = px[expo + k * 4], s = e ? Math.pow(2, e - 128) / 256 : 0;
+          data[o] = px[k*4]*s; data[o+1] = px[k*4+1]*s; data[o+2] = px[k*4+2]*s; data[o+3] = 1;
+        }
+      }
+      const t = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.FloatType);
+      t.mapping = THREE.EquirectangularReflectionMapping; t.needsUpdate = true;
+      envMap = pmrem.fromEquirectangular(t).texture; t.dispose(); res();
+    };
+    img.onerror = () => res();
+    img.src = 'assets/web/env-studio-rgbe.png';
+  });
+
+  /* ---- fabrique de scènes ---------------------------------------------- */
+  function nouvelleScene(){
+    const sc = new THREE.Scene();
+    if (envMap) { sc.environment = envMap; sc.environmentIntensity = 1.1; }
+    sc.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 1.5);
+    key.position.set(3, 6, 4); key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.left = -6; key.shadow.camera.right = 6;
+    key.shadow.camera.top = 6;   key.shadow.camera.bottom = -6;
+    key.shadow.camera.far = 24; key.shadow.bias = -0.0015; key.shadow.radius = 3;
+    const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(-4, 2, -3);
+    sc.add(key, fill);
+    return sc;
+  }
+
+  const mat = (couleur, opts = {}) => new THREE.MeshPhysicalMaterial(
+    Object.assign({ color: couleur, roughness: 0.62, metalness: 0.0 }, opts));
+
+  /* ====================================================================== */
+  /*  DÉMO 1 — l'appartement, en maquette d'architecte                      */
+  /* ====================================================================== */
+  const appart = nouvelleScene();
+  {
+    const blanc = mat(0xF2F1F3, { roughness: 0.78 });
+    const bois  = mat(0xC49A63, { roughness: 0.55 });
+    const tissu = mat(0x8C93A8, { roughness: 0.9 });
+
+    const sol = new THREE.Mesh(new THREE.BoxGeometry(11, 0.12, 8), bois);
+    sol.position.y = -0.06; sol.receiveShadow = true;
+    appart.add(sol);
+
+    // murs : [x, z, largeur, profondeur]
+    const murs = [
+      [0, -4, 11, 0.16], [0, 4, 11, 0.16], [-5.5, 0, 0.16, 8], [5.5, 0, 0.16, 8],
+      [-1, 0.6, 0.16, 6.8], [2.4, -1.4, 7, 0.16],
+    ];
+    /* Murs volontairement bas : en maquette de poupée, la caméra survole les
+       pièces au lieu de les traverser. Des murs à hauteur réelle occultent
+       systématiquement la vue depuis l'extérieur. */
+    const H_MUR = 1.35;
+    murs.forEach(([x, z, w, p]) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, H_MUR, p), blanc);
+      m.position.set(x, H_MUR / 2, z); m.castShadow = m.receiveShadow = true;
+      appart.add(m);
+    });
+
+    const meuble = (x, y, z, w, h, p, m) => {
+      const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, p), m);
+      o.position.set(x, y + h / 2, z); o.castShadow = o.receiveShadow = true;
+      appart.add(o); return o;
+    };
+    // séjour
+    meuble(-3.2, 0, 2.0, 2.6, 0.7, 1.0, tissu);           // canapé
+    meuble(-3.2, 0.7, 2.0, 2.6, 0.35, 0.28, tissu);       // dossier
+    meuble(-3.2, 0, 0.6, 1.1, 0.4, 0.6, bois);            // table basse
+    meuble(-3.2, 0.4, -3.6, 2.2, 0.06, 0.35, blanc);      // étagère
+    // cuisine
+    meuble(2.4, 0, -3.2, 4.2, 0.9, 0.65, blanc);          // plan de travail
+    meuble(3.0, 0, -0.4, 2.2, 0.9, 1.0, blanc);           // îlot
+    meuble(3.0, 0.9, -0.4, 2.2, 0.06, 1.0, bois);         // plateau
+    // chambre
+    meuble(2.6, 0, 2.4, 2.0, 0.45, 2.0, tissu);           // lit
+    meuble(2.6, 0.45, 3.3, 2.0, 0.25, 0.3, blanc);        // tête de lit
+    meuble(0.9, 0, 2.4, 0.5, 0.5, 0.5, bois);             // chevet
+  }
+
+  /* ====================================================================== */
+  /*  DÉMO 2 — la canette, reprise du moteur produit                        */
+  /* ====================================================================== */
+  const canettes = nouvelleScene();
+  const troisCanettes = [];
+  {
+    const profil = [
+      [0.000,0.052],[0.090,0.044],[0.160,0.022],[0.205,0.004],[0.232,0.000],
+      [0.258,0.010],[0.278,0.038],[0.288,0.074],[0.290,0.110],
+      [0.290,1.115],[0.288,1.155],[0.279,1.196],[0.262,1.235],
+      [0.238,1.268],[0.219,1.296],[0.211,1.312],
+      [0.216,1.325],[0.223,1.331],[0.220,1.334],[0.206,1.331],[0.199,1.323],
+      [0.150,1.316],[0.060,1.313],[0.000,1.315],
+    ];
+    const H = 1.334;
+    const lathe = new THREE.LatheGeometry(profil.map(([x, y]) => new THREE.Vector2(x, y - H/2)), 96);
+    lathe.computeVertexNormals();
+    const alu = mat(0xC4CAD4, { metalness: 1, roughness: 0.22, envMapIntensity: 0.9 });
+    const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 96, 1, true);
+    const teintes = [0xA94FE0, 0xF04A6E, 0x1FC98F];
+
+    teintes.forEach((t, i) => {
+      const g = new THREE.Group();
+      const corps = new THREE.Mesh(lathe, alu); corps.castShadow = true;
+      const manchon = new THREE.Mesh(sleeveGeo, mat(t, { roughness: 0.4, metalness: 0.12, envMapIntensity: 0.4, clearcoat: 0.25 }));
+      manchon.position.y = 0.615 - H/2;
+      g.add(corps, manchon);
+      g.position.x = (i - 1) * 0.95;
+      canettes.add(g); troisCanettes.push(g);
+    });
+    const socle = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.06, 64), mat(0xE4E2E7, { roughness: 0.3, metalness: 0.4 }));
+    socle.position.y = -H/2 - 0.03; socle.receiveShadow = true;
+    canettes.add(socle);
+  }
+
+  /* ====================================================================== */
+  /*  DÉMO 3 — le burger, qui s'ouvre couche par couche                     */
+  /* ====================================================================== */
+  const burger = nouvelleScene();
+  const couches = [];
+  {
+    const painHaut = new THREE.LatheGeometry(
+      [[0,0],[0.62,0.02],[0.76,0.12],[0.80,0.26],[0.74,0.40],[0.54,0.50],[0.30,0.55],[0,0.56]]
+        .map(([x, y]) => new THREE.Vector2(x, y)), 64);
+    painHaut.computeVertexNormals();
+    const painBas = new THREE.LatheGeometry(
+      [[0,0],[0.28,0.01],[0.60,0.05],[0.76,0.14],[0.80,0.26],[0.78,0.32],[0,0.33]]
+        .map(([x, y]) => new THREE.Vector2(x, y)), 64);
+    painBas.computeVertexNormals();
+
+    const matPain   = mat(0xC98B45, { roughness: 0.82 });
+    const matSauce  = mat(0xE8C86A, { roughness: 0.45, clearcoat: 0.5 });
+    const matCheddar= mat(0xE9A227, { roughness: 0.42, clearcoat: 0.35 });
+    const matSteak  = mat(0x5B3220, { roughness: 0.86 });
+    const matSalade = mat(0x6FA83C, { roughness: 0.75 });
+    const matTomate = mat(0xC7332B, { roughness: 0.48, clearcoat: 0.4 });
+
+    const ajouter = (mesh) => { mesh.castShadow = mesh.receiveShadow = true; burger.add(mesh); couches.push(mesh); return mesh; };
+
+    // du haut vers le bas, dans l'ordre des libellés
+    const haut = ajouter(new THREE.Mesh(painHaut, matPain));
+    for (let i = 0; i < 26; i++) {                       // graines de sésame
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), mat(0xEDD9A8, { roughness: 0.7 }));
+      const a = Math.random() * Math.PI * 2, r = Math.random() * 0.62;
+      s.position.set(Math.cos(a) * r, 0.56 - (r / 0.8) ** 2 * 0.24, Math.sin(a) * r);
+      s.scale.y = 0.55; haut.add(s);
+    }
+    ajouter(new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.05, 48), matSauce));
+    ajouter(new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.035, 1.18), matCheddar));
+    ajouter(new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.72, 0.20, 48), matSteak));
+    const vert = new THREE.Group();
+    vert.add(new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.09, 8, 40), matSalade));
+    [[-0.3,0,0.2],[0.32,0,-0.18],[0.02,0,0.34]].forEach(([x, y, z]) => {
+      const t = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 0.05, 32), matTomate);
+      t.position.set(x, y, z); vert.add(t);
+    });
+    vert.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+    burger.add(vert); couches.push(vert);
+    ajouter(new THREE.Mesh(painBas, matPain));
+
+    const planche = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.08, 64), mat(0xB98F5E, { roughness: 0.7 }));
+    planche.position.y = -0.05; planche.receiveShadow = true;
+    burger.add(planche);
+  }
+
+  /* ---- pistes de plans, une par démo ----------------------------------- */
+  const TOTAL = sections.length;
+  const P = (n) => n / TOTAL;
+  const debut = {};
+  { let n = 1; DEMOS.forEach((d) => { debut[d.id] = n; n += d.screens; }); }
+
+  const ease = (t) => t * t * (3 - 2 * t);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const mel = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
+
+  // trajets de caméra : position et point visé, par étape de démo
+  const TRAJETS = {
+    appart: [
+      { pos: [-11.0, 11.0, 12.0], look: [0, 0.2, 0] },   // vue d'ensemble
+      /* Chaque pièce est cadrée de loin et de haut : approcher davantage ne
+         montre plus qu'un pan de sol ou de mur, jamais la pièce. */
+      { pos: [ -9.0,  6.8,  8.6], look: [-3.2, 0.4, 1.2] }, // séjour
+      { pos: [  8.6,  6.8, -7.4], look: [ 2.6, 0.4,-1.8] }, // cuisine
+      { pos: [  9.0,  6.2,  9.0], look: [ 2.6, 0.4, 2.4] }, // chambre
+    ],
+    canette: [
+      { pos: [0, 0.9, 4.6], look: [0, 0, 0] },
+      { pos: [0, 0.2, 2.9], look: [0, 0, 0] },
+      { pos: [1.6, 0.5, 3.2], look: [0, 0, 0] },
+      { pos: [0, 1.4, 5.2], look: [0, 0, 0] },
+    ],
+    burger: [
+      { pos: [0, 1.2, 4.4], look: [0, 0.4, 0] },
+      { pos: [0, 1.0, 3.6], look: [0, 0.7, 0] },
+      { pos: [0, 1.4, 3.4], look: [0, 0.9, 0] },
+      { pos: [0, 1.1, 3.8], look: [0, 0.8, 0] },
+      { pos: [0, 0.9, 4.8], look: [0, 0.5, 0] },
+    ],
+  };
+
+  /* #instant coupe l'interpolation : sans lui, toute capture d'écran est prise
+     en pleine transition et donne une image trompeuse. Sert aussi aux
+     vérifications automatiques. */
+  const INSTANT = location.hash === '#instant';
+
+  const etat = {
+    pos: TRAJETS.appart[0].pos.slice(),
+    look: TRAJETS.appart[0].look.slice(),
+    ouverture: 0,     // écartement des couches du burger
+    tour: 0,          // rotation des canettes
+  };
+  const cible = { ...etat, pos: etat.pos.slice(), look: etat.look.slice() };
+
+  const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
+  addEventListener('pointermove', (e) => {
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = (e.clientY / innerHeight) * 2 - 1;
+  }, { passive: true });
+
+  let demoActive = DEMOS[0], progression = 0;
+
+  function lireScroll(){
+    const span = Math.max(document.body.scrollHeight - innerHeight, 1);
+    progression = Math.min(Math.max(scrollY / span, 0), 1);
+    document.getElementById('bar').style.width = (progression * 100) + '%';
+
+    // quelle démo, et où en est-on dedans
+    const p = progression * TOTAL;
+    let choisie = DEMOS[0], local = 0;
+    for (const d of DEMOS) {
+      const a = debut[d.id], b = a + d.screens;
+      if (p >= a - 0.5 && p < b - 0.5) { choisie = d; local = (p - (a - 0.5)) / d.screens; }
+    }
+    if (p >= debut[DEMOS[2].id] + DEMOS[2].screens - 0.5) { choisie = DEMOS[2]; local = 1; }
+    local = Math.min(Math.max(local, 0), 1);
+
+    if (choisie !== demoActive) {
+      demoActive = choisie;
+      document.documentElement.style.setProperty('--accent', choisie.accent);
+    }
+
+    const traj = TRAJETS[choisie.id];
+    const t = local * (traj.length - 1);
+    const i = Math.min(Math.floor(t), traj.length - 2);
+    const f = ease(t - i);
+    cible.pos = mel(traj[i].pos, traj[i + 1].pos, f);
+    cible.look = mel(traj[i].look, traj[i + 1].look, f);
+    cible.ouverture = choisie.id === 'burger' ? Math.min(1, Math.max(0, (local - 0.12) / 0.62)) : 0;
+    cible.tour = choisie.id === 'canette' ? local * Math.PI * 1.2 : 0;
+
+    /* la légende nomme ce que la caméra regarde : pièce ou ingrédient */
+    const leg = document.getElementById('legende');
+    let liste = null, part = 0;
+    if (choisie.id === 'appart') { liste = PIECES; part = (local - 0.30) / 0.68; }
+    if (choisie.id === 'burger') { liste = INGREDIENTS; part = (local - 0.30) / 0.66; }
+    if (liste && part > 0 && part < 1.04) {
+      const item = liste[Math.min(liste.length - 1, Math.floor(part * liste.length))];
+      if (leg.dataset.nom !== item.nom) {
+        leg.dataset.nom = item.nom;
+        leg.querySelector('b').textContent = item.nom;
+        leg.querySelector('span').textContent = item.detail;
+      }
+      leg.classList.add('on');
+    } else {
+      leg.classList.remove('on'); leg.dataset.nom = '';
+    }
+  }
+  addEventListener('scroll', lireScroll, { passive: true });
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    renderer.setSize(innerWidth, innerHeight, false);
+    lireScroll();
+  }, { passive: true });
+
+  /* ---- entrées de texte, un temps après que la scène s'est posée -------- */
+  document.querySelectorAll('main > section').forEach((s) => {
+    new IntersectionObserver(([e]) => e.target.classList.toggle('posed', e.isIntersecting),
+      { rootMargin: '-30% 0px -30% 0px' }).observe(s);
+  });
+
+  /* ---- formulaire ------------------------------------------------------- */
+  const go = document.getElementById('go');
+  go.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = document.getElementById('activite').value.trim();
+    document.getElementById('msg').textContent = v
+      ? `Reçu : « ${v} ». On vous écrit pour cadrer le site.`
+      : 'Dites-nous en une ligne ce que vous vendez.';
+  });
+
+  /* ---- boucle ----------------------------------------------------------- */
+  const scenes = { appart, canette: canettes, burger };
+  let last = performance.now();
+  lireScroll();
+
+  renderer.setAnimationLoop((now) => {
+    const dt = Math.min((now - last) / 1000, 0.05); last = now;
+    const k = INSTANT ? 1 : 1 - Math.exp(-4.2 * dt);
+
+    for (let i = 0; i < 3; i++) {
+      etat.pos[i] = lerp(etat.pos[i], cible.pos[i], k);
+      etat.look[i] = lerp(etat.look[i], cible.look[i], k);
+    }
+    etat.ouverture = lerp(etat.ouverture, cible.ouverture, k);
+    etat.tour = lerp(etat.tour, cible.tour, k);
+    pointer.sx = lerp(pointer.sx, pointer.x, k);
+    pointer.sy = lerp(pointer.sy, pointer.y, k);
+
+    // le burger s'écarte, du haut vers le bas
+    couches.forEach((c, i) => {
+      const rang = couches.length - 1 - i;
+      c.position.y = 0.34 + rang * 0.02 + etat.ouverture * rang * 0.42;
+      c.rotation.y = etat.ouverture * (i % 2 ? -0.2 : 0.2);
+    });
+    // et les canettes tournent
+    troisCanettes.forEach((g, i) => {
+      g.rotation.y = etat.tour + i * 0.4;
+      g.rotation.z = 0.04;
+    });
+
+    const par = reduce ? 0 : 1;
+    camera.position.set(
+      etat.pos[0] + pointer.sx * 0.22 * par,
+      etat.pos[1] - pointer.sy * 0.14 * par,
+      etat.pos[2]
+    );
+    camera.lookAt(etat.look[0], etat.look[1], etat.look[2]);
+    renderer.render(scenes[demoActive.id], camera);
+  });
+}
+</script>
+</body>
+</html>
