@@ -93,6 +93,10 @@ def main():
     head = re.sub(r'<meta name="viewport"[^>]*>\s*', "", head)
     page = head.strip() + "\n" + body.strip() + "\n"
 
+    config = open("site.config.js").read()
+    config = re.sub(r"\bexport\s+const\s+CONFIG", "const CONFIG", config)
+    page = page.replace("import { CONFIG } from './site.config.js';", config)
+
     marker = "import * as THREE from './vendor/three.module.min.js';"
     if marker not in page:
         sys.exit("l'import de three.js est introuvable — le marqueur a changé")
@@ -105,22 +109,28 @@ def main():
                             "`data:image/jpeg;base64,${LABEL_B64[ARTWORK + '-' + f.key]}`")
 
     # seul le jeu d'étiquettes retenu par la page est embarqué
-    actif = re.search(r"const ARTWORK = '(\w+)'", src)
+    actif = re.search(r"artwork:\s*'(\w+)'", open("site.config.js").read())
     prefixe = (actif.group(1) if actif else "label") + "-"
     labels = {n[:-4]: b64("assets/web/" + n)
               for n in os.listdir("assets/web")
               if n.startswith(prefixe) and n.endswith(".jpg")}
     if "LABEL_B64" in page:
-        page = page.replace("const FLAVOURS = [",
-            "const LABEL_B64 = " + __import__("json").dumps(labels) + ";\nconst FLAVOURS = [", 1)
+        page = page.replace("const ARTWORK = CONFIG.artwork;",
+            "const LABEL_B64 = " + __import__("json").dumps(labels) + ";\nconst ARTWORK = CONFIG.artwork;", 1)
 
     for font in ("anton", "archivo"):
         uri = "data:font/woff2;base64," + b64(f"assets/fonts/{font}.woff2")
         page = page.replace(f"url('assets/fonts/{font}.woff2')", f"url({uri})")
 
-    for leftover in ("vendor/", "assets/web/", "assets/fonts/", "data:text/javascript"):
-        if leftover in page:
-            sys.exit(f"référence externe restante : {leftover}")
+    # seules les références citées comptent : une occurrence en commentaire
+    # n'est pas une ressource à charger
+    for chemin in ("vendor/", "assets/web/", "assets/fonts/", "site.config.js"):
+        for guillemet in ("'", '"', "`"):
+            if guillemet + chemin in page or "/" + chemin in page.replace("//", ""):
+                if guillemet + chemin in page:
+                    sys.exit(f"référence externe restante : {guillemet}{chemin}")
+    if "data:text/javascript" in page:
+        sys.exit("un import depuis une URL data: subsiste, la CSP le refuserait")
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     open(OUT, "w").write(page)

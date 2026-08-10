@@ -1,12 +1,45 @@
-# HOLA ENERGY — site vitrine
+# Ultra Motion — moteur de site produit en 3D
 
-Page unique pour une boisson énergisante, dans l'esprit des sites produit en
-3D temps réel du secteur. Le scroll traverse une scène WebGL continue : les six
-canettes défilent sur leur axe, la caméra plonge dans celle qui est active pour
-lire les arguments imprimés sur le métal, puis recule vers la FAQ.
+Moteur de site produit en 3D temps réel. Le scroll traverse une scène WebGL
+continue : les variantes défilent sur leur axe, la caméra plonge dans celle qui
+est active pour lire les arguments imprimés sur l'objet, puis recule vers la FAQ
+et l'inscription.
 
-**La marque et le produit sont fictifs** — c'est une démo de design, pas le site
-d'une entreprise existante.
+**Le moteur ne contient aucun contenu de marque.** Tout est décrit dans
+`site.config.js` : la marque, le profil de l'objet, les variantes, les
+arguments, la FAQ, le thème. Concevoir un nouveau site revient à écrire ce seul
+fichier et à déposer les images correspondantes dans `assets/web/`.
+
+La configuration livrée décrit HOLA ENERGY, **une marque et un produit fictifs**
+— c'est une démo, pas le site d'une entreprise existante.
+
+## Écrire un nouveau site
+
+```js
+// site.config.js
+export const CONFIG = {
+  brand:  { name:'…', accent:'…', baseline:'…', mention:'…', menu:'…' },
+  theme:  'light',              // ou 'dark'
+  artwork:'label',              // préfixe des fichiers dans assets/web/
+  object: { height, profile, label, tab, metal },
+  items:  [ { key, name, glow, tint, tagline }, … ],
+  claims: [ { title, crossed, body }, … ],
+  faq:    { title, items:[ { q, a }, … ] },
+  signup: { … },
+};
+```
+
+Le nombre d'écrans, les arrêts de caméra et les secteurs d'arguments se
+déduisent des longueurs de `items` et `claims` — rien à recalculer à la main.
+
+**Les images attendues dans `assets/web/`** : une étiquette `<artwork>-<key>.jpg`
+par variante, l'environnement en `env-studio-rgbe.png`, plus `alu-grain.jpg` et
+`condensation.jpg` pour le relief de surface.
+
+**Décrire un autre objet** revient à changer `object.profile` : c'est un profil
+de révolution, du centre du fond au centre du couvercle. Une bouteille, un pot
+ou un flacon s'y décrivent de la même façon. `object.tab` n'ajoute la languette
+que pour les canettes.
 
 ## Aperçu
 
@@ -22,7 +55,8 @@ de charger depuis `file://`.
 
 ```
 site/
-  index.html            le site
+  index.html            le moteur, sans contenu de marque
+  site.config.js        la description du site : c'est le seul fichier à écrire
   vendor/               three.js r185 (module + core)
   assets/labels/        artworks d'étiquettes, sources pleine résolution
   assets/web/           artworks remontés en 2528 px + environnement RGBE
@@ -42,10 +76,13 @@ boucle de rendu rattrape ces valeurs par interpolation à taux constant
 l'inertie : rien ne s'arrête net, et le parallaxe souris s'additionne sans
 conflit.
 
-Les actes, dans l'ordre : ouverture large, six saveurs (une par écran, chacune
-imposant sa couleur au fond), plongée dans la canette, quatre arguments pendant
-que la caméra remonte le long du métal, puis recul pour la FAQ et la
-newsletter. Ajouter un plan revient à ajouter une entrée dans `SHOTS`.
+Les actes, dans l'ordre : ouverture large, une variante par écran (chacune
+imposant sa couleur au fond), un écran de transition pour la plongée, un
+argument par écran pendant que l'objet pivote, puis recul pour la FAQ et
+l'inscription. Ajouter un plan revient à ajouter une entrée dans `SHOTS`.
+
+La plongée a **son propre écran** : sans lui, la caméra se rapprochait pendant
+que le titre de la dernière variante était encore lisible.
 
 ## La canette
 
@@ -54,8 +91,10 @@ cotes d'une canette sleek 25 cl (Ø 58 mm, 133 mm) passé en `LatheGeometry` :
 dôme concave du fond, cercle d'appui, épaule, rétreint du col, bord roulé. La
 languette est un tore aplati, avec son rivet.
 
-Le corps est en métal (`metalness` 0,85) : la couleur est imprimée sur
-l'aluminium, elle n'est pas collée en papier.
+Le col, le fond et la languette sont du métal nu. Le manchon d'étiquette, lui,
+est un **diélectrique** (`metalness` 0,12) : c'est de l'encre imprimée sur de
+l'aluminium, pas du métal. Le traiter en métal fait renvoyer l'environnement par
+tout le corps, ce qui se cumule aux dégradés déjà peints dans l'artwork.
 
 ## Les étiquettes
 
@@ -75,8 +114,17 @@ que de texture de fond à 16 %.
 ## Points d'implémentation à connaître
 
 - **Couture du manchon** : `CylinderGeometry` place `u = 0` face caméra. Sans
-  rotation, la couture tomberait au milieu du logotype — d'où le
-  `sleeve.rotation.y = -π/2` qui amène `u = 0,25` de face.
+  rotation, la couture tomberait au milieu du logotype — d'où la rotation du
+  manchon. La coordonnée qui fait face à l'objectif vaut `0,25 - θ/2π` ;
+  composition et rotation dérivent de cette même formule.
+- **Arguments répartis sur le tour, pas empilés** : quatre blocs superposés
+  tiennent tous dans le cadre à la fois, quel que soit le recul. Un par secteur,
+  et l'objet pivote.
+- **Largeur du texte imprimé** : une ligne plus large que l'arc réellement
+  visible sort du cadre par les côtés, et reculer n'y change rien.
+- **Orange assombri = marron.** C'est la même couleur à luminosité près. Toute
+  disparition doit donc désaturer avant d'éteindre — le halo en CSS comme la
+  scène, via un uniforme dans la passe de composition.
 - **Environnement** : une HDRI est indispensable, un JPEG plafonne à 1 et
   laisse le métal mou. Elle est encodée en RGBE — mantisse en haut, exposant en
   bas — plutôt que livrée en `.hdr`, ce qui éviterait de vendoriser

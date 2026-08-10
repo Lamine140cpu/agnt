@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HOLA ENERGY — Le peps, sans le crash</title>
-<meta name="description" content="HOLA ENERGY : l'energy drink à 11 g de sucres, arômes 100 % naturels, caféine issue de grains de café et guarana. Six saveurs, zéro taurine.">
+<title>Ultra Motion</title>
+<meta name="description" content="">
 <style>
 @font-face{
   font-family:'Anton'; src:url('assets/fonts/anton.woff2') format('woff2');
@@ -226,88 +226,19 @@ form button:hover{transform:translateY(-1px)}
 <div id="grain"></div>
 
 <div class="chrome bar">
-  <span>On · 6 saveurs</span>
-  <span class="mark">HOL<i>A</i></span>
-  <span>Menu</span>
+  <span id="baseline"></span>
+  <span class="mark" id="mark"></span>
+  <span id="menuLabel"></span>
 </div>
 <nav class="chrome dock" id="dock" aria-label="Saveurs"></nav>
 <div class="chrome rail"><span id="bar"></span></div>
-<div class="chrome hint" id="hint">Scroller pour découvrir</div>
+<div class="chrome hint" id="hint"></div>
 
-<main>
-
-  <section class="act act-intro">
-    <h1>Le peps,<br>sans le crash.</h1>
-    <p class="sub">Six saveurs. 11 g de sucres. Zéro taurine.</p>
-  </section>
-
-  <section class="act" data-flavour="0"><h2>Double Litchi</h2><p class="lede">Une explosion de litchi frais, sans le sirop. La plus exotique de la gamme.</p></section>
-  <section class="act" data-flavour="1"><h2>Coco Citron Vert</h2><p class="lede">Le tropique en version sèche : coco crémeuse, lime qui claque.</p></section>
-  <section class="act" data-flavour="2"><h2>Kiwi Concombre</h2><p class="lede">La plus fraîche de la bande. Kiwi juteux, concombre, pointe de menthe.</p></section>
-  <section class="act" data-flavour="3"><h2>Pêche Blanche</h2><p class="lede">Douce, mais pas molle. Pêche blanche et fleur d'oranger.</p></section>
-  <section class="act" data-flavour="4"><h2>Pomme Rhubarbe</h2><p class="lede">Le verger en plus vif : pomme verte acidulée, rhubarbe franche.</p></section>
-  <section class="act" data-flavour="5"><h2>Abricot Framboise</h2><p class="lede">Un duo plein soleil. Abricot mûr, framboise, soupçon de vanille.</p></section>
-
-  <!-- Écran de transition : la caméra plonge dans la canette. Rien à lire,
-       ce qui laisse le titre de la dernière saveur sortir du champ d'abord. -->
-  <section class="act act-dive" aria-hidden="true"></section>
-
-  <section class="act act-arg">
-    <h2>11 g de sucres</h2>
-    <p class="lede">Par canette de 25 cl, contre 27 g en moyenne. Assez pour le goût du fruit, pas assez pour la chute de 16 h.</p>
-    <span class="chip"><b>×</b><s>27 g de sucres</s></span>
-  </section>
-  <section class="act act-arg">
-    <h2>Arômes naturels</h2>
-    <p class="lede">Nos goûts viennent d'arômes naturels de fruits. C'est aussi pour ça que les six ne se ressemblent pas.</p>
-    <span class="chip"><b>×</b><s>Arômes artificiels</s></span>
-  </section>
-  <section class="act act-arg">
-    <h2>Caféine issue<br>de grains de café</h2>
-    <p class="lede">Pourquoi la fabriquer artificiellement quand on peut l'extraire de grains d'arabica ? 80 mg, complétés au guarana.</p>
-    <span class="chip"><b>×</b><s>Caféine artificielle</s></span>
-  </section>
-  <section class="act act-arg">
-    <h2>Stévia</h2>
-    <p class="lede">Pour compléter le sucre de canne, un édulcorant d'origine végétale. Sans l'arrière-goût métallique.</p>
-    <span class="chip"><b>×</b><s>Aspartame · sucralose</s></span>
-  </section>
-
-  <section class="act act-read">
-    <div class="wrap">
-      <h2>Questions fréquentes</h2>
-      <div class="faq" style="margin-top:26px">
-        <details open><summary>Qu'est-ce qui distingue HOLA des autres energy drinks ?</summary><p>Trois fois moins de sucres, des arômes naturels de fruits, une caféine extraite de grains de café plutôt que de synthèse, et de la stévia à la place des édulcorants artificiels.</p></details>
-        <details><summary>Est-ce que c'est pétillant ?</summary><p>Légèrement. On a réduit la gazéification pour que les arômes de fruits restent lisibles.</p></details>
-        <details><summary>Combien de sucres par canette ?</summary><p>11 g pour 25 cl, soit environ 2,7 morceaux, contre 27 g en moyenne sur le marché.</p></details>
-        <details><summary>Y a-t-il des vitamines ?</summary><p>B3, B5, B6 et B12, à hauteur de 100 % des valeurs nutritionnelles de référence par canette.</p></details>
-        <details><summary>Pourquoi pas de taurine ?</summary><p>Parce qu'elle n'apporte rien de démontré à côté de la caféine dans ce type de boisson, et qu'elle alourdit le goût.</p></details>
-        <details><summary>Combien de canettes par jour ?</summary><p>Une à deux maximum. L'apport recommandé pour un adulte reste sous 400 mg de caféine par jour, toutes sources confondues.</p></details>
-        <details><summary>Où est-ce fabriqué ?</summary><p>Recette développée et boisson embouteillée en France, dans les Hauts-de-France. Canettes recyclables à l'infini.</p></details>
-      </div>
-    </div>
-  </section>
-
-  <section class="act act-read">
-    <div class="wrap">
-      <h2>Rejoignez la bande</h2>
-      <p class="lede" style="margin-left:0">Les nouvelles saveurs et les points de vente qui ouvrent près de chez vous. Un mail par mois, pas plus.</p>
-      <form id="newsForm" novalidate>
-        <input type="email" id="email" placeholder="votre@email.fr" autocomplete="email" aria-label="Adresse e-mail" required>
-        <button type="submit">Je m'inscris</button>
-      </form>
-      <p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>
-      <p class="small">
-        © 2026 HOLA ENERGY — marque de démonstration, produit fictif.<br>
-        À consommer avec modération. Déconseillé aux enfants, aux adolescents, aux femmes enceintes ou allaitantes.
-      </p>
-    </div>
-  </section>
-
-</main>
+<main id="scene"><!-- les actes sont construits depuis site.config.js --></main>
 
 <script type="module">
 import * as THREE from './vendor/three.module.min.js';
+import { CONFIG } from './site.config.js';
 
 /* ============================================================================
    La page est un plateau unique. Le scroll ne déplace jamais directement la
@@ -316,37 +247,22 @@ import * as THREE from './vendor/three.module.min.js';
    et le parallaxe souris peut s'y additionner sans conflit.
    ============================================================================ */
 
-const FLAVOURS = [
-  { key:'litchi',  name:'Double Litchi',     glow:'#8B2ED6', tint:'#A94FE0' },
-  { key:'coco',    name:'Coco Citron Vert',  glow:'#8FB81E', tint:'#B9D62E' },
-  { key:'kiwi',    name:'Kiwi Concombre',    glow:'#12B07E', tint:'#1FC98F' },
-  { key:'peche',   name:'Pêche Blanche',     glow:'#FF7A4D', tint:'#FF8A5B' },
-  { key:'pomme',   name:'Pomme Rhubarbe',    glow:'#E0356B', tint:'#F04A6E' },
-  { key:'abricot', name:'Abricot Framboise', glow:'#F0912A', tint:'#F5A32E' },
-];
+const FLAVOURS = CONFIG.items;
 
-const ARGS = [
-  { title:'11 G DE SUCRES',      crossed:'27 G DE SUCRES',        body:'Contre 27 g en moyenne sur le marché.' },
-  { title:'ARÔMES NATURELS',     crossed:'ARÔMES ARTIFICIELS',    body:"Des mélanges d'arômes naturels de fruits." },
-  { title:'CAFÉINE DE GRAINS',   crossed:'CAFÉINE ARTIFICIELLE',  body:"80 mg extraits de grains d'arabica." },
-  { title:'STÉVIA',              crossed:'ASPARTAME · SUCRALOSE',  body:"Un édulcorant d'origine végétale." },
-];
+const ARGS = CONFIG.claims;
 
 /* 'label' : artworks risographiques, typographie tracée au code.
    'wrap'  : artworks de packaging complets, utilisés tels quels. */
-const ARTWORK = 'label';
+const ARTWORK = CONFIG.artwork;
+const CLAIR = CONFIG.theme !== 'dark';
+if (!CLAIR) document.documentElement.dataset.scene = 'dark';
 
-/* 'light' ou 'dark'. Doit rester d'accord avec data-scene sur <html>. */
-const THEME = 'light';
-if (THEME === 'dark') document.documentElement.dataset.scene = 'dark';
-const CLAIR = THEME === 'light';
-
-const CAN_H = 1.334;
+const CAN_H = CONFIG.object.height;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* Découpage du scroll. Chaque acte occupe un écran ; ces bornes sont des
    fractions de la course totale, calculées à partir du nombre de sections. */
-const ACTS = { intro:1, flavours:6, dive:1, args:4, read:2 };
+const ACTS = { intro:1, flavours:FLAVOURS.length, dive:1, args:ARGS.length, read:2 };
 const TOTAL = ACTS.intro + ACTS.flavours + ACTS.args + ACTS.read;
 const P = (n) => n / TOTAL;
 const T_FLAV0 = P(ACTS.intro);
@@ -358,14 +274,14 @@ const T_ARGSE = P(ACTS.intro + ACTS.flavours + ACTS.dive + ACTS.args);
    d'étiquette est centré sur LABEL_C et haut de LABEL_H ; composeSpec dessine
    le bloc i à la hauteur relative 0,145 + 0,225·i. Caméra et texture lisent
    donc la même formule, elles ne peuvent pas se désaccorder. */
-const LABEL_C = 0.615 - CAN_H / 2;
-const LABEL_H = 1.02;
+const LABEL_C = CONFIG.object.label.center - CAN_H / 2;
+const LABEL_H = CONFIG.object.label.height;
 /* Un argument par quart de tour, tous à mi-hauteur. Empilés verticalement ils
    tenaient tous dans le cadre à la fois — 13 cm de canette ne suffisent pas à
    les séparer. La canette pivote donc pour présenter celui qu'on lit.
    Le manchon étant tourné de -π/2, la coordonnée u qui fait face à la caméra
    vaut 0,25 - θ/2π ; d'où la rotation qui amène l'argument i de face. */
-const argU = (i) => 0.125 + 0.25 * i;
+const argU = (i) => (i + 0.5) / ARGS.length;   // un argument par secteur, quel qu'en soit le nombre
 const argSpin = (i) => 2 * Math.PI * (0.25 - argU(i));
 
 /* Piste de plans. Chaque entrée est un instant du scroll et l'état de la
@@ -379,16 +295,16 @@ const SHOTS = [
   { at: T_ARGS0,        camY: LABEL_C, camZ: 2.35, look: LABEL_C, fov: 20, spread: 5.0, scale: 1.0, tilt: 0.0, veil: 0.0, spin: argSpin(0) },
 ];
 // un arrêt par argument : la caméra remonte d'un bloc au suivant et s'y pose
-for (let i = 1; i < 4; i++) {
+for (let i = 1; i < ARGS.length; i++) {
   SHOTS.push({
-    at: T_ARGS0 + (i / 3) * (T_ARGSE - T_ARGS0),
+    at: T_ARGS0 + (i / (ARGS.length - 1)) * (T_ARGSE - T_ARGS0),
     camY: LABEL_C, camZ: 2.35, look: LABEL_C,
     fov: 20, spread: 5.0, scale: 1.0, tilt: 0.0, veil: 0.0, spin: argSpin(i),
   });
 }
 SHOTS.push(
-  { at: T_ARGSE + P(0.5), camY: 0.34, camZ:  9.2, look: -0.14, fov: 20, spread: 1.90, scale: 0.80, tilt: 0.06, veil: 1.0, spin: argSpin(3) },
-  { at: 1.000,            camY: 0.34, camZ: 10.5, look: -0.14, fov: 20, spread: 1.90, scale: 0.74, tilt: 0.06, veil: 1.0, spin: argSpin(3) },
+  { at: T_ARGSE + P(0.5), camY: 0.34, camZ:  9.2, look: -0.14, fov: 20, spread: 1.90, scale: 0.80, tilt: 0.06, veil: 1.0, spin: argSpin(ARGS.length - 1) },
+  { at: 1.000,            camY: 0.34, camZ: 10.5, look: -0.14, fov: 20, spread: 1.90, scale: 0.74, tilt: 0.06, veil: 1.0, spin: argSpin(ARGS.length - 1) },
 );
 const KEYS = ['camY','camZ','look','fov','spread','scale','tilt','veil','spin'];
 
@@ -403,6 +319,71 @@ function sampleShots(p){
   for (const k of KEYS) out[k] = a[k] + (b[k] - a[k]) * t;
   return out;
 }
+
+/* ---------------------------------------------------------------------------
+   Construction de la page. Aucun contenu n'est écrit dans le document : tout
+   vient de la configuration, ce qui permet de décrire un nouveau site sans
+   toucher au moteur.
+   --------------------------------------------------------------------------- */
+function construirePage(){
+  const d = document;
+  const html = d.documentElement;
+  html.lang = CONFIG.meta.lang || 'fr';
+  d.title = CONFIG.meta.title || '';
+  const desc = d.querySelector('meta[name="description"]');
+  if (desc) desc.content = CONFIG.meta.description || '';
+
+  const b = CONFIG.brand;
+  d.getElementById('baseline').textContent = b.baseline || '';
+  d.getElementById('menuLabel').textContent = b.menu || '';
+  const accent = b.accent && b.name.endsWith(b.accent);
+  d.getElementById('mark').innerHTML = accent
+    ? `${b.name.slice(0, -b.accent.length)}<i>${b.accent}</i>`
+    : b.name;
+  d.getElementById('hint').textContent = CONFIG.intro.hint || '';
+
+  const acte = (classe, dedans, attrs = {}) => {
+    const el = d.createElement('section');
+    el.className = 'act ' + classe;
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    el.innerHTML = dedans;
+    return el;
+  };
+  const echapper = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]));
+
+  const main = d.getElementById('scene');
+  main.textContent = '';
+
+  main.append(acte('act-intro',
+    `<h1>${CONFIG.intro.title}</h1><p class="sub">${echapper(CONFIG.intro.sub)}</p>`));
+
+  CONFIG.items.forEach((f, i) => main.append(acte('',
+    `<h2>${echapper(f.name)}</h2><p class="lede">${echapper(f.tagline)}</p>`,
+    { 'data-flavour': i })));
+
+  main.append(acte('act-dive', '', { 'aria-hidden': 'true' }));
+
+  CONFIG.claims.forEach((a) => main.append(acte('act-arg',
+    `<h2>${echapper(a.title)}</h2><p class="lede">${echapper(a.body)}</p>` +
+    `<span class="chip"><b>×</b><s>${echapper(a.crossed)}</s></span>`)));
+
+  main.append(acte('act-read',
+    `<div class="wrap"><h2>${echapper(CONFIG.faq.title)}</h2><div class="faq" style="margin-top:26px">` +
+    CONFIG.faq.items.map((q, i) =>
+      `<details${i === 0 ? ' open' : ''}><summary>${echapper(q.q)}</summary><p>${echapper(q.a)}</p></details>`
+    ).join('') + '</div></div>'));
+
+  const s = CONFIG.signup;
+  main.append(acte('act-read',
+    `<div class="wrap"><h2>${echapper(s.title)}</h2>` +
+    `<p class="lede" style="margin-left:0">${echapper(s.lede)}</p>` +
+    `<form id="newsForm" novalidate><input type="email" id="email" placeholder="${echapper(s.placeholder)}" ` +
+    `autocomplete="email" aria-label="Adresse e-mail" required>` +
+    `<button type="submit">${echapper(s.button)}</button></form>` +
+    `<p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>` +
+    `<p class="small">${s.legal}</p></div>`));
+}
+construirePage();
 
 const canvas = document.getElementById('webgl');
 let renderer;
@@ -458,7 +439,7 @@ async function boot(){
       img.src = url;
     });
   }
-  loadEnvironment('assets/web/env-studio-rgbe.png').then((tex) => {
+  loadEnvironment(CONFIG.environment).then((tex) => {
     if (!tex) return;
     scene.environment = pmrem.fromEquirectangular(tex).texture;
     scene.environmentRotation = new THREE.Euler(0, -1.15, 0);
@@ -480,20 +461,13 @@ async function boot(){
   scene.add(key, fill, back);
 
   /* ---- géométrie ------------------------------------------------------- */
-  const profile = [
-    [0.000,0.052],[0.090,0.044],[0.160,0.022],[0.205,0.004],[0.232,0.000],
-    [0.258,0.010],[0.278,0.038],[0.288,0.074],[0.290,0.110],
-    [0.290,1.115],[0.288,1.155],[0.279,1.196],[0.262,1.235],
-    [0.238,1.268],[0.219,1.296],[0.211,1.312],
-    [0.216,1.325],[0.223,1.331],[0.220,1.334],[0.206,1.331],[0.199,1.323],
-    [0.150,1.316],[0.060,1.313],[0.000,1.315],
-  ];
+  const profile = CONFIG.object.profile;
   const lathe = new THREE.LatheGeometry(profile.map(([x,y]) => new THREE.Vector2(x, y - CAN_H/2)), 96);
   lathe.computeVertexNormals();
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
   const tabGeo    = new THREE.TorusGeometry(0.062, 0.009, 12, 40);
   const rivetGeo  = new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14);
-  const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 96, 1, true);
+  const sleeveGeo = new THREE.CylinderGeometry(CONFIG.object.label.radius, CONFIG.object.label.radius, LABEL_H, 96, 1, true);
   /* ---- fini du métal ---------------------------------------------------
      Deux images fournies servent de relief : le grain d'aluminium, très peu
      contrasté, et la condensation. On en tire une carte de rugosité et une
@@ -515,8 +489,8 @@ async function boot(){
   }
 
   const [grain, gouttes] = await Promise.all([
-    chargerRelief('assets/web/alu-grain.jpg'),
-    chargerRelief('assets/web/condensation.jpg'),
+    chargerRelief(CONFIG.surface.grain),
+    chargerRelief(CONFIG.surface.droplets),
   ]);
 
   function surfaceMaps(){
@@ -606,13 +580,13 @@ async function boot(){
         x.transform(1, 0, -0.20, 1, 0, 0);
         x.textAlign = 'center';
         x.font = '400 620px Anton, sans-serif';
-        const k = (W * 0.30) / x.measureText('HOLA').width;
+        const k = (W * 0.30) / x.measureText(CONFIG.brand.name).width;
         x.scale(k, k);
         const g = x.createLinearGradient(0, -420, 0, 260);
         g.addColorStop(0.00, '#FFFFFF'); g.addColorStop(0.34, '#EDEDF2');
         g.addColorStop(0.52, '#9EA2AE'); g.addColorStop(0.62, '#FFFFFF');
         g.addColorStop(1.00, '#C8CCD6');
-        x.fillStyle = g; x.fillText('HOLA', 0, 60);
+        x.fillStyle = g; x.fillText(CONFIG.brand.name, 0, 60);
         x.restore();
         x.textAlign = 'center';
         x.font = '400 150px Anton, sans-serif'; x.letterSpacing = '26px';
@@ -620,7 +594,7 @@ async function boot(){
         x.strokeText('ENERGY', 12, 300); x.letterSpacing = '0px';
         x.fillStyle = 'rgba(255,255,255,.72)';
         x.font = '400 42px Archivo, sans-serif';
-        x.fillText('25 CL  |  ZÉRO TAURINE', 0, 392);
+        x.fillText(CONFIG.brand.mention || '', 0, 392);
         x.save(); x.translate(-W * 0.135, 0); x.rotate(-Math.PI/2);
         x.textAlign = 'center'; x.font = '400 78px Anton, sans-serif';
         x.letterSpacing = '6px'; x.fillStyle = 'rgba(255,255,255,.94)';
@@ -731,9 +705,10 @@ async function boot(){
         clearcoat:0.22, clearcoatRoughness:0.30,
       });
       const sleeve = new THREE.Mesh(sleeveGeo, mat);
-      sleeve.position.y = 0.615 - CAN_H/2;
+      sleeve.position.y = LABEL_C;
       sleeve.rotation.y = ARTWORK === 'label' ? -Math.PI/2 : Math.PI;   // couture hors du champ dans les deux cas
-      g.add(tab, rivet, sleeve);
+      if (CONFIG.object.tab) g.add(tab, rivet);
+      g.add(sleeve);
       return { group:g, mat };
     };
     const real = build(), refl = build();
@@ -1006,10 +981,10 @@ async function boot(){
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email.value.trim())) {
-      msg.textContent = "Cette adresse ne ressemble pas à un e-mail. Vérifiez le @ et le nom de domaine.";
+      msg.textContent = CONFIG.signup.invalid;
       email.focus(); return;
     }
-    msg.textContent = "C’est noté. Le premier mail arrive au prochain lancement de saveur.";
+    msg.textContent = CONFIG.signup.done;
     form.reset();
   });
 
