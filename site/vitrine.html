@@ -278,15 +278,18 @@ async function boot(){
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 0.95;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-  const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 200);
+  /* near et far serrés : la profondeur de champ relit la carte de profondeur,
+     encodée sur 16 bits. Un rapport far/near de 4000 n'y laisserait aucune
+     précision utile là où se trouve le sujet. */
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.10, 60);
 
   /* ---- environnement partagé, décodé depuis le PNG RGBE ---------------- */
   const pmrem = new THREE.PMREMGenerator(renderer);
-  let envMap = null;
+  let envMap = null, envNeutre = null;
   await new Promise((res) => {
     const img = new Image();
     img.onload = () => {
@@ -295,18 +298,30 @@ async function boot(){
       const x = c.getContext('2d', { willReadFrequently: true });
       x.drawImage(img, 0, 0);
       const px = x.getImageData(0, 0, img.width, img.height).data;
-      const expo = W * H * 4, data = new Float32Array(W * H * 4);
+      const expo = W * H * 4, data = new Float32Array(W * H * 4), neutre = new Float32Array(W * H * 4);
+      /* Cette HDRI de studio est chaude : sa moyenne vaut (0,80 / 0,66 / 0,51).
+         Elle convient au métal d'une canette, mais elle jaunit un intérieur du
+         sol au plafond — et un intérieur jaune ne ressemble à aucune photo.
+         D'où une seconde version équilibrée sur le vert, pour l'appartement. */
+      const G = [0.657 / 0.801, 1, 0.657 / 0.507];
       for (let j = 0; j < H; j++) {
         const src = (H - 1 - j) * W;
         for (let i = 0; i < W; i++) {
           const k = src + i, o = (j * W + i) * 4;
           const e = px[expo + k * 4], s = e ? Math.pow(2, e - 128) / 256 : 0;
-          data[o] = px[k*4]*s; data[o+1] = px[k*4+1]*s; data[o+2] = px[k*4+2]*s; data[o+3] = 1;
+          for (let c = 0; c < 3; c++) {
+            const v = px[k * 4 + c] * s;
+            data[o + c] = v; neutre[o + c] = v * G[c];
+          }
+          data[o + 3] = neutre[o + 3] = 1;
         }
       }
-      const t = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.FloatType);
-      t.mapping = THREE.EquirectangularReflectionMapping; t.needsUpdate = true;
-      envMap = pmrem.fromEquirectangular(t).texture; t.dispose(); res();
+      const cuire = (buf) => {
+        const t = new THREE.DataTexture(buf, W, H, THREE.RGBAFormat, THREE.FloatType);
+        t.mapping = THREE.EquirectangularReflectionMapping; t.needsUpdate = true;
+        const m = pmrem.fromEquirectangular(t).texture; t.dispose(); return m;
+      };
+      envMap = cuire(data); envNeutre = cuire(neutre); res();
     };
     img.onerror = () => res();
     img.src = 'assets/web/env-studio-rgbe.png';
@@ -318,7 +333,38 @@ async function boot(){
      sa croûte, le parquet ses joints. */
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
-  function matiere(nom, repete = [1, 1], relief = 0.6){
+  /** Grain de peinture, calculé plutôt que photographié : un mur peint n'a pas
+      de motif, seulement une trame très fine. Une image ne servirait qu'à faire
+      apparaître sa propre répétition. */
+  function grainPeinture(S = 256, force = 1, repete = 7){
+    const c = document.createElement('canvas'); c.width = c.height = S;
+    const x = c.getContext('2d'), im = x.createImageData(S, S);
+    const brut = new Float32Array(S * S), lisse = new Float32Array(S * S);
+    for (let i = 0; i < S * S; i++) brut[i] = Math.random();
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+      let s = 0;                                  // un lissage, sinon le grain scintille
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++)
+        s += brut[((j + dj + S) % S) * S + ((i + di + S) % S)];
+      lisse[j * S + i] = s / 9;
+    }
+    for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+      const o = (j * S + i) * 4;
+      const dx = (lisse[j * S + (i + 1) % S] - lisse[j * S + (i + S - 1) % S]) * force * 4;
+      const dy = (lisse[((j + 1) % S) * S + i] - lisse[((j + S - 1) % S) * S + i]) * force * 4;
+      const l = Math.hypot(dx, dy, 1);
+      im.data[o]     = ((-dx / l) * 0.5 + 0.5) * 255;
+      im.data[o + 1] = (( dy / l) * 0.5 + 0.5) * 255;
+      im.data[o + 2] = ((  1 / l) * 0.5 + 0.5) * 255;
+      im.data[o + 3] = 255;
+    }
+    x.putImageData(im, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repete, repete); t.anisotropy = maxAniso;
+    return t;
+  }
+
+  function matiere(nom, repete = [1, 1], relief = 0.6, o = {}){
     return new Promise((res) => {
       const img = new Image();
       img.onload = () => {
@@ -353,7 +399,18 @@ async function boot(){
           t.needsUpdate = true;
           return t;
         };
-        res({ map: prep(img, true), normalMap: prep(nc, false) });
+        /* La carte de couleur peut être rééquilibrée sans retoucher le fichier :
+           un tissu photographié sombre, multiplié par la teinte du matériau,
+           donne un canapé noir quelle que soit la lumière. */
+        let couleur = img;
+        if (o.gain !== undefined || o.sat !== undefined) {
+          const cc = document.createElement('canvas'); cc.width = cc.height = S;
+          const cx = cc.getContext('2d');
+          cx.filter = `brightness(${o.gain ?? 1}) saturate(${o.sat ?? 1})`;
+          cx.drawImage(img, 0, 0, S, S);
+          couleur = cc;
+        }
+        res({ map: prep(couleur, true), normalMap: prep(nc, false) });
       };
       img.onerror = () => res({});
       img.src = `assets/web/${nom}.jpg`;
@@ -362,29 +419,58 @@ async function boot(){
 
   const [parquet, platre, tissuTex, marbre, painTex, steakTex, cheddarTex, saladeTex, tomateTex] =
     await Promise.all([
-      matiere('bois-parquet', [3, 2.2], 0.5),
-      matiere('mur-platre',   [4, 1.4], 0.3),
-      matiere('tissu-canape', [3, 3],   0.9),
-      matiere('plan-travail', [2, 1.4], 0.25),
-      matiere('pain-brioche', [1.6, 1], 0.8),
-      matiere('steak-grille', [1.4, 1.4], 1.2),
-      matiere('cheddar',      [1.2, 1.2], 0.5),
-      matiere('salade',       [1.6, 1.6], 0.9),
-      matiere('tomate',       [1.2, 1.2], 0.5),
+      /* Les UV des meubles sont en mètres : une même répétition garde donc la
+         même échelle physique d'un objet à l'autre. Le sol, lui, est une boîte
+         dont les UV vont de 0 à 1 par face — d'où des valeurs bien plus hautes. */
+      matiere('bois-parquet', [9, 6.5], 0.5, { gain: 1.05, sat: 0.82 }),
+      /* mur-platre.jpg et plan-travail.jpg sont le même fichier — l'une des
+         deux images n'est jamais arrivée. Les murs prennent donc un grain
+         calculé, ce qui vaut mieux : un mur peint n'a pas de veinage. */
+      Promise.resolve({ normalMap: grainPeinture(256, 0.55, 9) }),
+      matiere('tissu-canape', [3, 3], 0.9, { gain: 1.95, sat: 0.45 }),
+      matiere('plan-travail', [0.6, 0.6], 0.25, { gain: 1.0, sat: 0.30 }),
+      /* Ces photos sont saturées ; les multiplier encore par une teinte donne
+         du plastique fluorescent. On les rééquilibre ici, et les matériaux
+         partent du blanc. */
+      matiere('pain-brioche', [1.6, 1],   0.8, { gain: 1.30, sat: 0.52 }),
+      matiere('steak-grille', [1.4, 1.4], 1.2, { gain: 1.85, sat: 0.62 }),
+      matiere('cheddar',      [1.2, 1.2], 0.5, { gain: 1.10, sat: 0.58 }),
+      matiere('salade',       [1.6, 1.6], 0.9, { gain: 1.20, sat: 0.72 }),
+      matiere('tomate',       [1.2, 1.2], 0.5, { gain: 1.25, sat: 0.70 }),
     ]);
 
-  /* ---- fabrique de scènes ---------------------------------------------- */
-  function nouvelleScene(){
+  /* ---- fabrique de scènes -----------------------------------------------
+     Un éclairage plat sur des volumes plats : c'est exactement ce qui donne
+     l'impression d'un dessin. Chaque scène reçoit donc une source franche qui
+     creuse les volumes et porte des ombres douces, un remplissage froid très
+     faible, et l'environnement pour le reste. */
+  function nouvelleScene(o = {}){
     const sc = new THREE.Scene();
-    if (envMap) { sc.environment = envMap; sc.environmentIntensity = 1.1; }
-    sc.add(new THREE.AmbientLight(0xffffff, 0.55));
-    const key = new THREE.DirectionalLight(0xffffff, 1.5);
-    key.position.set(3, 6, 4); key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.left = -6; key.shadow.camera.right = 6;
-    key.shadow.camera.top = 6;   key.shadow.camera.bottom = -6;
-    key.shadow.camera.far = 24; key.shadow.bias = -0.0015; key.shadow.radius = 3;
-    const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(-4, 2, -3);
+    const ciel = o.neutre ? envNeutre : envMap;
+    if (ciel) { sc.environment = ciel; sc.environmentIntensity = o.env ?? 1.0; }
+    sc.add(new THREE.AmbientLight(o.ciel ?? 0xEAF0FF, o.ambiant ?? 0.30));
+
+    const key = new THREE.DirectionalLight(o.teinte ?? 0xFFF8EE, o.key ?? 2.4);
+    key.position.set(...(o.soleil || [3, 6, 4]));
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    const s = o.portee ?? 6;
+    key.shadow.camera.left = -s; key.shadow.camera.right = s;
+    key.shadow.camera.top = s;   key.shadow.camera.bottom = -s;
+    key.shadow.camera.near = 0.4; key.shadow.camera.far = o.loin ?? 40;
+    /* normalBias en plus du bias : sur des arêtes adoucies, décaler le long de
+       la normale supprime l'acné sans décoller l'ombre de son objet. */
+    key.shadow.bias = -0.0004; key.shadow.normalBias = 0.028;
+    key.shadow.radius = o.doux ?? 4;
+
+    if (o.hemi) {
+      /* Le plafond n'est éclairé par rien qui vienne d'en haut. Dans une pièce
+         réelle c'est le sol qui le remonte — d'où cette lumière d'hémisphère,
+         teintée du bois en dessous. */
+      sc.add(new THREE.HemisphereLight(0xEFF4FF, 0xE8D9C2, o.hemi));
+    }
+    const fill = new THREE.DirectionalLight(o.frais ?? 0xD6E3FF, o.fill ?? 0.28);
+    fill.position.set(...(o.rebond || [-5, 3.5, -4]));
     sc.add(key, fill);
     return sc;
   }
@@ -392,61 +478,469 @@ async function boot(){
   const mat = (couleur, opts = {}) => new THREE.MeshPhysicalMaterial(
     Object.assign({ color: couleur, roughness: 0.62, metalness: 0.0 }, opts));
 
+  const ombre = (o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } };
+  const pose = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; return m; };
+
+  /* ---- outils de forme ---------------------------------------------------
+     Aucun objet réel n'a d'arête vive : il y a toujours un congé, et c'est le
+     liseré de lumière qu'il accroche qui sépare un objet d'un bloc. Aucune
+     matière molle n'est régulière non plus — d'où le bruit appliqué au pain,
+     au steak, à la salade et à la couette. */
+
+  const bruit = (x, y, z) =>
+    Math.sin(x * 1.7 + y * 2.3 + z * 0.9) * 0.5 +
+    Math.sin(x * 3.9 - z * 2.7 + 1.3) * 0.3 +
+    Math.sin(y * 5.1 + z * 4.3 + 2.1) * 0.2;
+
+  /** Boîte à arêtes adoucies. Un rayon égal à la moitié de l'épaisseur donne
+      un galet : c'est ce qui sert de coussin. Les UV sont en mètres, donc une
+      même matière garde la même échelle d'un meuble à l'autre. */
+  function boiteRonde(l, h, p, r = 0.03){
+    r = Math.min(r, l / 2.02, h / 2.02, p / 2.02);
+    const L = l / 2 - r, P = p / 2 - r, s = new THREE.Shape();
+    s.moveTo(-L, -p / 2); s.lineTo(L, -p / 2);
+    s.quadraticCurveTo(l / 2, -p / 2, l / 2, -P);
+    s.lineTo(l / 2, P);   s.quadraticCurveTo(l / 2, p / 2, L, p / 2);
+    s.lineTo(-L, p / 2);  s.quadraticCurveTo(-l / 2, p / 2, -l / 2, P);
+    s.lineTo(-l / 2, -P); s.quadraticCurveTo(-l / 2, -p / 2, -L, -p / 2);
+    const g = new THREE.ExtrudeGeometry(s, {
+      depth: h - 2 * r, bevelEnabled: true, bevelThickness: r, bevelSize: r,
+      bevelSegments: 4, curveSegments: 6, steps: 1,
+    });
+    g.rotateX(-Math.PI / 2);              // l'extrusion part sur Z, la hauteur va sur Y
+    g.translate(0, -(h / 2 - r), 0);
+    return g;
+  }
+
+  /** Disque à bord arrondi : plateau, rondelle, galette. */
+  function galette(r, h, c, seg = 64){
+    c = Math.min(c, h / 2.02, r / 2.02);
+    const pts = [new THREE.Vector2(0, -h / 2)];
+    for (let i = 0; i <= 6; i++) {
+      const a = -Math.PI / 2 + i * (Math.PI / 2) / 6;
+      pts.push(new THREE.Vector2(r - c + Math.cos(a) * c, -h / 2 + c + Math.sin(a) * c));
+    }
+    for (let i = 0; i <= 6; i++) {
+      const a = i * (Math.PI / 2) / 6;
+      pts.push(new THREE.Vector2(r - c + Math.cos(a) * c, h / 2 - c + Math.sin(a) * c));
+    }
+    pts.push(new THREE.Vector2(0, h / 2));
+    return new THREE.LatheGeometry(pts, seg);
+  }
+
+  /** Moyenne les normales des sommets superposés. computeVertexNormals les
+      traite séparément et laisse une couture visible sur la génératrice d'un
+      tour ; ce recollage la fait disparaître. */
+  function recoudre(geo){
+    const p = geo.attributes.position, n = geo.attributes.normal, paquets = new Map();
+    for (let i = 0; i < p.count; i++) {
+      const k = `${p.getX(i).toFixed(4)}|${p.getY(i).toFixed(4)}|${p.getZ(i).toFixed(4)}`;
+      const l = paquets.get(k); if (l) l.push(i); else paquets.set(k, [i]);
+    }
+    for (const l of paquets.values()) {
+      if (l.length < 2) continue;
+      let x = 0, y = 0, z = 0;
+      for (const i of l) { x += n.getX(i); y += n.getY(i); z += n.getZ(i); }
+      const d = Math.hypot(x, y, z) || 1;
+      for (const i of l) n.setXYZ(i, x / d, y / d, z / d);
+    }
+    n.needsUpdate = true; return geo;
+  }
+
+  /** Déplace les sommets le long de leur normale. Réservé aux géométries dont
+      les sommets coïncident (tour, plan, anneau) : sur une boîte, les coins
+      sont dédoublés avec des normales différentes et le maillage se fendrait. */
+  function froisser(geo, amp, freq = 3, biais = 0){
+    const p = geo.attributes.position, n = geo.attributes.normal;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const d = bruit(x * freq + biais, y * freq, z * freq) * amp;
+      p.setXYZ(i, x + n.getX(i) * d, y + n.getY(i) * d, z + n.getZ(i) * d);
+    }
+    p.needsUpdate = true; geo.computeVertexNormals(); return recoudre(geo);
+  }
+
   /* ====================================================================== */
-  /*  DÉMO 1 — l'appartement, en maquette d'architecte                      */
+  /*  DÉMO 1 — l'appartement, visité de l'intérieur                         */
   /* ====================================================================== */
-  const appart = nouvelleScene();
+  /* Les murs montent à hauteur réelle et la caméra se tient à 1,55 m : on
+     visite l'appartement au lieu de survoler une maquette. Une maquette de
+     poupée reste une maquette, c'est-à-dire un dessin en volume. La lumière
+     entre par les fenêtres et rien d'autre ne l'éclaire vraiment : c'est cette
+     coulée de soleil sur le parquet qui fait la photographie. */
+  const appart = nouvelleScene({
+    soleil: [-2.6, 5.2, -14], portee: 8.5, loin: 34, neutre: true,
+    /* Le remplissage vient de la même direction que le soleil : c'est ce que
+       renvoie le mur d'en face, et c'est ce qui empêche les faces à l'ombre de
+       tomber dans le gris. */
+    key: 2.8, ambiant: 0.42, fill: 0.34, env: 0.55, doux: 4,
+    rebond: [-1.5, 2.5, -9], frais: 0xE4EEFF, hemi: 0.55,
+  });
   {
-    const blanc  = mat(0xFFFFFF, { roughness: 0.86, ...platre, normalScale: new THREE.Vector2(0.3, 0.3) });
-    const bois   = mat(0xC49A63, { roughness: 0.55 });
-    const tissu  = mat(0xFFFFFF, { roughness: 0.94, ...tissuTex, normalScale: new THREE.Vector2(0.7, 0.7) });
-    const solMat = mat(0xFFFFFF, { roughness: 0.5, ...parquet, normalScale: new THREE.Vector2(0.45, 0.45) });
-    const pierre = mat(0xFFFFFF, { roughness: 0.28, ...marbre, normalScale: new THREE.Vector2(0.2, 0.2), clearcoat: 0.3 });
+    const EP = 0.20, HM = 2.62, X = 5.5, Z = 4.0;
 
-    const sol = new THREE.Mesh(new THREE.BoxGeometry(11, 0.12, 8), solMat);
-    sol.position.y = -0.06; sol.receiveShadow = true;
-    appart.add(sol);
+    const platreM = mat(0xEFEDE9, { roughness: 0.95, ...platre, normalScale: new THREE.Vector2(0.6, 0.6) });
+    const solM    = mat(0xFFFFFF, { roughness: 0.40, ...parquet, normalScale: new THREE.Vector2(0.5, 0.5),
+                                    clearcoat: 0.3, clearcoatRoughness: 0.55 });
+    const tissu   = mat(0xE6E2DB, { roughness: 0.96, ...tissuTex, normalScale: new THREE.Vector2(0.25, 0.25) });
+    const coussin = mat(0x93A3AA, { roughness: 0.96, ...tissuTex, normalScale: new THREE.Vector2(0.5, 0.5) });
+    const tapisM  = mat(0xCFC6B7, { roughness: 0.98, ...tissuTex, normalScale: new THREE.Vector2(0.7, 0.7) });
+    const pierre  = mat(0xFFFFFF, { roughness: 0.20, ...marbre, normalScale: new THREE.Vector2(0.14, 0.14),
+                                    clearcoat: 0.5, clearcoatRoughness: 0.22 });
+    const noyer   = mat(0x5E4029, { roughness: 0.44, clearcoat: 0.25, clearcoatRoughness: 0.35 });
+    const chene   = mat(0xC0A077, { roughness: 0.50 });
+    const laque   = mat(0xEBE8E3, { roughness: 0.32, clearcoat: 0.45, clearcoatRoughness: 0.18 });
+    const laqueS  = mat(0x2E3238, { roughness: 0.34, clearcoat: 0.4, clearcoatRoughness: 0.2 });
+    const acier   = mat(0xB6BBC3, { roughness: 0.22, metalness: 0.95, envMapIntensity: 1.2 });
+    const verre   = new THREE.MeshPhysicalMaterial({ color: 0xF4F8FF, roughness: 0.04, metalness: 0,
+                                                     transparent: true, opacity: 0.12, envMapIntensity: 1.8 });
+    const feuille = mat(0x3F7A4A, { roughness: 0.62, side: THREE.DoubleSide });
 
-    // murs : [x, z, largeur, profondeur]
-    const murs = [
-      [0, -4, 11, 0.16], [0, 4, 11, 0.16], [-5.5, 0, 0.16, 8], [5.5, 0, 0.16, 8],
-      [-1, 0.6, 0.16, 6.8], [2.4, -1.4, 7, 0.16],
-    ];
-    /* Murs volontairement bas : en maquette de poupée, la caméra survole les
-       pièces au lieu de les traverser. Des murs à hauteur réelle occultent
-       systématiquement la vue depuis l'extérieur. */
-    const H_MUR = 1.35;
-    murs.forEach(([x, z, w, p]) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, H_MUR, p), blanc);
-      m.position.set(x, H_MUR / 2, z); m.castShadow = m.receiveShadow = true;
-      appart.add(m);
+    const sol = new THREE.Mesh(new THREE.BoxGeometry(2 * X, 0.12, 2 * Z), solM);
+    sol.position.y = -0.06; sol.receiveShadow = true; appart.add(sol);
+
+    /* Le plafond ne porte pas d'ombre : sinon un soleil rasant ne franchirait
+       plus que les fenêtres, et la pièce tomberait dans le noir. */
+    const plafond = new THREE.Mesh(new THREE.BoxGeometry(2 * X, 0.14, 2 * Z),
+      mat(0xF6F4F1, { roughness: 0.97, ...platre, normalScale: new THREE.Vector2(0.35, 0.35) }));
+    plafond.position.y = HM + 0.07; plafond.receiveShadow = true; appart.add(plafond);
+
+    /** Un mur est une surface percée, pas un bloc : c'est par ses ouvertures
+        que la lumière entre, et c'est cette lumière qui fait la pièce. */
+    function mur(long, ouvertures = []){
+      const s = new THREE.Shape();
+      s.moveTo(-long / 2, 0); s.lineTo(long / 2, 0);
+      s.lineTo(long / 2, HM); s.lineTo(-long / 2, HM); s.closePath();
+      ouvertures.forEach(([cx, cy, l, h]) => {
+        const t = new THREE.Path();
+        t.moveTo(cx - l / 2, cy - h / 2); t.lineTo(cx - l / 2, cy + h / 2);
+        t.lineTo(cx + l / 2, cy + h / 2); t.lineTo(cx + l / 2, cy - h / 2); t.closePath();
+        s.holes.push(t);
+      });
+      const g = new THREE.ExtrudeGeometry(s, { depth: EP, bevelEnabled: false, curveSegments: 1 });
+      g.translate(0, 0, -EP / 2);
+      const m = new THREE.Mesh(g, platreM);
+      m.castShadow = m.receiveShadow = true; appart.add(m); return m;
+    }
+
+    const FEN = [1.68, 1.66];                      // largeur, hauteur d'une fenêtre
+    const CY = 1.72;                               // axe des baies : allège à 0,89 m
+    /* Deux baies seulement au fond : la troisième tombait derrière le plan de
+       travail, et une crédence en travers d'une fenêtre ne se voit nulle part. */
+    pose(mur(2 * X, [[-3.4, CY, 2.60, FEN[1]], [3.9, CY, 1.35, FEN[1]]]), 0, 0, -Z);
+    pose(mur(2 * X), 0, 0, Z, Math.PI);
+    pose(mur(2 * Z, [[-1.2, CY, FEN[0], FEN[1]]]), -X, 0, 0, Math.PI / 2);
+    pose(mur(2 * Z), X, 0, 0, -Math.PI / 2);
+    /* Refend de la chambre, percé d'une porte. Il s'arrête avant l'axe de la
+       caméra : elle passe d'une pièce à l'autre sans traverser un mur. */
+    pose(mur(4.6, [[-1.4, 1.05, 1.00, 2.10]]), 2.0, 0, -1.7, Math.PI / 2);
+
+    /* Plinthes : c'est un détail minuscule, et c'est pourtant lui qui dit
+       « pièce habitée » plutôt que « boîte blanche ». */
+    const plinthe = (l, x, z, ry) => {
+      const m = pose(new THREE.Mesh(boiteRonde(l, 0.11, 0.022, 0.008), laque), x, 0.055, z, ry);
+      m.receiveShadow = true; appart.add(m);
+    };
+    plinthe(2 * X - 0.1, 0, -Z + EP / 2 + 0.012, 0);
+    plinthe(2 * X - 0.1, 0, Z - EP / 2 - 0.012, 0);
+    plinthe(2 * Z - 0.1, -X + EP / 2 + 0.012, 0, Math.PI / 2);
+    plinthe(2 * Z - 0.1, X - EP / 2 - 0.012, 0, Math.PI / 2);
+
+    /** Dormant, meneau, vitre et appui. Sans son cadre, une ouverture n'est
+        qu'un trou : c'est le cadre qui donne l'échelle de la pièce. */
+    function fenetre(l, h, x, y, z, ry){
+      const g = new THREE.Group(), b = 0.06;
+      [h / 2, -h / 2].forEach((cy) => g.add(pose(
+        new THREE.Mesh(boiteRonde(l + b, b, EP + 0.04, 0.012), laque), 0, cy, 0)));
+      [-l / 2, l / 2, 0].forEach((cx) => g.add(pose(
+        new THREE.Mesh(boiteRonde(b, h, EP + 0.04, 0.012), laque), cx, 0, 0)));
+      g.traverse(ombre);
+      const vitre = new THREE.Mesh(new THREE.PlaneGeometry(l, h), verre);
+      g.add(vitre);
+      const appui = pose(new THREE.Mesh(boiteRonde(l + 0.16, 0.04, 0.20, 0.012), pierre), 0, -h / 2 - 0.035, 0.09);
+      appui.castShadow = appui.receiveShadow = true; g.add(appui);
+      pose(g, x, y, z, ry); appart.add(g); return g;
+    }
+    fenetre(2.60, FEN[1], -3.4, CY, -Z, 0);
+    fenetre(1.35, FEN[1],  3.9, CY, -Z, 0);
+    fenetre(FEN[0], FEN[1], -X, CY, 1.2, Math.PI / 2);
+
+    /* Dehors : deux plans hors correction tonale, donc franchement brûlés. Une
+       fenêtre correctement exposée sur l'intérieur est toujours blanche. */
+    const ciel = new THREE.Mesh(new THREE.PlaneGeometry(60, 30),
+      new THREE.MeshBasicMaterial({ color: 0xFFFFFF, toneMapped: false }));
+    ciel.position.set(0, 8, -16); appart.add(ciel);
+    const lointain = new THREE.Mesh(new THREE.PlaneGeometry(60, 9),
+      new THREE.MeshBasicMaterial({ color: 0xD9E3DC, toneMapped: false }));
+    lointain.position.set(0, -5.6, -15.6); appart.add(lointain);
+    const cielG = new THREE.Mesh(new THREE.PlaneGeometry(30, 30),
+      new THREE.MeshBasicMaterial({ color: 0xFFFFFF, toneMapped: false }));
+    cielG.position.set(-16, 8, 0); cielG.rotation.y = Math.PI / 2; appart.add(cielG);
+
+    /* ---------------------------------------------------------- le séjour */
+    const sejour = new THREE.Group(); appart.add(sejour);
+
+    // canapé : socle, assises, dossier, coussins, accoudoirs roulés, pieds
+    {
+      const g = new THREE.Group(), L = 2.34, P = 0.96;
+      g.add(pose(new THREE.Mesh(boiteRonde(L, 0.30, P, 0.05), tissu), 0, 0.28, 0));
+      for (let i = -1; i <= 1; i++) {
+        const c = pose(new THREE.Mesh(boiteRonde(L / 3 - 0.04, 0.20, P - 0.20, 0.078), tissu),
+          i * (L / 3), 0.50, 0.04, i * 0.008);
+        g.add(c);
+      }
+      const dossier = pose(new THREE.Mesh(boiteRonde(L, 0.66, 0.22, 0.06), tissu), 0, 0.74, -P / 2 + 0.11);
+      dossier.rotation.x = -0.10; g.add(dossier);
+      for (let i = -1; i <= 1; i++) {
+        /* Les coussins de dos touchent l'assise. Le moindre jour laisse voir le
+           dossier dans son ombre, et trois trous noirs alignés dans un canapé. */
+        const c = pose(new THREE.Mesh(boiteRonde(L / 3 + 0.01, 0.46, 0.20, 0.085), tissu),
+          i * (L / 3), 0.66, -P / 2 + 0.245);
+        c.rotation.x = -0.13; g.add(c);
+      }
+      [-1, 1].forEach((s) => g.add(pose(
+        new THREE.Mesh(boiteRonde(0.22, 0.58, P, 0.108), tissu), s * (L / 2 + 0.11), 0.43, 0)));
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(pose(
+        new THREE.Mesh(new THREE.CylinderGeometry(0.030, 0.020, 0.14, 12), noyer),
+        sx * (L / 2 - 0.05), 0.07, sz * (P / 2 - 0.12))));
+      // deux coussins jetés, jamais d'aplomb
+      [[-0.74, 0.19], [0.68, -0.15]].forEach(([x, r]) => {
+        const c = pose(new THREE.Mesh(boiteRonde(0.42, 0.42, 0.14, 0.068), coussin), x, 0.68, -0.22);
+        c.rotation.set(-0.36, 0, r); g.add(c);
+      });
+      g.traverse(ombre);
+      pose(g, -4.35, 0, 0.4, Math.PI / 2); sejour.add(g);
+    }
+
+    // tapis
+    {
+      const t = pose(new THREE.Mesh(boiteRonde(3.0, 0.016, 2.1, 0.006), tapisM), -3.0, 0.008, 0.4);
+      t.receiveShadow = true; sejour.add(t);
+    }
+
+    // table basse, bol, deux livres
+    {
+      const g = new THREE.Group();
+      g.add(pose(new THREE.Mesh(boiteRonde(1.16, 0.045, 0.62, 0.016), noyer), 0, 0.40, 0));
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+        const p = pose(new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.016, 0.40, 12), noyer),
+          sx * 0.50, 0.20, sz * 0.24);
+        p.rotation.set(sz * 0.05, 0, -sx * 0.05); g.add(p);
+      });
+      g.add(pose(new THREE.Mesh(galette(0.13, 0.085, 0.040, 40), laque), 0.26, 0.465, 0.02));
+      [[0x27314B, 0.0], [0xB4573A, -0.22]].forEach(([c, r], i) => g.add(pose(
+        new THREE.Mesh(boiteRonde(0.25, 0.030, 0.31, 0.005), mat(c, { roughness: 0.72 })),
+        -0.24, 0.438 + i * 0.031, 0.01, r)));
+      g.traverse(ombre); pose(g, -3.0, 0, 0.4); sejour.add(g);
+    }
+
+    // meuble bas + livres debout
+    {
+      const g = new THREE.Group(), L = 1.9, H = 0.62, P = 0.38;
+      g.add(pose(new THREE.Mesh(boiteRonde(L, H, P, 0.014), laque), 0, H / 2, 0));
+      [-1, 1].forEach((s) => {                          // deux portes creusées
+        const d = pose(new THREE.Mesh(boiteRonde(L / 2 - 0.03, H - 0.08, 0.022, 0.008), laque),
+          s * (L / 4), H / 2, P / 2 + 0.004);
+        g.add(d);
+        g.add(pose(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.14, 8), acier),
+          s * (L / 4) - s * 0.14, H / 2, P / 2 + 0.024));
+      });
+      let x = -L / 2 + 0.14;
+      for (let i = 0; i < 11; i++) {
+        const h = 0.20 + (i % 4) * 0.035, e = 0.022 + (i % 3) * 0.012;
+        const c = [0x8B3A2E, 0x2C3D56, 0xC7B08A, 0x3E5B45, 0x6E5A7A][i % 5];
+        const l = pose(new THREE.Mesh(boiteRonde(e, h, 0.15, 0.004), mat(c, { roughness: 0.78 })),
+          x, H + h / 2, -0.02, i === 9 ? 0.12 : 0);
+        if (i === 9) l.rotation.z = 0.22;
+        g.add(l); x += e + 0.006;
+      }
+      g.traverse(ombre); pose(g, -3.0, 0, -Z + EP / 2 + P / 2 + 0.03); sejour.add(g);
+    }
+
+    // deux cadres au mur : rien ne date une image comme un mur vide
+    [[-4.6, 0.62, 0.46], [-3.55, 0.46, 0.62]].forEach(([x, l, h], i) => {
+      const g = new THREE.Group();
+      g.add(new THREE.Mesh(boiteRonde(l, h, 0.035, 0.006), noyer));
+      const toile = new THREE.Mesh(new THREE.PlaneGeometry(l - 0.09, h - 0.09),
+        mat([0xD9CFC0, 0xC3CEC9][i], { roughness: 0.9 }));
+      toile.position.z = 0.019; g.add(toile);
+      g.traverse(ombre);
+      pose(g, -X + EP / 2 + 0.02, 1.62 + i * 0.06, x, Math.PI / 2); sejour.add(g);
     });
 
-    const meuble = (x, y, z, w, h, p, m) => {
-      const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, p), m);
-      o.position.set(x, y + h / 2, z); o.castShadow = o.receiveShadow = true;
-      appart.add(o); return o;
-    };
-    // séjour
-    meuble(-3.2, 0, 2.0, 2.6, 0.7, 1.0, tissu);           // canapé
-    meuble(-3.2, 0.7, 2.0, 2.6, 0.35, 0.28, tissu);       // dossier
-    meuble(-3.2, 0, 0.6, 1.1, 0.4, 0.6, bois);            // table basse
-    meuble(-3.2, 0.4, -3.6, 2.2, 0.06, 0.35, blanc);      // étagère
-    // cuisine
-    meuble(2.4, 0, -3.2, 4.2, 0.9, 0.65, blanc);          // plan de travail
-    meuble(2.4, 0.9, -3.2, 4.2, 0.05, 0.65, pierre);      // dessus en pierre
-    meuble(3.0, 0, -0.4, 2.2, 0.9, 1.0, blanc);           // îlot
-    meuble(3.0, 0.9, -0.4, 2.2, 0.06, 1.0, pierre);       // plateau
-    // chambre
-    meuble(2.6, 0, 2.4, 2.0, 0.45, 2.0, tissu);           // lit
-    meuble(2.6, 0.45, 3.3, 2.0, 0.25, 0.3, blanc);        // tête de lit
-    meuble(0.9, 0, 2.4, 0.5, 0.5, 0.5, bois);             // chevet
+    // plante : pot tourné, terre, et des feuilles cintrées une à une
+    {
+      const g = new THREE.Group();
+      const gPot = recoudre(new THREE.LatheGeometry([
+        [0, 0], [0.15, 0], [0.16, 0.01], [0.175, 0.14], [0.20, 0.34], [0.205, 0.37],
+        [0.192, 0.375], [0.188, 0.36], [0.165, 0.16], [0.148, 0.02], [0, 0.015],
+      ].map(([x, y]) => new THREE.Vector2(x, y)), 48));
+      g.add(new THREE.Mesh(gPot, mat(0xB98A6B, { roughness: 0.68 })));
+      const terre = pose(new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.02, 32), mat(0x3A2E24, { roughness: 0.95 })), 0, 0.355, 0);
+      g.add(terre);
+      /* Une feuille : limbe qui s'ouvre puis s'effile, nervure cintrée, base à
+         l'origine pour pouvoir la planter au bord du pot. */
+      const limbe = (long, larg) => {
+        const f = new THREE.PlaneGeometry(1, 1, 5, 14), p = f.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+          const u = p.getX(i) + 0.5, v = p.getY(i) + 0.5;
+          const x = (u - 0.5) * larg * Math.sin(Math.PI * Math.pow(v, 0.68));
+          p.setXYZ(i, x, v * long, -Math.sin(v * 1.6) * 0.11 + Math.abs(x) * 1.5);
+        }
+        p.needsUpdate = true; f.computeVertexNormals(); return f;
+      };
+      for (let i = 0; i < 9; i++) {
+        const az = i * 2.399, incl = 0.42 + (i % 3) * 0.26;
+        const bras = new THREE.Group(); bras.rotation.y = az;
+        const fe = new THREE.Mesh(limbe(0.34 + (i % 4) * 0.06, 0.15), feuille);
+        fe.rotation.x = incl; fe.position.set(0, 0.02, 0.03);
+        const tige = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.010, 0.26, 6), feuille);
+        tige.position.set(0, 0.12, 0.055); tige.rotation.x = incl * 0.8;
+        bras.add(fe, tige); bras.position.y = 0.38; g.add(bras);
+      }
+      g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      pose(g, -5.0, 0, -3.0); sejour.add(g);
+    }
+
+    /* --------------------------------------------------------- la cuisine */
+    {
+      const g = new THREE.Group();
+      const L = 3.2, H = 0.86, P = 0.62;
+      g.add(pose(new THREE.Mesh(boiteRonde(L, H, P, 0.012), laque), 0, H / 2, 0));
+      for (let i = 0; i < 4; i++) {                       // façades et poignées
+        const x = -L / 2 + L / 8 + i * (L / 4);
+        g.add(pose(new THREE.Mesh(boiteRonde(L / 4 - 0.012, H - 0.10, 0.020, 0.006), laque), x, H / 2, P / 2 + 0.004));
+        g.add(pose(new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.16, 8), acier), x, H - 0.14, P / 2 + 0.024));
+      }
+      const plan = pose(new THREE.Mesh(boiteRonde(L + 0.06, 0.042, P + 0.04, 0.012), pierre), 0, H + 0.021, 0.02);
+      g.add(plan);
+      // évier creusé et robinet cintré
+      const cuve = pose(new THREE.Mesh(boiteRonde(0.52, 0.16, 0.38, 0.03), acier), -0.75, H - 0.055, 0.02);
+      g.add(cuve);
+      const courbe = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.75, H + 0.04, -0.20), new THREE.Vector3(-0.75, H + 0.26, -0.20),
+        new THREE.Vector3(-0.75, H + 0.34, -0.13), new THREE.Vector3(-0.75, H + 0.32, 0.01),
+      ]);
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(courbe, 28, 0.017, 10), acier));
+      // crédence et meubles hauts
+      g.add(pose(new THREE.Mesh(boiteRonde(L + 0.06, 0.46, 0.02, 0.004), pierre), 0, H + 0.26, -P / 2 - 0.004));
+      g.add(pose(new THREE.Mesh(boiteRonde(1.9, 0.70, 0.34, 0.012), laque), 0.55, 1.78, -P / 2 + 0.17));
+      g.traverse(ombre);
+      pose(g, 0.2, 0, -Z + EP / 2 + P / 2); appart.add(g);
+    }
+
+    // îlot, plateau débordant, deux tabourets, deux suspensions
+    {
+      const g = new THREE.Group();
+      const L = 1.95, H = 0.88, P = 0.84;
+      g.add(pose(new THREE.Mesh(boiteRonde(L, H, P, 0.012), laqueS), 0, H / 2, -0.06));
+      for (let i = 0; i < 3; i++) {
+        const x = -L / 2 + L / 6 + i * (L / 3);
+        g.add(pose(new THREE.Mesh(boiteRonde(L / 3 - 0.012, H - 0.10, 0.020, 0.006), laqueS), x, H / 2, -0.06 - P / 2 - 0.004));
+      }
+      g.add(pose(new THREE.Mesh(boiteRonde(L + 0.10, 0.045, P + 0.34, 0.014), pierre), 0, H + 0.022, 0));
+      [-0.52, 0.52].forEach((x) => {                      // tabourets
+        const t = new THREE.Group();
+        t.add(pose(new THREE.Mesh(galette(0.17, 0.055, 0.024, 40), noyer), 0, 0.66, 0));
+        for (let i = 0; i < 4; i++) {
+          const a = Math.PI / 4 + i * Math.PI / 2;
+          const p = pose(new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.012, 0.66, 10), acier),
+            Math.cos(a) * 0.13, 0.33, Math.sin(a) * 0.13);
+          p.rotation.set(-Math.sin(a) * 0.09, 0, Math.cos(a) * 0.09); t.add(p);
+        }
+        pose(t, x, 0, 0.62); g.add(t);
+      });
+      [-0.44, 0.44].forEach((x) => {                      // suspensions
+        const s = new THREE.Group();
+        s.add(pose(new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.86, 6), laqueS), 0, HM - 0.43, 0));
+        const abat = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.155, 0.20, 32, 1, true),
+          mat(0x1E2126, { roughness: 0.4, side: THREE.DoubleSide }));
+        abat.position.y = HM - 0.96; s.add(abat);
+        const ampoule = new THREE.Mesh(new THREE.SphereGeometry(0.042, 16, 12),
+          new THREE.MeshBasicMaterial({ color: 0xFFE9C4 }));
+        ampoule.position.y = HM - 1.05; s.add(ampoule);
+        const feu = new THREE.PointLight(0xFFDDB0, 1.2, 4.4, 2);
+        feu.position.y = HM - 1.06; s.add(feu);
+        pose(s, x, 0, 0); g.add(s);
+      });
+      g.traverse(ombre);
+      pose(g, 0.2, 0, -1.5); appart.add(g);
+    }
+
+    /* --------------------------------------------------------- la chambre */
+    {
+      const g = new THREE.Group();
+      const L = 1.62, LON = 2.05;                          // 160 × 200
+      g.add(pose(new THREE.Mesh(boiteRonde(L + 0.08, 0.30, LON + 0.08, 0.014), noyer), 0, 0.16, 0));
+      const matelas = pose(new THREE.Mesh(boiteRonde(L, 0.24, LON, 0.05), tissu), 0, 0.43, 0);
+      g.add(matelas);
+      // couette : une nappe drapée, avec ses plis et son retombé sur les côtés
+      let nappe;
+      {
+        const c = new THREE.PlaneGeometry(L + 0.34, LON * 0.74, 44, 44);
+        c.rotateX(-Math.PI / 2);
+        const p = c.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+          const x = p.getX(i), z = p.getZ(i);
+          const deb = Math.max(0, Math.abs(x) - L / 2), debZ = Math.max(0, z - LON * 0.37 + 0.02);
+          let y = bruit(x * 3.6, 0, z * 3.6) * 0.022 + Math.sin(z * 4.1) * 0.012;
+          y -= Math.pow(deb, 1.2) * 2.6 + Math.pow(debZ, 1.2) * 1.4;
+          p.setXYZ(i, x - Math.sign(x) * deb * 0.35, y, z - Math.max(0, debZ) * 0.3);
+        }
+        p.needsUpdate = true; c.computeVertexNormals();
+        nappe = new THREE.Mesh(c, mat(0xF7F5F1, { roughness: 0.95, ...tissuTex,
+          normalScale: new THREE.Vector2(0.5, 0.5), side: THREE.DoubleSide }));
+        nappe.position.set(0, 0.565, 0.28); g.add(nappe);
+      }
+      [-0.38, 0.38].forEach((x, i) => {                    // deux oreillers, jamais parallèles
+        const o = pose(new THREE.Mesh(boiteRonde(0.62, 0.15, 0.40, 0.072), tissu),
+          x, 0.615, -LON / 2 + 0.42, (i ? -1 : 1) * 0.07);
+        o.rotation.x = -0.10; g.add(o);
+      });
+      const tete = pose(new THREE.Mesh(boiteRonde(L + 0.20, 0.62, 0.14, 0.05), coussin), 0, 0.74, -LON / 2 - 0.10);
+      g.add(tete);
+      [-1, 1].forEach((s) => {                             // chevets et lampes
+        const c = pose(new THREE.Mesh(boiteRonde(0.42, 0.44, 0.36, 0.012), noyer), s * 1.16, 0.22, -LON / 2 + 0.16);
+        g.add(c);
+        g.add(pose(new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.16, 8), acier), s * 1.16, 0.52, -LON / 2 + 0.16));
+        const abat = pose(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.115, 0.16, 28, 1, true),
+          mat(0xF0E6D6, { roughness: 0.85, side: THREE.DoubleSide })), s * 1.16, 0.66, -LON / 2 + 0.16);
+        g.add(abat);
+        if (s > 0) {
+          const feu = new THREE.PointLight(0xFFCF96, 3.2, 3.4, 2);
+          feu.position.set(s * 1.16, 0.66, -LON / 2 + 0.16); g.add(feu);
+          const bulbe = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 10),
+            new THREE.MeshBasicMaterial({ color: 0xFFE7BE }));
+          bulbe.position.copy(feu.position); g.add(bulbe);
+        }
+      });
+      g.traverse(ombre);
+      /* Après le parcours, sinon il la remettrait : une nappe froissée qui se
+         porte ombre à elle-même sur une carte de 2048 px couvrant tout
+         l'appartement ne produit que des taches. */
+      nappe.castShadow = false;
+      pose(g, 3.85, 0, -1.9); appart.add(g);
+    }
+
+    // armoire, avec le jeu entre ses portes
+    {
+      const g = new THREE.Group(), L = 1.7, H = 2.25, P = 0.60;
+      g.add(pose(new THREE.Mesh(boiteRonde(L, H, P, 0.012), laque), 0, H / 2, 0));
+      [-1, 1].forEach((s) => {
+        g.add(pose(new THREE.Mesh(boiteRonde(L / 2 - 0.014, H - 0.06, 0.022, 0.006), laque), s * (L / 4), H / 2, P / 2 + 0.004));
+        g.add(pose(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.20, 8), acier), s * 0.05, H / 2, P / 2 + 0.026));
+      });
+      g.traverse(ombre); pose(g, 2.0 + EP / 2 + 0.31, 0, -2.60, Math.PI / 2); appart.add(g);
+    }
   }
 
   /* ====================================================================== */
   /*  DÉMO 2 — la canette, reprise du moteur produit                        */
   /* ====================================================================== */
-  const canettes = nouvelleScene();
+  const canettes = nouvelleScene({
+    soleil: [3.2, 5.4, 3.6], portee: 3.2, loin: 18,
+    key: 2.6, ambiant: 0.38, fill: 0.32, env: 1.2, doux: 3,
+  });
   const troisCanettes = [];
   {
     const profil = [
@@ -458,8 +952,8 @@ async function boot(){
       [0.150,1.316],[0.060,1.313],[0.000,1.315],
     ];
     const H = 1.334;
-    const lathe = new THREE.LatheGeometry(profil.map(([x, y]) => new THREE.Vector2(x, y - H/2)), 96);
-    lathe.computeVertexNormals();
+    const lathe = new THREE.LatheGeometry(profil.map(([x, y]) => new THREE.Vector2(x, y - H / 2)), 96);
+    recoudre(lathe);
     const alu = mat(0xC4CAD4, { metalness: 1, roughness: 0.22, envMapIntensity: 0.9 });
     const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 96, 1, true);
     const teintes = [0xA94FE0, 0xF04A6E, 0x1FC98F];
@@ -467,70 +961,181 @@ async function boot(){
     teintes.forEach((t, i) => {
       const g = new THREE.Group();
       const corps = new THREE.Mesh(lathe, alu); corps.castShadow = true;
-      const manchon = new THREE.Mesh(sleeveGeo, mat(t, { roughness: 0.4, metalness: 0.12, envMapIntensity: 0.4, clearcoat: 0.25 }));
-      manchon.position.y = 0.615 - H/2;
-      g.add(corps, manchon);
+      const manchon = new THREE.Mesh(sleeveGeo,
+        mat(t, { roughness: 0.4, metalness: 0.12, envMapIntensity: 0.4, clearcoat: 0.25 }));
+      manchon.position.y = 0.615 - H / 2;
+      // languette : anneau aplati et son rivet, sans quoi le couvercle est nu
+      const anneau = new THREE.Mesh(new THREE.TorusGeometry(0.082, 0.011, 8, 28), alu);
+      anneau.rotation.x = Math.PI / 2; anneau.scale.set(1, 0.62, 1);
+      anneau.position.set(0.055, H / 2 - 0.012, 0);
+      const rivet = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.014, 14), alu);
+      rivet.position.set(-0.015, H / 2 - 0.010, 0);
+      g.add(corps, manchon, anneau, rivet);
       g.position.x = (i - 1) * 0.95;
       canettes.add(g); troisCanettes.push(g);
     });
-    const socle = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.06, 64), mat(0xE4E2E7, { roughness: 0.3, metalness: 0.4 }));
-    socle.position.y = -H/2 - 0.03; socle.receiveShadow = true;
+    const socle = new THREE.Mesh(galette(3, 0.06, 0.02, 80), mat(0xE4E2E7, { roughness: 0.3, metalness: 0.4 }));
+    socle.position.y = -H / 2 - 0.03; socle.receiveShadow = true;
     canettes.add(socle);
   }
 
   /* ====================================================================== */
   /*  DÉMO 3 — le burger, qui s'ouvre couche par couche                     */
   /* ====================================================================== */
-  const burger = nouvelleScene();
+  const burger = nouvelleScene({
+    soleil: [2.8, 5.0, 2.6], portee: 2.6, loin: 16,
+    key: 3.0, ambiant: 0.34, fill: 0.28, env: 1.15, doux: 3,
+  });
   const couches = [];
   {
-    const painHaut = new THREE.LatheGeometry(
-      [[0,0],[0.62,0.02],[0.76,0.12],[0.80,0.26],[0.74,0.40],[0.54,0.50],[0.30,0.55],[0,0.56]]
-        .map(([x, y]) => new THREE.Vector2(x, y)), 64);
-    painHaut.computeVertexNormals();
-    const painBas = new THREE.LatheGeometry(
-      [[0,0],[0.28,0.01],[0.60,0.05],[0.76,0.14],[0.80,0.26],[0.78,0.32],[0,0.33]]
-        .map(([x, y]) => new THREE.Vector2(x, y)), 64);
-    painBas.computeVertexNormals();
+    const matPain   = mat(0xFFFFFF, { roughness: 0.80, ...painTex,   normalScale: new THREE.Vector2(0.85, 0.85) });
+    const matMie    = mat(0xF0DCB4, { roughness: 0.92 });
+    const matSauce  = mat(0xD9B45E, { roughness: 0.34, clearcoat: 0.65, clearcoatRoughness: 0.15 });
+    const matCheddar= mat(0xFFFFFF, { roughness: 0.36, ...cheddarTex, normalScale: new THREE.Vector2(0.3, 0.3),
+                                      clearcoat: 0.35, side: THREE.DoubleSide });
+    const matSteak  = mat(0xFFFFFF, { roughness: 0.86, ...steakTex,   normalScale: new THREE.Vector2(1.1, 1.1) });
+    const matSalade = mat(0xFFFFFF, { roughness: 0.62, ...saladeTex,  normalScale: new THREE.Vector2(0.8, 0.8),
+                                      side: THREE.DoubleSide, clearcoat: 0.3 });
+    const matTomate = mat(0xFFFFFF, { roughness: 0.38, ...tomateTex,  normalScale: new THREE.Vector2(0.45, 0.45),
+                                      clearcoat: 0.45, clearcoatRoughness: 0.25 });
+    const matSesame = mat(0xEAD3A0, { roughness: 0.55, clearcoat: 0.3 });
 
-    const matPain   = mat(0xFFFFFF, { roughness: 0.74, ...painTex,   normalScale: new THREE.Vector2(0.5, 0.5) });
-    const matSauce  = mat(0xE8C86A, { roughness: 0.42, clearcoat: 0.5 });
-    const matCheddar= mat(0xFFFFFF, { roughness: 0.40, ...cheddarTex, normalScale: new THREE.Vector2(0.35, 0.35), clearcoat: 0.3 });
-    const matSteak  = mat(0xFFFFFF, { roughness: 0.88, ...steakTex,   normalScale: new THREE.Vector2(0.9, 0.9) });
-    const matSalade = mat(0xFFFFFF, { roughness: 0.70, ...saladeTex,  normalScale: new THREE.Vector2(0.7, 0.7) });
-    const matTomate = mat(0xFFFFFF, { roughness: 0.44, ...tomateTex,  normalScale: new THREE.Vector2(0.4, 0.4), clearcoat: 0.35 });
+    const ajouter = (o) => { o.traverse ? o.traverse(ombre) : ombre(o); burger.add(o); couches.push(o); return o; };
 
-    const ajouter = (mesh) => { mesh.castShadow = mesh.receiveShadow = true; burger.add(mesh); couches.push(mesh); return mesh; };
+    /* Pain du haut : un dôme de révolution, puis froissé. Un dôme parfait est
+       la signature même d'une géométrie de synthèse — aucun pain n'est rond. */
+    const PROFIL_HAUT = [[0,0],[0.62,0.015],[0.755,0.10],[0.80,0.235],[0.755,0.375],
+                         [0.60,0.478],[0.37,0.540],[0.17,0.566],[0,0.572]];
+    const gHaut = froisser(new THREE.LatheGeometry(
+      PROFIL_HAUT.map(([x, y]) => new THREE.Vector2(x, y)), 112), 0.014, 3.2);
+    const haut = new THREE.Mesh(gHaut, matPain);
+    haut.scale.set(1.02, 1, 0.985);
+    ajouter(haut);
 
-    // du haut vers le bas, dans l'ordre des libellés
-    const haut = ajouter(new THREE.Mesh(painHaut, matPain));
-    for (let i = 0; i < 26; i++) {                       // graines de sésame
-      const s = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), mat(0xEDD9A8, { roughness: 0.7 }));
-      const a = Math.random() * Math.PI * 2, r = Math.random() * 0.62;
-      s.position.set(Math.cos(a) * r, 0.56 - (r / 0.8) ** 2 * 0.24, Math.sin(a) * r);
-      s.scale.y = 0.55; haut.add(s);
+    // graines de sésame, posées sur la courbe du dôme et à demi enfoncées
+    const surLeDome = (r) => {
+      for (let i = 1; i < PROFIL_HAUT.length; i++) {
+        if (r <= PROFIL_HAUT[i][0] || i === PROFIL_HAUT.length - 1) {
+          const [x0, y0] = PROFIL_HAUT[i - 1], [x1, y1] = PROFIL_HAUT[i];
+          return y0 + (y1 - y0) * Math.min(1, Math.max(0, (r - x0) / (x1 - x0 || 1)));
+        }
+      }
+      return 0;
+    };
+    for (let i = 0; i < 34; i++) {
+      const a = i * 2.399 + Math.sin(i) * 0.5, r = 0.74 * Math.sqrt((i + 0.4) / 34);
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.026, 10, 8), matSesame);
+      s.position.set(Math.cos(a) * r, surLeDome(r) - 0.010, Math.sin(a) * r);
+      s.scale.set(1, 0.44, 0.62);
+      s.rotation.set(0, a + i, Math.sin(i * 3) * 0.4);
+      s.castShadow = true; haut.add(s);
     }
-    ajouter(new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.05, 48), matSauce));
-    ajouter(new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.035, 1.18), matCheddar));
-    ajouter(new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.72, 0.20, 48), matSteak));
-    const vert = new THREE.Group();
-    vert.add(new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.09, 8, 40), matSalade));
-    [[-0.3,0,0.2],[0.32,0,-0.18],[0.02,0,0.34]].forEach(([x, y, z]) => {
-      const t = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 0.05, 32), matTomate);
-      t.position.set(x, y, z); vert.add(t);
-    });
-    vert.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
-    burger.add(vert); couches.push(vert);
-    ajouter(new THREE.Mesh(painBas, matPain));
 
-    const planche = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.08, 64), mat(0xB98F5E, { roughness: 0.7 }));
-    planche.position.y = -0.05; planche.receiveShadow = true;
-    burger.add(planche);
+    /* Sauce : une nappe qui déborde par vagues, pas un disque. */
+    const gSauce = galette(0.60, 0.05, 0.02, 96);
+    {
+      const p = gSauce.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z);
+        if (r < 0.42) continue;
+        const a = Math.atan2(z, x);
+        const k = 1 + (Math.sin(a * 6 + 1.1) * 0.5 + Math.sin(a * 11 - 0.4) * 0.5 + 1) * 0.055;
+        p.setXYZ(i, x * k, p.getY(i) - (Math.sin(a * 6 + 1.1) * 0.5 + 0.5) * 0.03, z * k);
+      }
+      p.needsUpdate = true; gSauce.computeVertexNormals(); recoudre(gSauce);
+    }
+    ajouter(new THREE.Mesh(gSauce, matSauce));
+
+    /* Cheddar fondu : une tranche carrée qui retombe par ses angles. C'est le
+       drapé qui dit « fondu » ; une plaque plate dit « polygone ». */
+    const gChed = new THREE.PlaneGeometry(1.42, 1.42, 40, 40);
+    gChed.rotateX(-Math.PI / 2);
+    {
+      const p = gChed.attributes.position, BORD = 0.60;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z);
+        const deb = Math.min(Math.max(0, r - BORD), 0.34);
+        const y = bruit(x * 5, 0, z * 5) * 0.007 - Math.pow(deb, 1.25) * 1.55;
+        const k = 1 - deb * 0.22;
+        p.setXYZ(i, x * k, y, z * k);
+      }
+      p.needsUpdate = true; gChed.computeVertexNormals();
+    }
+    ajouter(new THREE.Mesh(gChed, matCheddar));
+
+    /* Steak : silhouette irrégulière — le bord d'un haché n'est jamais un
+       cercle — et croûte froissée par-dessus. */
+    const gSteak = new THREE.LatheGeometry([
+      [0,0],[0.55,0.006],[0.70,0.038],[0.745,0.105],[0.755,0.165],
+      [0.725,0.218],[0.60,0.248],[0.31,0.260],[0,0.262],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 112);
+    {
+      const p = gSteak.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z);
+        if (r < 1e-4) continue;
+        const a = Math.atan2(z, x);
+        const k = 1 + (Math.sin(a * 3 + 0.7) * 0.5 + Math.sin(a * 5 - 1.2) * 0.3 +
+                       Math.sin(a * 8 + 2.1) * 0.2) * 0.05;
+        p.setXYZ(i, x * k, p.getY(i), z * k);
+      }
+      p.needsUpdate = true;
+      gSteak.computeVertexNormals();
+    }
+    froisser(gSteak, 0.011, 8);
+    ajouter(new THREE.Mesh(gSteak, matSteak));
+
+    /* Tomate et salade. La salade est une collerette frisée : un tore, c'est
+       un beignet. */
+    const vert = new THREE.Group();
+    [[0.86, 0, 0], [0.80, 0.9, -0.035]].forEach(([R, phase, dy]) => {
+      const g = new THREE.RingGeometry(0.40, R, 132, 5);
+      g.rotateX(-Math.PI / 2);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z), a = Math.atan2(z, x) + phase;
+        const t = Math.min(Math.max((r - 0.40) / (R - 0.40), 0), 1);
+        const frise = Math.sin(a * 11) * 0.055 + Math.sin(a * 19 + 1.4) * 0.026;
+        const k = 1 + Math.sin(a * 11 + 0.6) * 0.035 * t;
+        p.setXYZ(i, x * k, frise * t * t + bruit(x * 6, 0, z * 6) * 0.012 - t * 0.035 + dy, z * k);
+      }
+      p.needsUpdate = true; g.computeVertexNormals();
+      const m = new THREE.Mesh(g, matSalade); m.castShadow = m.receiveShadow = true; vert.add(m);
+    });
+    [[-0.30, 0.19, 0.4], [0.33, -0.17, 1.9], [0.03, 0.34, 3.1]].forEach(([x, z, r]) => {
+      const g = froisser(galette(0.30, 0.055, 0.020, 48), 0.004, 9, r);
+      const t = pose(new THREE.Mesh(g, matTomate), x, -0.06, z, r);
+      t.rotation.z = 0.03; vert.add(t);
+    });
+    vert.traverse(ombre); burger.add(vert); couches.push(vert);
+
+    const gBas = froisser(new THREE.LatheGeometry([
+      [0,0],[0.28,0.008],[0.60,0.045],[0.755,0.13],[0.80,0.24],[0.79,0.29],[0.40,0.315],[0,0.318],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 112), 0.010, 3.6, 2.1);
+    const bas = new THREE.Mesh(gBas, matPain);
+    bas.scale.set(1.015, 1, 0.99);
+    ajouter(bas);
+
+    /* La planche : bord adouci, quelques graines tombées. Une scène propre au
+       millimètre n'a jamais l'air d'une photographie. */
+    const planche = new THREE.Mesh(galette(1.75, 0.075, 0.022, 96), mat(0xA87B4E, { roughness: 0.68, clearcoat: 0.15 }));
+    planche.position.y = -0.04; planche.receiveShadow = true; burger.add(planche);
+    /* Une table sous la planche. Un objet posé sur rien flotte, et rien ne
+       trahit une image de synthèse comme un objet qui flotte. */
+    const table = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), mat(0xCFC7BC, { roughness: 0.55 }));
+    table.rotation.x = -Math.PI / 2; table.position.y = -0.078;
+    table.receiveShadow = true; burger.add(table);
+    for (let i = 0; i < 7; i++) {
+      const a = i * 2.1 + 0.6, r = 1.05 + (i % 3) * 0.17;
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.026, 8, 6), matSesame);
+      s.position.set(Math.cos(a) * r, 0.006, Math.sin(a) * r);
+      s.scale.set(1, 0.4, 0.6); s.rotation.y = a * 2;
+      s.castShadow = true; burger.add(s);
+    }
   }
 
   /* ---- pistes de plans, une par démo ----------------------------------- */
   const TOTAL = sections.length;
-  const P = (n) => n / TOTAL;
   const debut = {};
   { let n = 1; DEMOS.forEach((d) => { debut[d.id] = n; n += d.screens; }); }
 
@@ -538,30 +1143,33 @@ async function boot(){
   const lerp = (a, b, t) => a + (b - a) * t;
   const mel = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
 
-  // trajets de caméra : position et point visé, par étape de démo
+  /* Trajets de caméra. La focale fait partie du plan : un intérieur se
+     photographie au grand-angle — sans quoi on ne voit jamais une pièce, mais
+     un pan de mur —, un produit à la longue focale, qui ne déforme rien. */
   const TRAJETS = {
     appart: [
-      { pos: [-11.0, 11.0, 12.0], look: [0, 0.2, 0] },   // vue d'ensemble
-      /* Chaque pièce est cadrée de loin et de haut : approcher davantage ne
-         montre plus qu'un pan de sol ou de mur, jamais la pièce. */
-      { pos: [ -9.0,  6.8,  8.6], look: [-3.2, 0.4, 1.2] }, // séjour
-      { pos: [  8.6,  6.8, -7.4], look: [ 2.6, 0.4,-1.8] }, // cuisine
-      { pos: [  9.0,  6.2,  9.0], look: [ 2.6, 0.4, 2.4] }, // chambre
+      { pos: [-4.20, 1.58,  3.20], look: [-2.60, 1.14, -1.70], fov: 50 },  // entrée, l'enfilade d'un coup
+      { pos: [-1.95, 1.50,  1.15], look: [-4.70, 1.00,  0.45], fov: 48 },  // le séjour, face au canapé
+      { pos: [-0.70, 1.56,  1.90], look: [ 0.60, 1.02, -2.90], fov: 48 },  // la cuisine et son îlot
+      { pos: [ 2.60, 1.52,  3.00], look: [ 4.10, 0.82, -1.90], fov: 50 },  // la chambre, passé la cloison
     ],
     canette: [
-      { pos: [0, 0.9, 4.6], look: [0, 0, 0] },
-      { pos: [0, 0.2, 2.9], look: [0, 0, 0] },
-      { pos: [1.6, 0.5, 3.2], look: [0, 0, 0] },
-      { pos: [0, 1.4, 5.2], look: [0, 0, 0] },
+      { pos: [0, 0.9, 4.6], look: [0, 0, 0], fov: 30 },
+      { pos: [0, 0.2, 2.9], look: [0, 0, 0], fov: 28 },
+      { pos: [1.6, 0.5, 3.2], look: [0, 0, 0], fov: 28 },
+      { pos: [0, 1.4, 5.2], look: [0, 0, 0], fov: 32 },
     ],
     burger: [
-      { pos: [0, 1.2, 4.4], look: [0, 0.4, 0] },
-      { pos: [0, 1.0, 3.6], look: [0, 0.7, 0] },
-      { pos: [0, 1.4, 3.4], look: [0, 0.9, 0] },
-      { pos: [0, 1.1, 3.8], look: [0, 0.8, 0] },
-      { pos: [0, 0.9, 4.8], look: [0, 0.5, 0] },
+      { pos: [ 0.00, 0.95, 4.10], look: [0, 0.38, 0], fov: 30 },
+      { pos: [ 0.55, 1.35, 4.40], look: [0, 0.62, 0], fov: 30 },
+      { pos: [ 0.30, 1.70, 5.00], look: [0, 0.98, 0], fov: 30 },
+      { pos: [-0.45, 1.40, 4.70], look: [0, 0.82, 0], fov: 30 },
+      { pos: [ 0.00, 0.80, 4.30], look: [0, 0.42, 0], fov: 31 },
     ],
   };
+
+  // profondeur de champ : une scène nette de bout en bout n'est pas une photo
+  const PLAGE = { appart: 4.2, canette: 1.5, burger: 1.7 };
 
   /* #instant coupe l'interpolation : sans lui, toute capture d'écran est prise
      en pleine transition et donne une image trompeuse. Sert aussi aux
@@ -571,6 +1179,7 @@ async function boot(){
   const etat = {
     pos: TRAJETS.appart[0].pos.slice(),
     look: TRAJETS.appart[0].look.slice(),
+    fov: TRAJETS.appart[0].fov,
     ouverture: 0,     // écartement des couches du burger
     tour: 0,          // rotation des canettes
   };
@@ -610,6 +1219,7 @@ async function boot(){
     const f = ease(t - i);
     cible.pos = mel(traj[i].pos, traj[i + 1].pos, f);
     cible.look = mel(traj[i].look, traj[i + 1].look, f);
+    cible.fov = lerp(traj[i].fov, traj[i + 1].fov, f);
     cible.ouverture = choisie.id === 'burger' ? Math.min(1, Math.max(0, (local - 0.12) / 0.62)) : 0;
     cible.tour = choisie.id === 'canette' ? local * Math.PI * 1.2 : 0;
 
@@ -631,11 +1241,112 @@ async function boot(){
     }
   }
   addEventListener('scroll', lireScroll, { passive: true });
+
+  /* ---- post-traitement : bloom et profondeur de champ --------------------
+     Écrit à la main plutôt qu'avec EffectComposer, dont les passes sont des
+     modules d'extension qu'il faudrait vendoriser puis replier dans le build
+     d'un seul fichier. Le flou de mise au point est ce qui manque le plus à
+     une image de synthèse : l'oeil lit « photographie » à la seule condition
+     que tout ne soit pas net en même temps. */
+  const quad = new THREE.BufferGeometry();
+  quad.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1,-1,0, 3,-1,0, -1,3,0]), 3));
+  quad.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0,0, 2,0, 0,2]), 2));
+  const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const quadMesh = new THREE.Mesh(quad, null);
+  const quadScene = new THREE.Scene(); quadScene.add(quadMesh);
+
+  const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position, 1.0); }';
+  const cible2D = (w, h, prof) => {
+    const t = new THREE.WebGLRenderTarget(Math.max(1, w | 0), Math.max(1, h | 0), {
+      type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+    });
+    if (prof) {
+      t.depthTexture = new THREE.DepthTexture(Math.max(1, w | 0), Math.max(1, h | 0));
+      t.depthTexture.type = THREE.UnsignedShortType;
+    }
+    return t;
+  };
+
+  let rtScene, rtDemi, rtFlouA, rtFlouB;
+  function allouer(){
+    /* En pixels physiques, pas en pixels CSS : le canvas dessine à la densité
+       de l'écran, et allouer en CSS reviendrait à rendre en 1x puis à étirer. */
+    const pr = renderer.getPixelRatio(), w = innerWidth * pr, h = innerHeight * pr;
+    for (const t of [rtScene, rtDemi, rtFlouA, rtFlouB]) if (t) t.dispose();
+    rtScene = cible2D(w, h, true);
+    rtDemi  = cible2D(w / 2, h / 2, false);
+    rtFlouA = cible2D(w / 4, h / 4, false);
+    rtFlouB = cible2D(w / 4, h / 4, false);
+  }
+  allouer();
+
+  const matBright = new THREE.ShaderMaterial({
+    uniforms: { tSrc: { value: null }, seuil: { value: 1.02 } },
+    vertexShader: VERT,
+    fragmentShader: `
+      varying vec2 vUv; uniform sampler2D tSrc; uniform float seuil;
+      void main(){
+        vec3 c = texture2D(tSrc, vUv).rgb;
+        float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        gl_FragColor = vec4(c * smoothstep(seuil, seuil + 0.35, l), 1.0);
+      }`,
+  });
+
+  const matFlou = new THREE.ShaderMaterial({
+    uniforms: { tSrc: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, texel: { value: new THREE.Vector2() } },
+    vertexShader: VERT,
+    fragmentShader: `
+      varying vec2 vUv; uniform sampler2D tSrc; uniform vec2 dir; uniform vec2 texel;
+      void main(){
+        vec2 o = dir * texel;
+        vec4 c = texture2D(tSrc, vUv) * 0.227027;
+        c += (texture2D(tSrc, vUv + o * 1.3846) + texture2D(tSrc, vUv - o * 1.3846)) * 0.316216;
+        c += (texture2D(tSrc, vUv + o * 3.2308) + texture2D(tSrc, vUv - o * 3.2308)) * 0.070270;
+        gl_FragColor = c;
+      }`,
+  });
+
+  const matMix = new THREE.ShaderMaterial({
+    uniforms: {
+      tScene: { value: null }, tFlou: { value: null }, tBloom: { value: null }, tDepth: { value: null },
+      force: { value: 0.10 }, focus: { value: 6.0 }, plage: { value: 3.0 },
+      near: { value: 0.1 }, far: { value: 100.0 }, vignette: { value: 0.28 },
+    },
+    vertexShader: VERT,
+    fragmentShader: `
+      varying vec2 vUv;
+      uniform sampler2D tScene, tFlou, tBloom, tDepth;
+      uniform float force, focus, plage, near, far, vignette;
+      float viewZ(float d){ return (near * far) / ((far - near) * d - far); }
+      void main(){
+        vec4 net  = texture2D(tScene, vUv);
+        vec4 flou = texture2D(tFlou,  vUv);
+        vec4 blm  = texture2D(tBloom, vUv);
+        float z = -viewZ(texture2D(tDepth, vUv).x);
+        float coc = clamp(abs(z - focus) / plage, 0.0, 1.0);
+        coc = coc * coc;                       // net plus longtemps autour du plan de mise au point
+        vec3 c = mix(net.rgb, flou.rgb, coc * 0.72);
+        c += blm.rgb * force;
+        // l'alpha est conservé : le halo de couleur en CSS doit rester visible
+        float a = clamp(mix(net.a, flou.a, coc * 0.72) + blm.a * force, 0.0, 1.0);
+        vec2 d = vUv - 0.5;
+        c *= 1.0 - vignette * dot(d, d) * 2.0;
+        gl_FragColor = vec4(c, a);
+      }`,
+    transparent: true, depthTest: false, depthWrite: false,
+  });
+
+  const tirer = (materiau, dest) => {
+    quadMesh.material = materiau;
+    renderer.setRenderTarget(dest || null);
+    renderer.render(quadScene, quadCam);
+  };
+
   addEventListener('resize', () => {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.setSize(innerWidth, innerHeight, false);
-    lireScroll();
+    allouer(); lireScroll();
   }, { passive: true });
 
   /* ---- entrées de texte, un temps après que la scène s'est posée -------- */
@@ -656,6 +1367,7 @@ async function boot(){
 
   /* ---- boucle ----------------------------------------------------------- */
   const scenes = { appart, canette: canettes, burger };
+  const vise = new THREE.Vector3();
   let last = performance.now();
   lireScroll();
 
@@ -667,6 +1379,7 @@ async function boot(){
       etat.pos[i] = lerp(etat.pos[i], cible.pos[i], k);
       etat.look[i] = lerp(etat.look[i], cible.look[i], k);
     }
+    etat.fov = lerp(etat.fov, cible.fov, k);
     etat.ouverture = lerp(etat.ouverture, cible.ouverture, k);
     etat.tour = lerp(etat.tour, cible.tour, k);
     pointer.sx = lerp(pointer.sx, pointer.x, k);
@@ -675,7 +1388,7 @@ async function boot(){
     // le burger s'écarte, du haut vers le bas
     couches.forEach((c, i) => {
       const rang = couches.length - 1 - i;
-      c.position.y = 0.34 + rang * 0.02 + etat.ouverture * rang * 0.42;
+      c.position.y = 0.34 + rang * 0.02 + etat.ouverture * rang * 0.30;
       c.rotation.y = etat.ouverture * (i % 2 ? -0.2 : 0.2);
     });
     // et les canettes tournent
@@ -690,8 +1403,40 @@ async function boot(){
       etat.pos[1] - pointer.sy * 0.14 * par,
       etat.pos[2]
     );
-    camera.lookAt(etat.look[0], etat.look[1], etat.look[2]);
-    renderer.render(scenes[demoActive.id], camera);
+    vise.set(etat.look[0], etat.look[1], etat.look[2]);
+    camera.lookAt(vise);
+    if (Math.abs(camera.fov - etat.fov) > 0.01) { camera.fov = etat.fov; camera.updateProjectionMatrix(); }
+
+    const scene = scenes[demoActive.id];
+    renderer.setRenderTarget(rtScene);
+    renderer.clear();
+    renderer.render(scene, camera);
+
+    matBright.uniforms.tSrc.value = rtScene.texture;
+    tirer(matBright, rtDemi);
+
+    matFlou.uniforms.texel.value.set(1 / rtFlouA.width, 1 / rtFlouA.height);
+    matFlou.uniforms.tSrc.value = rtDemi.texture;
+    matFlou.uniforms.dir.value.set(1, 0); tirer(matFlou, rtFlouA);
+    matFlou.uniforms.tSrc.value = rtFlouA.texture;
+    matFlou.uniforms.dir.value.set(0, 1); tirer(matFlou, rtFlouB);
+
+    // le flou de mise au point réutilise la même chaîne, sur la scène entière
+    matFlou.uniforms.tSrc.value = rtScene.texture;
+    matFlou.uniforms.dir.value.set(1, 0); tirer(matFlou, rtFlouA);
+    matFlou.uniforms.tSrc.value = rtFlouA.texture;
+    matFlou.uniforms.dir.value.set(0, 1); tirer(matFlou, rtDemi);
+
+    matMix.uniforms.tScene.value = rtScene.texture;
+    matMix.uniforms.tFlou.value  = rtDemi.texture;
+    matMix.uniforms.tBloom.value = rtFlouB.texture;
+    matMix.uniforms.tDepth.value = rtScene.depthTexture;
+    matMix.uniforms.near.value = camera.near;
+    matMix.uniforms.far.value  = camera.far;
+    // la mise au point suit le point visé : c'est lui, le sujet
+    matMix.uniforms.focus.value = camera.position.distanceTo(vise);
+    matMix.uniforms.plage.value = PLAGE[demoActive.id];
+    tirer(matMix, null);
   });
 }
 </script>
