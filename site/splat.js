@@ -24,6 +24,13 @@
 
 const MAGIC = 0x50534d55; // « UMSP » en petit-boutiste
 
+/* Les fichiers .splat rangent le quaternion en (w,x,y,z) ; d'autres outils le
+   rangent en (x,y,z,w). Se tromper d'ordre ne casse rien : les ellipsoïdes
+   partent simplement dans des directions arbitraires, et la scène se lit comme
+   une traînée. D'où ce réglage, vérifiable à l'oeil. */
+let ordreQuat = 'wxyz';
+export function reglerQuaternion(ordre) { ordreQuat = ordre; }
+
 export async function chargerSplat(url, THREE) {
   const buf = await (await fetch(url)).arrayBuffer();
   const vue = new DataView(buf);
@@ -51,6 +58,7 @@ export async function chargerSplat(url, THREE) {
     }
     for (let k = 0; k < 4; k++) col[i * 4 + k] = blocs[o + 9 + k];
     for (let k = 0; k < 4; k++) q[k] = (blocs[o + 13 + k] - 128) / 128;
+    if (ordreQuat === 'xyzw') { const t = q[0]; q[0] = q[3]; q[3] = q[2]; q[2] = q[1]; q[1] = t; }
 
     // covariance = R S Sᵀ Rᵀ, calculée ici une fois plutôt qu'à chaque image
     const [w, x, y, z] = q;

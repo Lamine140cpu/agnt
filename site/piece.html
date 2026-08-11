@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Une vraie pièce, en 3D</title>
+<style>
+:root{ --ground:#0E0E11; --ink:#F2F1EE; --ink-soft:#9C9AA4; --accent:#7FD1C1; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);color:var(--ink);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#c:active{cursor:grabbing}
+
+.panneau{
+  position:fixed;left:0;right:0;bottom:0;z-index:3;pointer-events:none;
+  padding:18px clamp(14px,4vw,28px) calc(18px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top, rgba(14,14,17,.92), rgba(14,14,17,.6) 55%, transparent);
+}
+.panneau b{display:block;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.panneau p{margin:6px 0 0;max-width:52ch;color:var(--ink-soft);font-size:14px}
+
+.charge{
+  position:fixed;inset:0;z-index:4;display:grid;place-content:center;text-align:center;
+  gap:14px;background:var(--ground);transition:opacity .5s ease}
+.charge.parti{opacity:0;pointer-events:none}
+.jauge{width:min(220px,60vw);height:2px;background:rgba(242,241,238,.16);border-radius:2px;overflow:hidden}
+.jauge i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s ease}
+.charge small{color:var(--ink-soft);font-size:13px;letter-spacing:.04em}
+
+.aide{
+  position:fixed;top:0;left:0;right:0;z-index:3;pointer-events:none;
+  padding:calc(14px + env(safe-area-inset-top)) clamp(14px,4vw,28px) 26px;
+  background:linear-gradient(to bottom, rgba(14,14,17,.8), transparent);
+  font-size:13px;color:var(--ink-soft); letter-spacing:.02em;
+  display:flex;gap:18px;flex-wrap:wrap;
+}
+.aide span{white-space:nowrap}
+.aide kbd{
+  font:inherit;color:var(--ink);background:rgba(242,241,238,.1);
+  border-radius:5px;padding:1px 6px;margin-right:5px;
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms !important}}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="aide" id="aide">
+  <span><kbd>glisser</kbd>regarder autour</span>
+  <span><kbd>molette</kbd>avancer, reculer</span>
+  <span><kbd>2 doigts</kbd>se déplacer</span>
+</div>
+
+<div class="panneau">
+  <b>Une pièce réelle, pas une photo</b>
+  <p>Ce n'est pas une image qui défile : c'est un volume, mesuré sur des
+     photographies d'un lieu qui existe. Déplacez-vous dedans.</p>
+</div>
+
+<div class="charge" id="charge">
+  <div class="jauge"><i id="jauge"></i></div>
+  <small id="etat">Chargement de la scène…</small>
+</div>
+
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+import { chargerSplat, nuage, reglerQuaternion } from './splat.js';
+
+/* ============================================================================
+   Visionneuse d'une scène en splats gaussiens.
+
+   Le fichier décrit quelques centaines de milliers d'ellipsoïdes flous ajustés
+   sur des photographies. La caméra s'y déplace librement : c'est ce qui sépare
+   un volume d'un diaporama.
+   ============================================================================ */
+
+const canvas = document.getElementById('c');
+const charge = document.getElementById('charge');
+const jauge = document.getElementById('jauge');
+const etat = document.getElementById('etat');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight, false);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 120);
+
+const reglages = Object.fromEntries(new URLSearchParams(location.search));
+reglerQuaternion(reglages.rot || 'wxyz');
+jauge.style.width = '25%';
+const donnees = await chargerSplat(window.PIECE_URL || 'assets/splats/piece.ums', THREE);
+jauge.style.width = '75%';
+etat.textContent = `${(donnees.n / 1000).toFixed(0)} 000 points — mise en place`;
+await new Promise((r) => setTimeout(r, 30));
+scene.add(nuage(donnees, THREE));
+jauge.style.width = '100%';
+
+/* ---- pilotage ------------------------------------------------------------
+   Une caméra libre en coordonnées sphériques autour d'un point visé. Le point
+   visé se déplace avec la caméra : on avance dans la pièce au lieu de tourner
+   indéfiniment autour d'un pivot. */
+/* Les captures photogrammétriques sortent souvent avec l'axe Y vers le bas :
+   la scène arrive alors la tête en bas. Le redressement se règle ici, et les
+   réglages de départ se surchargent par l'adresse pour la mise au point. */
+const reglage = reglages;
+const nuageMaille = scene.children[scene.children.length - 1];
+if (reglage.flip !== '0') nuageMaille.rotation.z = Math.PI;
+nuageMaille.updateMatrixWorld(true);
+
+const cible = new THREE.Vector3(...donnees.centre);
+if (reglage.flip !== '0') { cible.x = -cible.x; cible.y = -cible.y; }
+/* Cadrage d'ouverture : sur le fauteuil, à hauteur d'assise, assez près pour
+   que la parallaxe se voie au premier geste. */
+const orbite = {
+  azimut: +(reglage.az ?? 2.40),
+  hauteur: +(reglage.ht ?? 0.15),
+  rayon: +(reglage.r ?? 2.50),
+};
+const vise = { ...orbite, cible: cible.clone() };
+window.PILOTE = { vise, orbite, cible };   // réglage du cadrage à la mise au point
+
+function poser(){
+  const { azimut, hauteur, rayon } = orbite;
+  camera.position.set(
+    cible.x + Math.sin(azimut) * Math.cos(hauteur) * rayon,
+    cible.y - Math.sin(hauteur) * rayon,
+    cible.z + Math.cos(azimut) * Math.cos(hauteur) * rayon,
+  );
+  camera.lookAt(cible);
+}
+
+const doigts = new Map();
+let ecart0 = 0, rayon0 = 0;
+
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (doigts.size === 2) {
+    const [a, b] = [...doigts.values()];
+    ecart0 = Math.hypot(a.x - b.x, a.y - b.y); rayon0 = vise.rayon;
+  }
+  document.getElementById('aide').style.opacity = '0';
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  const p = doigts.get(e.pointerId);
+  if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+
+  if (doigts.size === 1) {
+    vise.azimut -= dx * 0.005;
+    vise.hauteur = Math.max(-0.9, Math.min(0.9, vise.hauteur + dy * 0.004));
+  } else if (doigts.size === 2) {
+    const [a, b] = [...doigts.values()];
+    const ecart = Math.hypot(a.x - b.x, a.y - b.y);
+    if (ecart0 > 0) vise.rayon = Math.max(0.4, Math.min(9, rayon0 * ecart0 / ecart));
+    // le point visé glisse latéralement : c'est ce qui fait avancer dans la pièce
+    const droite = new THREE.Vector3(Math.cos(vise.azimut), 0, -Math.sin(vise.azimut));
+    vise.cible.addScaledVector(droite, -dx * 0.004 * vise.rayon);
+    vise.cible.y += dy * 0.003 * vise.rayon;
+  }
+}, { passive: true });
+
+const lacher = (e) => { doigts.delete(e.pointerId); ecart0 = 0; };
+canvas.addEventListener('pointerup', lacher);
+canvas.addEventListener('pointercancel', lacher);
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  vise.rayon = Math.max(0.4, Math.min(9, vise.rayon * (1 + Math.sign(e.deltaY) * 0.10)));
+}, { passive: false });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight, false);
+}, { passive: true });
+
+/* ---- boucle : le rattrapage à taux constant donne l'inertie -------------- */
+let last = performance.now();
+renderer.setAnimationLoop((now) => {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now;
+  const k = 1 - Math.exp(-9 * dt);
+  orbite.azimut += (vise.azimut - orbite.azimut) * k;
+  orbite.hauteur += (vise.hauteur - orbite.hauteur) * k;
+  orbite.rayon += (vise.rayon - orbite.rayon) * k;
+  cible.lerp(vise.cible, k);
+  poser();
+  renderer.render(scene, camera);
+});
+
+// une première image avant de découvrir la scène, pour ne pas montrer du noir
+poser(); renderer.render(scene, camera);
+requestAnimationFrame(() => charge.classList.add('parti'));
+</script>
+</body>
+</html>
