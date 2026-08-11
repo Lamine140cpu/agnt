@@ -13,7 +13,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build_artifact import wrap_core, wrap_module      # noqa: E402
 
 SITE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(SITE, "dist", "piece.html")
+SCENE = sys.argv[1] if len(sys.argv) > 1 else "piece"
+OUT = os.path.join(SITE, "dist", f"{SCENE}.html")
 
 
 def main():
@@ -44,7 +45,7 @@ def main():
 
     # Pas d'URL data: — une politique de sécurité stricte refuse fetch() dessus.
     # La chaîne est décodée sur place par le chargeur.
-    scene = "base64," + b64("assets/splats/piece.ums")
+    scene = "base64," + b64(f"assets/splats/{SCENE}.ums")
     page = page.replace("window.PIECE_URL || 'assets/splats/piece.ums'", "SCENE_B64")
     page = page.replace("const canvas = document.getElementById('c');",
                         "const SCENE_B64 = '" + scene + "';\nconst canvas = document.getElementById('c');", 1)
