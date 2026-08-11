@@ -1,2 +1,4 @@
 site/assets/splats/*.ums
 site/assets/splats/*.splat
+site/assets/mobilier/*/
+!site/assets/mobilier/CREDITS.md

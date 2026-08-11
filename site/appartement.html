@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Un salon meublé</title>
+<style>
+:root{ --ground:#0F0F12; --ink:#F4F3F0; --ink-soft:#A09EA6; --accent:#C9A227; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);color:var(--ink);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#c:active{cursor:grabbing}
+
+.panneau{
+  position:fixed;left:0;right:0;bottom:0;z-index:3;pointer-events:none;
+  padding:18px clamp(14px,4vw,28px) calc(18px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top, rgba(15,15,18,.92), rgba(15,15,18,.55) 55%, transparent);
+}
+.panneau b{display:block;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.panneau p{margin:6px 0 0;max-width:56ch;color:var(--ink-soft);font-size:14px}
+
+.aide{
+  position:fixed;top:0;left:0;right:0;z-index:3;pointer-events:none;
+  padding:calc(14px + env(safe-area-inset-top)) clamp(14px,4vw,28px) 26px;
+  background:linear-gradient(to bottom, rgba(15,15,18,.8), transparent);
+  font-size:13px;color:var(--ink-soft);display:flex;gap:18px;flex-wrap:wrap;
+}
+.aide kbd{font:inherit;color:var(--ink);background:rgba(244,243,240,.1);
+  border-radius:5px;padding:1px 6px;margin-right:5px}
+
+.charge{position:fixed;inset:0;z-index:4;display:grid;place-content:center;text-align:center;
+  gap:14px;background:var(--ground);transition:opacity .5s ease}
+.charge.parti{opacity:0;pointer-events:none}
+.jauge{width:min(220px,60vw);height:2px;background:rgba(244,243,240,.16);border-radius:2px;overflow:hidden}
+.jauge i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+.charge small{color:var(--ink-soft);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms !important}}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="aide">
+  <span><kbd>glisser</kbd>regarder autour</span>
+  <span><kbd>molette</kbd>avancer, reculer</span>
+  <span><kbd>2 doigts</kbd>se déplacer</span>
+</div>
+
+<div class="panneau">
+  <b>Un salon meublé, pas capturé</b>
+  <p>La pièce est construite, le mobilier vient d'une bibliothèque
+     professionnelle. Rien n'a été photographié : tout se déplace, se remplace
+     et s'éclaire autrement d'une ligne à l'autre.</p>
+</div>
+
+<div class="charge" id="charge">
+  <div class="jauge"><i id="jauge"></i></div>
+  <small id="etat">Construction de la pièce…</small>
+</div>
+
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+import { GLTFLoader } from './vendor/GLTFLoader.js';
+
+/* ============================================================================
+   Un salon construit, puis meublé.
+
+   Le contraire d'une capture : la coque est de la géométrie — des murs percés,
+   un sol, un plafond — et le mobilier vient de Poly Haven, modélisé par des
+   professionnels et publié en CC0.
+
+   C'est la méthode de l'image d'architecture. Un architecte ne modélise pas
+   ses chaises : il meuble une pièce vide. Un canapé fabriqué à la main avec
+   des boîtes arrondies se lit comme un dessin, quelle que soit la lumière
+   qu'on lui donne — parce qu'il lui manque les mille irrégularités qu'un
+   modeleur y met.
+   ============================================================================ */
+
+const canvas = document.getElementById('c');
+const charge = document.getElementById('charge');
+const jauge = document.getElementById('jauge');
+const etat = document.getElementById('etat');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.05, 60);
+
+/* ---- la pièce ------------------------------------------------------------
+   6,4 × 4,6 m sous 2,70 — un séjour parisien ordinaire. Les cotes comptent :
+   une pièce trop grande sonne faux avant même qu'on l'ait meublée. */
+const L = 6.4, P = 4.6, H = 2.70, EP = 0.18;
+
+/** Grain de peinture, calculé plutôt que photographié : un mur peint n'a pas
+    de motif, seulement une trame très fine, et une image ne servirait qu'à
+    faire apparaître sa propre répétition. */
+function grain(S = 256, force = 0.5, repete = 8){
+  const c = document.createElement('canvas'); c.width = c.height = S;
+  const x = c.getContext('2d'), im = x.createImageData(S, S);
+  const brut = new Float32Array(S * S), lisse = new Float32Array(S * S);
+  for (let i = 0; i < S * S; i++) brut[i] = Math.random();
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    let s = 0;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++)
+      s += brut[((j + dj + S) % S) * S + ((i + di + S) % S)];
+    lisse[j * S + i] = s / 9;
+  }
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    const o = (j * S + i) * 4;
+    const dx = (lisse[j * S + (i + 1) % S] - lisse[j * S + (i + S - 1) % S]) * force * 4;
+    const dy = (lisse[((j + 1) % S) * S + i] - lisse[((j + S - 1) % S) * S + i]) * force * 4;
+    const l = Math.hypot(dx, dy, 1);
+    im.data[o] = ((-dx / l) * 0.5 + 0.5) * 255;
+    im.data[o + 1] = ((dy / l) * 0.5 + 0.5) * 255;
+    im.data[o + 2] = ((1 / l) * 0.5 + 0.5) * 255;
+    im.data[o + 3] = 255;
+  }
+  x.putImageData(im, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repete, repete);
+  return t;
+}
+
+const grainMur = grain(256, 0.5, 10);
+
+function matiere(fichier, repete, relief){
+  return new Promise((res) => {
+    const im = new Image();
+    im.onload = () => {
+      const t = new THREE.Texture(im);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repete);
+      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      t.needsUpdate = true;
+      res(t);
+    };
+    im.onerror = () => res(null);
+    im.src = `assets/web/${fichier}.jpg`;
+  });
+}
+
+const parquet = await matiere('bois-parquet', [7, 5]);
+
+const platre = new THREE.MeshStandardMaterial({
+  color: 0xF0EEEA, roughness: 0.96,
+  normalMap: grainMur, normalScale: new THREE.Vector2(0.5, 0.5),
+});
+const sol = new THREE.MeshStandardMaterial({
+  color: 0xFFFFFF, map: parquet, roughness: 0.45, metalness: 0,
+});
+const boiserie = new THREE.MeshStandardMaterial({ color: 0xF6F5F2, roughness: 0.35 });
+
+/** Un mur est une surface percée, pas un bloc : c'est par ses ouvertures que la
+    lumière entre, et c'est cette lumière qui fait la pièce. */
+function mur(long, ouvertures = []){
+  const s = new THREE.Shape();
+  s.moveTo(-long / 2, 0); s.lineTo(long / 2, 0);
+  s.lineTo(long / 2, H); s.lineTo(-long / 2, H); s.closePath();
+  ouvertures.forEach(([cx, cy, l, h]) => {
+    const t = new THREE.Path();
+    t.moveTo(cx - l / 2, cy - h / 2); t.lineTo(cx - l / 2, cy + h / 2);
+    t.lineTo(cx + l / 2, cy + h / 2); t.lineTo(cx + l / 2, cy - h / 2); t.closePath();
+    s.holes.push(t);
+  });
+  const g = new THREE.ExtrudeGeometry(s, { depth: EP, bevelEnabled: false, curveSegments: 1 });
+  g.translate(0, 0, -EP / 2);
+  const m = new THREE.Mesh(g, platre);
+  m.castShadow = m.receiveShadow = true; scene.add(m); return m;
+}
+const poser = (m, x, y, z, ry = 0) => { m.position.set(x, y, z); m.rotation.y = ry; return m; };
+
+const FEN = [1.55, 1.80], CY = 1.62;      // largeur, hauteur ; allège à 0,72 m
+poser(mur(L, [[-1.55, CY, FEN[0], FEN[1]], [1.55, CY, FEN[0], FEN[1]]]), 0, 0, -P / 2);
+poser(mur(L), 0, 0, P / 2, Math.PI);
+poser(mur(P), -L / 2, 0, 0, Math.PI / 2);
+poser(mur(P), L / 2, 0, 0, -Math.PI / 2);
+
+const plancher = new THREE.Mesh(new THREE.BoxGeometry(L, 0.1, P), sol);
+plancher.position.y = -0.05; plancher.receiveShadow = true; scene.add(plancher);
+
+const plafond = new THREE.Mesh(new THREE.BoxGeometry(L, 0.12, P),
+  new THREE.MeshStandardMaterial({ color: 0xF8F7F5, roughness: 0.97 }));
+plafond.position.y = H + 0.06; plafond.receiveShadow = true; scene.add(plafond);
+
+/* Plinthes et corniches : deux détails minuscules, et pourtant ce sont eux qui
+   disent « pièce » plutôt que « boîte ». */
+for (const [l, x, z, ry] of [[L, 0, -P/2 + EP/2 + 0.012, 0], [L, 0, P/2 - EP/2 - 0.012, 0],
+                             [P, -L/2 + EP/2 + 0.012, 0, Math.PI/2], [P, L/2 - EP/2 - 0.012, 0, Math.PI/2]]) {
+  const b = poser(new THREE.Mesh(new THREE.BoxGeometry(l, 0.12, 0.022), boiserie), x, 0.06, z, ry);
+  b.receiveShadow = true; scene.add(b);
+  const c = poser(new THREE.Mesh(new THREE.BoxGeometry(l, 0.09, 0.05), boiserie), x, H - 0.045, z, ry);
+  scene.add(c);
+}
+
+/** Dormant, meneau et appui. Sans son cadre, une ouverture n'est qu'un trou :
+    c'est le cadre qui donne l'échelle de la pièce. */
+function fenetre(x, z, ry){
+  const g = new THREE.Group(), b = 0.055, [l, h] = FEN;
+  [h / 2, -h / 2].forEach((cy) => g.add(poser(
+    new THREE.Mesh(new THREE.BoxGeometry(l + b, b, EP + 0.04), boiserie), 0, cy, 0)));
+  [-l / 2, l / 2, 0].forEach((cx) => g.add(poser(
+    new THREE.Mesh(new THREE.BoxGeometry(b, h, EP + 0.04), boiserie), cx, 0, 0)));
+  g.add(poser(new THREE.Mesh(new THREE.BoxGeometry(l, b * 0.7, EP + 0.04), boiserie), 0, 0, 0));
+  const appui = poser(new THREE.Mesh(new THREE.BoxGeometry(l + 0.16, 0.04, 0.20), boiserie),
+    0, -h / 2 - 0.03, 0.08);
+  g.add(appui);
+  g.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
+  poser(g, x, CY, z, ry); scene.add(g);
+}
+fenetre(-1.55, -P / 2, 0);
+fenetre(1.55, -P / 2, 0);
+
+/* Dehors : un plan hors correction tonale, donc franchement brûlé. Une fenêtre
+   correctement exposée sur l'intérieur est toujours blanche. */
+const dehors = new THREE.Mesh(new THREE.PlaneGeometry(30, 18),
+  new THREE.MeshBasicMaterial({ color: 0xFFFFFF, toneMapped: false }));
+dehors.position.set(0, 5, -9); scene.add(dehors);
+
+/* ---- lumière -------------------------------------------------------------
+   Un soleil rasant qui entre par les baies et pose deux rectangles sur le
+   parquet, une lumière d'hémisphère pour que le plafond ne soit pas noir, et
+   l'ampoule de la suspension. Rien d'autre. */
+const soleil = new THREE.DirectionalLight(0xFFF6EA, 3.4);
+soleil.position.set(-2.4, 4.2, -9);
+soleil.castShadow = true;
+soleil.shadow.mapSize.set(2048, 2048);
+soleil.shadow.camera.left = -5; soleil.shadow.camera.right = 5;
+soleil.shadow.camera.top = 5; soleil.shadow.camera.bottom = -5;
+soleil.shadow.camera.near = 1; soleil.shadow.camera.far = 22;
+soleil.shadow.bias = -0.0005; soleil.shadow.normalBias = 0.02; soleil.shadow.radius = 3;
+scene.add(soleil);
+scene.add(new THREE.HemisphereLight(0xEEF3FF, 0xE6D8C4, 0.75));
+scene.add(new THREE.AmbientLight(0xFFFFFF, 0.18));
+
+/* ---- le mobilier ---------------------------------------------------------
+   Position, rotation, et parfois une hauteur — un vase se pose sur une table,
+   pas sur le sol. Les cotes viennent des modèles eux-mêmes. */
+const MEUBLES = [
+  { nom: 'sofa_03',                  x: -2.45, y: 0,    z:  0.10, ry:  Math.PI / 2 },
+  { nom: 'modern_coffee_table_01',   x: -1.10, y: 0,    z:  0.10, ry:  0 },
+  { nom: 'mid_century_lounge_chair', x:  0.55, y: 0,    z:  1.05, ry: -2.35 },
+  { nom: 'side_table_01',            x:  1.55, y: 0,    z:  0.75, ry:  0.3 },
+  { nom: 'Shelf_01',                 x:  2.95, y: 0,    z: -1.15, ry: -Math.PI / 2 },
+  { nom: 'potted_plant_01',          x:  2.55, y: 0,    z:  1.65, ry:  0.8 },
+  { nom: 'potted_plant_04',          x: -1.10, y: 0.39, z:  0.10, ry:  1.9 },
+  { nom: 'ceramic_vase_01',          x:  1.55, y: 0.55, z:  0.75, ry:  0.5 },
+  { nom: 'modern_ceiling_lamp_01',   x: -1.10, y: H - 1.17, z: 0.10, ry: 0 },
+];
+
+const chargeur = new GLTFLoader();
+const charger = (nom) => new Promise((res, rej) =>
+  chargeur.load(`assets/mobilier/${nom}/${nom}.gltf`, res, undefined, rej));
+
+let faits = 0;
+for (const m of MEUBLES) {
+  try {
+    const gltf = await charger(m.nom);
+    const o = gltf.scene;
+    o.position.set(m.x, m.y, m.z);
+    o.rotation.y = m.ry;
+    o.traverse((n) => {
+      if (!n.isMesh) return;
+      n.castShadow = n.receiveShadow = true;
+      // les modèles arrivent souvent en double face, coûteux et inutile ici
+      if (n.material) n.material.side = THREE.FrontSide;
+    });
+    scene.add(o);
+  } catch (e) {
+    console.warn('meuble absent :', m.nom, e.message);
+  }
+  faits++;
+  jauge.style.width = `${Math.round(100 * faits / MEUBLES.length)}%`;
+  etat.textContent = `${faits} meubles sur ${MEUBLES.length}`;
+}
+
+// l'ampoule de la suspension, allumée
+const feu = new THREE.PointLight(0xFFE0B4, 6, 6, 2);
+feu.position.set(-1.10, H - 0.62, 0.10);
+scene.add(feu);
+
+/* ---- pilotage, identique à celui de la scène capturée ------------------- */
+/* Cadrage d'ouverture : depuis l'angle, le canapé et la table basse d'un côté,
+   le fauteuil et la lumière des baies de l'autre. */
+const cible = new THREE.Vector3(-0.40, 1.10, -0.20);
+const orbite = { azimut: 2.30, hauteur: 0.12, rayon: 2.60 };
+const vise = { ...orbite, cible: cible.clone() };
+window.PILOTE = { vise, orbite, cible };
+
+function placer(){
+  const { azimut, hauteur, rayon } = orbite;
+  /* La caméra reste dans la pièce. Une orbite de plusieurs mètres autour d'un
+     point central sort par les murs, et l'on se retrouve à regarder l'envers
+     d'une cloison sans comprendre pourquoi tout est gris. */
+  const marge = 0.35;
+  camera.position.set(
+    Math.max(-L / 2 + marge, Math.min(L / 2 - marge,
+      cible.x + Math.sin(azimut) * Math.cos(hauteur) * rayon)),
+    Math.max(0.35, Math.min(H - 0.25, cible.y + Math.sin(hauteur) * rayon)),
+    Math.max(-P / 2 + marge, Math.min(P / 2 - marge,
+      cible.z + Math.cos(azimut) * Math.cos(hauteur) * rayon)),
+  );
+  camera.lookAt(cible);
+}
+
+const doigts = new Map();
+let ecart0 = 0, rayon0 = 0;
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (doigts.size === 2) {
+    const [a, b] = [...doigts.values()];
+    ecart0 = Math.hypot(a.x - b.x, a.y - b.y); rayon0 = vise.rayon;
+  }
+});
+canvas.addEventListener('pointermove', (e) => {
+  const p = doigts.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  if (doigts.size === 1) {
+    vise.azimut -= dx * 0.005;
+    vise.hauteur = Math.max(-0.6, Math.min(0.9, vise.hauteur + dy * 0.004));
+  } else if (doigts.size === 2) {
+    const [a, b] = [...doigts.values()];
+    const ecart = Math.hypot(a.x - b.x, a.y - b.y);
+    if (ecart0 > 0) vise.rayon = Math.max(0.5, Math.min(7, rayon0 * ecart0 / ecart));
+    const droite = new THREE.Vector3(Math.cos(vise.azimut), 0, -Math.sin(vise.azimut));
+    vise.cible.addScaledVector(droite, -dx * 0.004 * vise.rayon);
+    vise.cible.y = Math.max(0.4, Math.min(2.2, vise.cible.y + dy * 0.003 * vise.rayon));
+  }
+}, { passive: true });
+const lacher = (e) => { doigts.delete(e.pointerId); ecart0 = 0; };
+canvas.addEventListener('pointerup', lacher);
+canvas.addEventListener('pointercancel', lacher);
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  vise.rayon = Math.max(0.5, Math.min(7, vise.rayon * (1 + Math.sign(e.deltaY) * 0.1)));
+}, { passive: false });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight, false);
+}, { passive: true });
+
+let last = performance.now();
+renderer.setAnimationLoop((now) => {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now;
+  const k = 1 - Math.exp(-9 * dt);
+  orbite.azimut += (vise.azimut - orbite.azimut) * k;
+  orbite.hauteur += (vise.hauteur - orbite.hauteur) * k;
+  orbite.rayon += (vise.rayon - orbite.rayon) * k;
+  cible.lerp(vise.cible, k);
+  placer();
+  renderer.render(scene, camera);
+});
+
+placer(); renderer.render(scene, camera);
+requestAnimationFrame(() => charge.classList.add('parti'));
+</script>
+</body>
+</html>
