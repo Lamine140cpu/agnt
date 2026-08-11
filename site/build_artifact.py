@@ -143,6 +143,16 @@ def main():
                             "const MATIERES = " + __import__("json").dumps(matieres) +
                             ";\n  const maxAniso = renderer.capabilities.getMaxAnisotropy();", 1)
 
+    # les plans photographiques, nommés dans un gabarit `assets/photos/${f}.jpg`
+    if "`assets/photos/${f}.jpg`" in page:
+        dossier = "assets/photos"
+        plans = {n[:-4]: "data:image/jpeg;base64," + b64(f"{dossier}/{n}")
+                 for n in sorted(os.listdir(dossier)) if n.endswith(".jpg")}
+        page = page.replace("`assets/photos/${f}.jpg`", "(PLANS_B64[f] || '')")
+        page = page.replace("const photos = {};",
+                            "const PLANS_B64 = " + __import__("json").dumps(plans) +
+                            ";\nconst photos = {};", 1)
+
     for name in sorted(os.listdir("assets/web")):
         uri = "data:image/jpeg;base64," + b64("assets/web/" + name)
         page = page.replace(f"'assets/web/{name}'", f"'{uri}'")

@@ -143,6 +143,20 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
   opacity:0; transition:opacity .3s ease; background:var(--ground);
 }
 #photos.on{opacity:1}
+/* Un voile en haut et en bas. Les titres et les légendes sont écrits en sombre
+   pour le fond clair de la page ; sur une photographie, ils tombent selon les
+   cas dans un steak ou dans un contre-jour. */
+#photos::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(to top,
+      color-mix(in srgb, var(--ground) 92%, transparent) 0%,
+      color-mix(in srgb, var(--ground) 34%, transparent) 24%,
+      transparent 46%),
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--ground) 66%, transparent) 0%,
+      transparent 14%);
+}
 #photos img{
   position:absolute; inset:0; width:100%; height:100%;
   object-fit:cover; opacity:0; will-change:transform,opacity;
@@ -259,10 +273,10 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canvas = document.getElementById('webgl');
 const scenePhotos = document.getElementById('photos');
 
-/** Charge les plans d'une démonstration, tout ou rien : une série amputée
-    d'un plan sauterait une pièce au milieu de la visite. Le premier fichier
-    sert de sonde — inutile de réclamer quinze images pour découvrir qu'aucune
-    n'est encore là. */
+/** Retient les plans dont le fichier est là, dans l'ordre, en passant sur les
+    absents. La série se remplit par lots : une visite de cinq pièces vaut
+    mieux que l'attente des huit, et le manque se comble tout seul le jour où
+    l'image arrive — chaque légende voyage avec son plan, rien ne se décale. */
 const photos = {};
 async function chargerPlans(){
   const lire = (f) => new Promise((res) => {
@@ -272,13 +286,12 @@ async function chargerPlans(){
     im.src = `assets/photos/${f}.jpg`;
   });
   for (const [id, liste] of Object.entries(PLANS)) {
-    const tete = await lire(liste[0].f);
-    if (!tete) continue;
-    const suite = await Promise.all(liste.slice(1).map((p) => lire(p.f)));
-    if (suite.some((im) => !im)) continue;
-    const serie = [tete, ...suite];
-    serie.forEach((im) => scenePhotos.append(im));
-    photos[id] = serie;
+    const charges = await Promise.all(liste.map((plan) => lire(plan.f)));
+    const gardes = liste.filter((_, i) => charges[i]);
+    if (gardes.length < 2) continue;          // en dessous, la scène 3D vaut mieux
+    charges.filter(Boolean).forEach((im) => scenePhotos.append(im));
+    photos[id] = charges.filter(Boolean);
+    PLANS[id] = gardes;
   }
 }
 
@@ -1339,8 +1352,11 @@ async function boot(){
     const leg = document.getElementById('legende');
     let liste = null, part = 0, item = null;
     if (photos[choisie.id]) {
-      // en photo, la légende nomme le plan sous les yeux, sans décalage
-      item = PLANS[choisie.id][Math.round(cible.plan)];
+      /* La légende nomme le plan sous les yeux, sans décalage — mais pas le
+         premier : cet écran-là porte déjà le titre de la démonstration, et les
+         deux se superposeraient au même endroit. */
+      const k = Math.round(cible.plan);
+      item = k >= 1 ? PLANS[choisie.id][k] : null;
     } else {
       if (choisie.id === 'appart') { liste = PIECES; part = (local - 0.30) / 0.68; }
       if (choisie.id === 'burger') { liste = INGREDIENTS; part = (local - 0.30) / 0.66; }
