@@ -13,8 +13,9 @@ déstructuration.
 import base64, os, re, sys
 
 SITE = os.path.dirname(os.path.abspath(__file__))
-PAGE = sys.argv[1] if len(sys.argv) > 1 else "index.html"
-OUT = os.path.join(SITE, "dist", PAGE)
+PAGES = [a for a in sys.argv[1:] if not a.startswith("-")]
+PAGE = PAGES[0] if PAGES else "index.html"
+OUT = os.path.join(SITE, "dist", ("leger-" if "--leger" in sys.argv else "") + PAGE)
 
 
 def parse_specifiers(block):
@@ -76,9 +77,38 @@ def wrap_module(src, core_var):
             + body + "\nreturn {" + ",".join(fields) + "};\n})()")
 
 
+def alleger(chemin):
+    """Recomprime une image avant de l'embarquer, en mode --leger.
+
+    Les étiquettes sont livrées en 2528 px parce que la caméra vient les lire
+    de très près. Mais depuis que la typographie est tracée au code, l'artwork
+    n'est plus qu'un fond à 16 % : le rendre en 1280 px ne se voit pas, et
+    divise le poids du fichier par cinq. Un fichier de huit mégaoctets ne
+    s'envoie pas, ne se lit pas, et sur certaines machines ne s'ouvre pas.
+    """
+    import io
+    from PIL import Image
+
+    im = Image.open(chemin)
+    if max(im.size) > 1280:
+        k = 1280 / max(im.size)
+        im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))),
+                       Image.LANCZOS)
+    tampon = io.BytesIO()
+    im.convert("RGB").save(tampon, "JPEG", quality=82, optimize=True, progressive=True)
+    return tampon.getvalue()
+
+
 def main():
     os.chdir(SITE)
-    b64 = lambda p: base64.b64encode(open(p, "rb").read()).decode()
+    leger = "--leger" in sys.argv
+
+    def b64(p):
+        """L'environnement est laissé intact quoi qu'il arrive : c'est du RGBE,
+        mantisses en haut et exposants en bas. Le rééchantillonner mélangerait
+        les deux moitiés, et interpoler un exposant n'a aucun sens."""
+        octets = alleger(p) if (leger and p.endswith(".jpg")) else open(p, "rb").read()
+        return base64.b64encode(octets).decode()
 
     bundle = (
         "/* three.js r185 — replié en place : voir build_artifact.py */\n"
@@ -143,8 +173,15 @@ def main():
     if "data:text/javascript" in page:
         sys.exit("un import depuis une URL data: subsiste, la CSP le refuserait")
 
+    # Le dossier de projet voyage dans la page : c'est le même fichier qu'on
+    # ouvre pour la voir tourner et qu'on ouvre pour comprendre ce qu'elle fait.
+    dossier = os.path.join(SITE, "DOSSIER.md")
+    if os.path.exists(dossier):
+        texte = open(dossier, encoding="utf-8").read().replace("--", "––")
+        page = "<!--\n" + texte + "\n-->\n" + page
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    open(OUT, "w").write(page)
+    open(OUT, "w", encoding="utf-8").write(page)
     print(f"écrit {OUT} — {len(page)/1024/1024:.2f} Mo")
 
 
