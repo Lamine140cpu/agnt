@@ -138,31 +138,23 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
 /* Les plans photographiques. Empilés dans l'ordre de lecture : chacun se
    révèle par-dessus le précédent, ce qui évite le creux qu'on obtiendrait en
    croisant deux opacités à 50 %. */
-#photos{
-  position:fixed; inset:0; z-index:1; overflow:hidden; pointer-events:none;
-  opacity:0; transition:opacity .3s ease; background:var(--ground);
-}
-#photos.on{opacity:1}
-/* Un voile en haut et en bas. Les titres et les légendes sont écrits en sombre
-   pour le fond clair de la page ; sur une photographie, ils tombent selon les
-   cas dans un steak ou dans un contre-jour. */
-#photos::after{
-  content:""; position:absolute; inset:0; pointer-events:none;
+/* Le voile. Les titres et les légendes sont écrits en sombre pour le fond
+   clair de la page ; sur une photographie, ils tombent selon les cas dans un
+   steak ou dans un contre-jour. */
+#voile{
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  opacity:0; transition:opacity .3s ease;
   background:
     linear-gradient(to top,
       color-mix(in srgb, var(--ground) 92%, transparent) 0%,
       color-mix(in srgb, var(--ground) 34%, transparent) 24%,
       transparent 46%),
     linear-gradient(to bottom,
-      color-mix(in srgb, var(--ground) 66%, transparent) 0%,
-      transparent 14%);
+      color-mix(in srgb, var(--ground) 82%, transparent) 0%,
+      color-mix(in srgb, var(--ground) 30%, transparent) 9%,
+      transparent 17%);
 }
-#photos img{
-  position:absolute; inset:0; width:100%; height:100%;
-  object-fit:cover; opacity:0; will-change:transform,opacity;
-  transform-origin:50% 45%;
-}
-#webgl{transition:opacity .3s ease}
+#voile.on{opacity:1}
 :focus-visible{outline:2px solid var(--accent); outline-offset:3px}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:.001ms !important}
@@ -173,7 +165,7 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
 <body>
 
 <div id="wash"></div>
-<div id="photos" aria-hidden="true"></div>
+<div id="voile" aria-hidden="true"></div>
 <canvas id="webgl"></canvas>
 <div id="grain"></div>
 
@@ -271,28 +263,43 @@ const PIECES = [
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canvas = document.getElementById('webgl');
-const scenePhotos = document.getElementById('photos');
+const voile = document.getElementById('voile');
 
-/** Retient les plans dont le fichier est là, dans l'ordre, en passant sur les
-    absents. La série se remplit par lots : une visite de cinq pièces vaut
-    mieux que l'attente des huit, et le manque se comble tout seul le jour où
-    l'image arrive — chaque légende voyage avec son plan, rien ne se décale. */
+/* Une photographie plein cadre qu'on remplace par la suivante reste un
+   diaporama : rien ne bouge dedans. Accompagnée de sa carte de profondeur,
+   elle devient une surface en relief — le premier plan se déplace plus vite
+   que le fond quand la caméra bouge, et l'oeil y lit un volume. La profondeur
+   est calculée hors ligne par profondeurs.py, et livrée en <numéro>-p.jpg. */
 const photos = {};
-async function chargerPlans(){
-  const lire = (f) => new Promise((res) => {
+function chargerPlans(THREE){
+  const lire = (src, srgb) => new Promise((res) => {
     const im = new Image();
-    im.decoding = 'async'; im.alt = '';
-    im.onload = () => res(im); im.onerror = () => res(null);
-    im.src = `assets/photos/${f}.jpg`;
+    im.decoding = 'async';
+    im.onload = () => {
+      const t = new THREE.Texture(im);
+      if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+      t.minFilter = THREE.LinearFilter; t.generateMipmaps = false;
+      t.needsUpdate = true; res(t);
+    };
+    im.onerror = () => res(null);
+    im.src = src;
   });
-  for (const [id, liste] of Object.entries(PLANS)) {
-    const charges = await Promise.all(liste.map((plan) => lire(plan.f)));
-    const gardes = liste.filter((_, i) => charges[i]);
-    if (gardes.length < 2) continue;          // en dessous, la scène 3D vaut mieux
-    charges.filter(Boolean).forEach((im) => scenePhotos.append(im));
-    photos[id] = charges.filter(Boolean);
+  return Promise.all(Object.entries(PLANS).map(async ([id, liste]) => {
+    const paires = await Promise.all(liste.map(async (plan) => {
+      const [carte, prof] = await Promise.all([
+        lire(`assets/photos/${plan.f}.jpg`, true),
+        lire(`assets/photos/${plan.f}-p.jpg`, false),
+      ]);
+      return carte ? { carte, prof } : null;
+    }));
+    const gardes = liste.filter((_, i) => paires[i]);
+    /* On retient les plans dont le fichier est là, en passant sur les absents :
+       la série se remplit par lots, et le manque se comble tout seul le jour où
+       l'image arrive. Chaque légende voyage avec son plan, rien ne se décale. */
+    if (gardes.length < 2) return;
+    photos[id] = paires.filter(Boolean);
     PLANS[id] = gardes;
-  }
+  }));
 }
 
 /* ---------------------------------------------------------------- la page */
@@ -1500,34 +1507,111 @@ async function boot(){
       : 'Dites-nous en une ligne ce que vous vendez.';
   });
 
-  /* ---- les plans photographiques ----------------------------------------
-     Ils s'empilent dans l'ordre de lecture et chacun se révèle par-dessus le
-     précédent. Croiser deux opacités à 50 % laisserait passer le fond entre
-     les deux : le fondu tomberait dans un creux gris au milieu.
+  /* ---- les plans photographiques, en relief -----------------------------
+     Chaque photographie est une nappe subdivisée dont les sommets sont
+     repoussés selon sa carte de profondeur. La caméra s'y déplace vraiment :
+     le premier plan glisse plus vite que le fond, la souris fait bouger la
+     pièce. Ce n'est pas encore une visite libre — il n'y a qu'un point de vue
+     par photographie, et s'en éloigner étire les bords — mais c'est un
+     déplacement dans une matière photographique, pas un fondu entre deux
+     images. */
+  const scenePhoto = new THREE.Scene();
+  const H_PLAN = 2, L_PLAN = H_PLAN * 1264 / 848;
 
-     Chaque plan continue par ailleurs de se resserrer très lentement pendant
-     qu'on le regarde. Une photographie parfaitement immobile au milieu d'une
-     page qui bouge s'y lit comme un trou. */
-  function majPhotos(){
-    const serie = photos[demoActive.id];
-    scenePhotos.classList.toggle('on', !!serie);
-    canvas.style.opacity = serie ? '0' : '1';
-    if (!serie) return;
+  const nappeGeo = new THREE.PlaneGeometry(L_PLAN, H_PLAN, 200, 136);
+  const nappes = {};
 
-    const t = etat.plan;
-    serie.forEach((im, k) => {
-      const d = t - k + 1;                       // 0 avant l'entrée, 1 une fois posé
-      const o = k === 0 ? 1 : ease(Math.min(Math.max((d - 0.32) / 0.40, 0), 1));
-      const vu = Math.min(Math.max(d, 0), 2) / 2;
-      im.style.opacity = o;
-      im.style.transform = `scale(${(1.085 - 0.085 * vu).toFixed(4)})`;
-      /* Le plan est caché une fois recouvert : celui du dessus est alors
-         opaque, et un calque de moins à composer à chaque image. */
-      im.style.visibility = (o > 0.002 && d < 2.4) ? 'visible' : 'hidden';
-    });
+  const VERT_PLAN = `
+    uniform sampler2D prof; uniform float relief, recul;
+    varying vec2 vUv;
+    void main(){
+      vUv = uv;
+      /* La carte donne une disparité : clair au premier plan, sombre au loin.
+         On repousse donc d'autant plus que le pixel est sombre. */
+      float d = texture2D(prof, uv).r;
+      float ecart = (1.0 - d) * relief;
+      vec3 p = position;
+      p.z -= ecart;
+      /* Et on l'écarte de l'axe en proportion : le sommet glisse le long du
+         rayon qui le visait, au lieu de reculer tout droit. Sans ça, le fond
+         rétrécit en s'éloignant et découvre du vide sur les bords. Du point de
+         vue d'origine l'image reste exactement la photographie ; c'est en
+         bougeant qu'apparaît la parallaxe. */
+      p.xy *= (recul + ecart) / recul;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+    }`;
+  const FRAG_PLAN = `
+    uniform sampler2D carte; uniform float opacite;
+    varying vec2 vUv;
+    void main(){
+      gl_FragColor = vec4(texture2D(carte, vUv).rgb, opacite);
+    }`;
+
+  function batirNappes(){
+    for (const [id, serie] of Object.entries(photos)) {
+      if (nappes[id]) continue;
+      nappes[id] = serie.map(({ carte, prof }, k) => {
+        const m = new THREE.Mesh(nappeGeo, new THREE.ShaderMaterial({
+          uniforms: { carte: { value: carte }, prof: { value: prof },
+                      relief: { value: 0.95 }, recul: { value: 2.5 },
+                      opacite: { value: 0 } },
+          vertexShader: VERT_PLAN, fragmentShader: FRAG_PLAN,
+          /* Ordre du peintre plutôt que tampon de profondeur : deux nappes se
+             croisent pendant le fondu, et leurs reliefs s'interpénétreraient. */
+          transparent: true, depthTest: false, depthWrite: false,
+        }));
+        m.renderOrder = k; m.visible = false;
+        scenePhoto.add(m);
+        return m;
+      });
+    }
   }
 
-  chargerPlans();          // sans attendre : la page démarre sur ses scènes 3D
+  /** Distance à laquelle la nappe couvre le cadre, quel que soit le format de
+      la fenêtre — comme un object-fit: cover, mais en perspective. */
+  function reculCouverture(){
+    const t = Math.tan((PHOTO_FOV * Math.PI / 180) / 2);
+    return Math.min((H_PLAN / 2) / t, (L_PLAN / 2) / (t * camera.aspect)) * 0.93;
+  }
+  const PHOTO_FOV = 42;
+
+  function majPhotos(){
+    const serie = photos[demoActive.id];
+    voile.classList.toggle('on', !!serie);
+    if (!serie) return false;
+    batirNappes();
+
+    const t = etat.plan, lot = nappes[demoActive.id];
+    for (const [id, autres] of Object.entries(nappes)) {
+      if (id !== demoActive.id) autres.forEach((m) => { m.visible = false; });
+    }
+
+    const recul = reculCouverture();
+    lot.forEach((m, k) => {
+      const d = t - k + 1;                       // 0 avant l'entrée, 1 une fois posé
+      const o = k === 0 ? 1 : ease(Math.min(Math.max((d - 0.32) / 0.40, 0), 1));
+      m.visible = o > 0.003 && d < 2.4;
+      if (!m.visible) return;
+      m.material.uniforms.opacite.value = o;
+      m.material.uniforms.recul.value = recul;
+      /* Chaque plan avance lentement pendant qu'on le regarde. Le mouvement est
+         porté par la nappe et non par la caméra : chacune a sa propre avance,
+         et rien ne se réinitialise d'un plan à l'autre. */
+      const p = Math.min(Math.max(d, 0), 2) / 2;
+      m.position.set((p - 0.5) * 0.16, (0.5 - p) * 0.05, -recul + p * 0.42);
+      m.rotation.y = (p - 0.5) * 0.05;
+    });
+
+    const par = reduce ? 0 : 1;
+    camera.fov = PHOTO_FOV;
+    camera.updateProjectionMatrix();
+    // la souris regarde autour d'elle dans la pièce, pour de bon
+    camera.position.set(pointer.sx * 0.30 * par, -pointer.sy * 0.18 * par, 0);
+    camera.lookAt(pointer.sx * 0.06 * par, -pointer.sy * 0.04 * par, -recul);
+    return true;
+  }
+
+  chargerPlans(THREE);     // sans attendre : la page démarre sur ses scènes 3D
 
   /* ---- boucle ----------------------------------------------------------- */
   const scenes = { appart, canette: canettes, burger };
@@ -1572,12 +1656,10 @@ async function boot(){
     camera.lookAt(vise);
     if (Math.abs(camera.fov - etat.fov) > 0.01) { camera.fov = etat.fov; camera.updateProjectionMatrix(); }
 
-    majPhotos();
-    /* Rien à calculer derrière une photographie plein cadre : on rend la
-       scène 3D de la démonstration suivante seulement, pas celle qu'on cache. */
-    if (photos[demoActive.id]) return;
-
-    const scene = scenes[demoActive.id];
+    /* Les plans photographiques traversent la même chaîne que les scènes 3D :
+       même vignettage, même bloom, même grain. Sans quoi la page changerait de
+       peau d'une démonstration à l'autre. */
+    const scene = majPhotos() ? scenePhoto : scenes[demoActive.id];
     renderer.setRenderTarget(rtScene);
     renderer.clear();
     renderer.render(scene, camera);
@@ -1605,7 +1687,10 @@ async function boot(){
     matMix.uniforms.far.value  = camera.far;
     // la mise au point suit le point visé : c'est lui, le sujet
     matMix.uniforms.focus.value = camera.position.distanceTo(vise);
-    matMix.uniforms.plage.value = PLAGE[demoActive.id];
+/* Les nappes n'écrivent pas dans le tampon de profondeur — ordre du peintre
+       oblige. Le tampon vidé renverrait le plan lointain pour tout le cadre, et
+       la mise au point flouterait la photographie d'un bout à l'autre. */
+    matMix.uniforms.plage.value = photos[demoActive.id] ? 1e6 : PLAGE[demoActive.id];
     tirer(matMix, null);
   });
 }

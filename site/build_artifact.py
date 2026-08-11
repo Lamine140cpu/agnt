@@ -143,12 +143,22 @@ def main():
                             "const MATIERES = " + __import__("json").dumps(matieres) +
                             ";\n  const maxAniso = renderer.capabilities.getMaxAnisotropy();", 1)
 
-    # les plans photographiques, nommés dans un gabarit `assets/photos/${f}.jpg`
-    if "`assets/photos/${f}.jpg`" in page:
+    # Les plans photographiques : une image de couleur et sa carte de
+    # profondeur par plan, nommées dans des gabarits.
+    gabarits = {
+        "`assets/photos/${plan.f}.jpg`": "(PLANS_B64[plan.f] || '')",
+        "`assets/photos/${plan.f}-p.jpg`": "(PLANS_B64[plan.f + '-p'] || '')",
+    }
+    if any(g in page for g in gabarits):
         dossier = "assets/photos"
         plans = {n[:-4]: "data:image/jpeg;base64," + b64(f"{dossier}/{n}")
                  for n in sorted(os.listdir(dossier)) if n.endswith(".jpg")}
-        page = page.replace("`assets/photos/${f}.jpg`", "(PLANS_B64[f] || '')")
+        if not plans:
+            sys.exit("aucun plan dans assets/photos : la page serait muette")
+        for gabarit, remplacement in gabarits.items():
+            if gabarit not in page:
+                sys.exit(f"gabarit de plan introuvable : {gabarit}")
+            page = page.replace(gabarit, remplacement)
         page = page.replace("const photos = {};",
                             "const PLANS_B64 = " + __import__("json").dumps(plans) +
                             ";\nconst photos = {};", 1)
