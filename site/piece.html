@@ -63,6 +63,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);color:va
 <div class="charge" id="charge">
   <div class="jauge"><i id="jauge"></i></div>
   <small id="etat">Chargement de la scène…</small>
+  <small id="ennui" style="display:none;max-width:34ch;color:#E88"></small>
 </div>
 
 <script type="module">
@@ -82,6 +83,23 @@ const charge = document.getElementById('charge');
 const jauge = document.getElementById('jauge');
 const etat = document.getElementById('etat');
 
+/* Une page noire ne dit pas si le fichier n'est pas arrivé, si la carte
+   graphique a renoncé ou si le téléphone a manqué de mémoire. Chacun de ces
+   trois cas a sa phrase. */
+const ennui = document.getElementById('ennui');
+function echouer(quoi){
+  document.querySelector('.jauge').style.display = 'none';
+  etat.textContent = 'La scène ne s’affiche pas.';
+  ennui.style.display = 'block';
+  ennui.textContent = quoi;
+  throw new Error(quoi);
+}
+addEventListener('error', (e) => { if (ennui.style.display === 'none') echouer(String(e.message || e)); });
+
+if (!document.createElement('canvas').getContext('webgl2')) {
+  echouer('Ce navigateur n’a pas WebGL 2, indispensable ici. Essayez Chrome, ou Safari 15 ou plus récent.');
+}
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.setSize(innerWidth, innerHeight, false);
@@ -91,12 +109,27 @@ const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, 0.1, 12
 
 const reglages = Object.fromEntries(new URLSearchParams(location.search));
 reglerQuaternion(reglages.rot || 'wxyz');
-jauge.style.width = '25%';
-const donnees = await chargerSplat(window.PIECE_URL || 'assets/splats/piece.ums', THREE);
-jauge.style.width = '75%';
+jauge.style.width = '18%';
+etat.textContent = 'Chargement de la scène…';
+let donnees;
+try {
+  donnees = await chargerSplat(window.PIECE_URL || 'assets/splats/piece.ums', THREE);
+} catch (e) {
+  echouer('Le fichier de la scène n’a pas pu être lu : ' + e.message);
+}
+jauge.style.width = '62%';
 etat.textContent = `${(donnees.n / 1000).toFixed(0)} 000 points — mise en place`;
-await new Promise((r) => setTimeout(r, 30));
-scene.add(nuage(donnees, THREE));
+await new Promise((r) => setTimeout(r, 40));
+try {
+  scene.add(nuage(donnees, THREE));
+} catch (e) {
+  echouer('La carte graphique n’a pas pu recevoir la scène : ' + e.message);
+}
+/* Les covariances et les couleurs vivent désormais dans des textures ; les
+   garder en double coûte une vingtaine de mégaoctets pour rien, et c'est
+   souvent ce qui fait renoncer un téléphone. Les positions restent : le tri
+   les relit à chaque déplacement. */
+donnees.cov = null; donnees.col = null;
 jauge.style.width = '100%';
 
 /* ---- pilotage ------------------------------------------------------------
