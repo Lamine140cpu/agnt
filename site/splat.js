@@ -31,8 +31,21 @@ const MAGIC = 0x50534d55; // « UMSP » en petit-boutiste
 let ordreQuat = 'wxyz';
 export function reglerQuaternion(ordre) { ordreQuat = ordre; }
 
-export async function chargerSplat(url, THREE) {
-  const buf = await (await fetch(url)).arrayBuffer();
+/** Décode une chaîne base64 sans passer par le réseau.
+
+    fetch() sur une URL data: est une requête comme une autre pour une politique
+    de sécurité stricte, qui la refuse au titre de connect-src : la scène était
+    pourtant dans la page. atob n'est soumis à rien. */
+function depuisBase64(b64) {
+  const bin = atob(b64), n = bin.length, u8 = new Uint8Array(n);
+  for (let i = 0; i < n; i++) u8[i] = bin.charCodeAt(i);
+  return u8.buffer;
+}
+
+export async function chargerSplat(source, THREE) {
+  const buf = source.startsWith('base64,')
+    ? depuisBase64(source.slice(7))
+    : await (await fetch(source)).arrayBuffer();
   const vue = new DataView(buf);
   if (vue.getUint32(0, true) !== MAGIC) throw new Error(`${url} : ce n'est pas un .ums`);
 

@@ -42,7 +42,9 @@ def main():
     page = page.replace(
         "import { chargerSplat, nuage, reglerQuaternion } from './splat.js';", splat)
 
-    scene = "data:application/octet-stream;base64," + b64("assets/splats/piece.ums")
+    # Pas d'URL data: — une politique de sécurité stricte refuse fetch() dessus.
+    # La chaîne est décodée sur place par le chargeur.
+    scene = "base64," + b64("assets/splats/piece.ums")
     page = page.replace("window.PIECE_URL || 'assets/splats/piece.ums'", "SCENE_B64")
     page = page.replace("const canvas = document.getElementById('c');",
                         "const SCENE_B64 = '" + scene + "';\nconst canvas = document.getElementById('c');", 1)
