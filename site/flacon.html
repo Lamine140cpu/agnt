@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Sillage — Ambre &amp; Cuir</title>
+<style>
+:root{ --ground:#0B0B0D; --ink:#F2F0EC; --ink-soft:#8E8A84; --accent:#C8A24A; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);color:var(--ink);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#c:active{cursor:grabbing}
+
+.marque{
+  position:fixed;top:0;left:0;right:0;z-index:3;pointer-events:none;
+  padding:calc(20px + env(safe-area-inset-top)) clamp(16px,5vw,40px) 0;
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-soft);
+}
+.marque b{font-weight:500;letter-spacing:.34em;color:var(--ink)}
+
+.legende{
+  position:fixed;left:0;right:0;bottom:0;z-index:3;pointer-events:none;
+  padding:0 clamp(16px,5vw,40px) calc(26px + env(safe-area-inset-bottom));
+  text-align:center;
+}
+.legende h1{
+  margin:0;font-weight:300;letter-spacing:.18em;text-transform:uppercase;
+  font-size:clamp(20px,4.4vw,30px);
+}
+.legende p{
+  margin:10px auto 0;max-width:46ch;color:var(--ink-soft);font-size:13.5px;
+  letter-spacing:.02em;
+}
+.legende small{
+  display:block;margin-top:18px;font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--accent);opacity:.85;
+}
+
+.charge{position:fixed;inset:0;z-index:4;display:grid;place-content:center;
+  background:var(--ground);transition:opacity .6s ease}
+.charge.parti{opacity:0;pointer-events:none}
+.charge span{width:34px;height:1px;background:var(--accent);animation:respire 1.4s ease-in-out infinite}
+@keyframes respire{0%,100%{opacity:.2;transform:scaleX(.4)}50%{opacity:1;transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition-duration:.001ms !important}}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="marque"><b>Sillage</b><span>Eau de parfum · 50 ml</span></div>
+
+<div class="legende">
+  <h1>Ambre &amp; Cuir</h1>
+  <p>Verre massif, épaulement taillé, bouchon laiton. Tournez-le : c'est la
+     lumière qui traverse la matière, pas une photographie qui défile.</p>
+  <small>Glissez pour faire tourner</small>
+</div>
+
+<div class="charge" id="charge"><span></span></div>
+
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+
+/* ============================================================================
+   Un flacon de parfum, en temps réel.
+
+   Le verre est le cas où le temps réel bat la photographie : il ne se décrit
+   pas par une couleur mais par ce qu'il fait de la lumière — réfraction,
+   épaisseur, absorption dans la masse. Une image fixe n'en montre qu'un état ;
+   ici, chaque degré de rotation en montre un autre.
+
+   Comme la canette, l'objet n'est pas téléchargé : c'est un profil de
+   révolution, une vingtaine de nombres. Décrire un autre flacon revient à
+   changer ces nombres.
+   ============================================================================ */
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.9;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.01, 20);
+
+/* ---- le studio, dessiné plutôt que photographié --------------------------
+   Les reflets d'un objet en verre ne viennent pas des lampes de la scène : ils
+   viennent de la carte d'environnement. Un photographe de packshot ne place
+   d'ailleurs pas des ampoules, il place des boîtes à lumière — de grands
+   rectangles blancs que l'objet reflète. On les dessine donc directement dans
+   une image équirectangulaire, ce qui donne un contrôle qu'aucune HDRI toute
+   faite ne donnerait. */
+function studio(){
+  const W = 1024, H = 512;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+
+  const fond = x.createLinearGradient(0, 0, 0, H);
+  fond.addColorStop(0, '#2e2e36');
+  fond.addColorStop(0.5, '#17171c');
+  fond.addColorStop(1, '#0b0b0e');
+  x.fillStyle = fond; x.fillRect(0, 0, W, H);
+
+  /* Deux bandes verticales franches, à gauche et à droite. C'est le montage
+     classique du packshot de flacon : ce sont elles qui dessinent les deux
+     lignes de lumière sur les arêtes du verre, et une tache molle n'en donne
+     rien. Les bords sont nets — un reflet flou ne se lit pas comme du verre. */
+  const bande = (cx, largeur, haut, bas, force) => {
+    const g = x.createLinearGradient(cx - largeur / 2, 0, cx + largeur / 2, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.22, `rgba(255,255,255,${force})`);
+    g.addColorStop(0.78, `rgba(255,255,255,${force})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g;
+    x.fillRect(cx - largeur / 2, H * haut, largeur, H * (bas - haut));
+  };
+  bande(W * 0.17, W * 0.085, 0.06, 0.74, 1.0);    // la clé, à gauche
+  bande(W * 0.83, W * 0.045, 0.10, 0.70, 0.75);   // la contre, à droite
+  bande(W * 0.50, W * 0.30, 0.00, 0.13, 0.45);    // le plafond
+
+  // une bande chaude au ras du sol : c'est elle qui allume la tranche du verre
+  const sol = x.createLinearGradient(0, H * 0.82, 0, H);
+  sol.addColorStop(0, 'rgba(200,162,74,0)');
+  sol.addColorStop(1, 'rgba(200,162,74,0.5)');
+  x.fillStyle = sol; x.fillRect(0, H * 0.82, W, H * 0.18);
+
+  // en flottant, avec de vraies hautes lumières : une boîte à lumière dépasse
+  // largement le blanc de l'écran, et c'est ce dépassement qui fait l'éclat
+  const px = x.getImageData(0, 0, W, H).data;
+  const data = new Float32Array(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    for (let k = 0; k < 3; k++) {
+      const v = px[i * 4 + k] / 255;
+      data[i * 4 + k] = Math.pow(v, 2.2) * (1 + v * v * 44);
+    }
+    data[i * 4 + 3] = 1;
+  }
+  const t = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.FloatType);
+  t.mapping = THREE.EquirectangularReflectionMapping;
+  t.needsUpdate = true;
+  return t;
+}
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const env = pmrem.fromEquirectangular(studio()).texture;
+scene.environment = env;
+
+/* ---- le flacon -----------------------------------------------------------
+   Un profil, du centre du fond au centre du col, en mètres. Un flacon de 50 ml
+   fait une dizaine de centimètres : les cotes réelles comptent, parce que
+   l'épaisseur du verre se lit à l'échelle de l'objet. */
+const PROFIL = [
+  [0.0000, 0.0000], [0.0250, 0.0000], [0.0288, 0.0022], [0.0300, 0.0060],
+  [0.0300, 0.0520], [0.0296, 0.0575], [0.0268, 0.0630], [0.0210, 0.0682],
+  [0.0150, 0.0716], [0.0112, 0.0740], [0.0104, 0.0768], [0.0104, 0.0836],
+  [0.0128, 0.0848], [0.0128, 0.0880], [0.0106, 0.0892], [0.0000, 0.0894],
+];
+const HAUT = 0.0894;
+
+const tour = (points, seg = 128) => {
+  const g = new THREE.LatheGeometry(points.map(([r, y]) => new THREE.Vector2(r, y - HAUT / 2)), seg);
+  g.computeVertexNormals();
+  return g;
+};
+
+/** Le logotype gravé. Le verre n'est pas peint : il est dépoli par endroits.
+    Une gravure se décrit donc par la rugosité, pas par la couleur. */
+function gravure(){
+  const W = 1024, H = 512;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, W, H);       // noir = poli
+  x.fillStyle = '#fff';                                // blanc = dépoli
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '300 74px ui-sans-serif, system-ui, sans-serif';
+  x.letterSpacing = '26px';
+  x.fillText('SILLAGE', W * 0.25 + 13, H * 0.46);
+  x.font = '300 30px ui-sans-serif, system-ui, sans-serif';
+  x.letterSpacing = '14px';
+  x.fillText('AMBRE & CUIR', W * 0.25 + 7, H * 0.60);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+const verre = new THREE.MeshPhysicalMaterial({
+  color: 0xFFFFFF,
+  metalness: 0,
+  /* La rugosité est multipliée par sa carte : la laisser à 0,02 rendait la
+     gravure invisible, puisque tout finissait poli quoi qu'elle dise. C'est
+     donc la carte qui décide — noir pour le verre poli, blanc pour le dépoli. */
+  roughness: 0.85,
+  transmission: 1, ior: 1.52,
+  thickness: 0.012,
+  // l'ambre du jus, absorbé dans l'épaisseur : plus le trajet est long dans le
+  // verre, plus la couleur se charge — c'est ce dégradé qui fait le flacon
+  /* L'ambre s'absorbe dans l'épaisseur. À 7 cm de distance d'absorption pour
+     un flacon de 6 cm, il ne passait plus rien : le verre virait au noir. */
+  attenuationColor: new THREE.Color(0xE0A64A),
+  attenuationDistance: 0.35,
+  roughnessMap: gravure(),
+  envMapIntensity: 1.25,
+  clearcoat: 1, clearcoatRoughness: 0.02,
+});
+
+const corps = new THREE.Mesh(tour(PROFIL), verre);
+
+/* Le bouchon : laiton brossé, et un joint sombre à sa base. Un flacon dont le
+   bouchon est du même verre que le corps n'existe pas. */
+const laiton = new THREE.MeshPhysicalMaterial({
+  color: 0xC9A24A, metalness: 1, roughness: 0.22, envMapIntensity: 1.4,
+});
+const bouchon = new THREE.Mesh(tour([
+  [0.0000, 0.0836], [0.0150, 0.0836], [0.0168, 0.0850], [0.0172, 0.0880],
+  [0.0172, 0.1090], [0.0166, 0.1112], [0.0140, 0.1128], [0.0000, 0.1132],
+], 96), laiton);
+const joint = new THREE.Mesh(tour([
+  [0.0000, 0.0820], [0.0132, 0.0820], [0.0134, 0.0838], [0.0000, 0.0838],
+], 64), new THREE.MeshPhysicalMaterial({ color: 0x141414, roughness: 0.5 }));
+
+/* Le jus. Un flacon vide n'est pas un flacon de parfum : c'est une bouteille.
+   Le liquide a son propre indice de réfraction, plus faible que le verre, et
+   sa surface libre — ce disque au ras du niveau — attrape la lumière comme un
+   miroir. C'est le détail qui fait la différence. */
+const jus = new THREE.MeshPhysicalMaterial({
+  color: 0xFFFFFF, metalness: 0, roughness: 0.04,
+  transmission: 1, ior: 1.36, thickness: 0.028,
+  /* Le jus doit se voir. Trop de distance d'absorption et le flacon paraît
+     vide ; trop peu et il vire au noir. */
+  attenuationColor: new THREE.Color(0xC26A12),
+  attenuationDistance: 0.030,
+  envMapIntensity: 1.1,
+});
+const NIVEAU = 0.0585;
+const liquide = new THREE.Mesh(tour([
+  [0.0000, 0.0028], [0.0238, 0.0028], [0.0274, 0.0044], [0.0284, 0.0072],
+  [0.0284, NIVEAU - 0.0016], [0.0281, NIVEAU], [0.0000, NIVEAU],
+], 128), jus);
+
+const flacon = new THREE.Group();
+flacon.add(corps, liquide, bouchon, joint);
+scene.add(flacon);
+
+/* ---- le fond -------------------------------------------------------------
+   Un fond de studio, pas une couleur unie : le dégradé donne au verre quelque
+   chose à traverser, et sans lui la transmission ne se voit pas. */
+const fondGeo = new THREE.PlaneGeometry(3, 2.1);
+const fondCanvas = document.createElement('canvas');
+fondCanvas.width = 16; fondCanvas.height = 256;
+{
+  const x = fondCanvas.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0, '#3b3b45');
+  g.addColorStop(0.55, '#1d1d23');
+  g.addColorStop(1, '#0c0c10');
+  x.fillStyle = g; x.fillRect(0, 0, 16, 256);
+}
+const fondTex = new THREE.CanvasTexture(fondCanvas);
+fondTex.colorSpace = THREE.SRGBColorSpace;
+const fond = new THREE.Mesh(fondGeo, new THREE.MeshBasicMaterial({ map: fondTex }));
+fond.position.z = -0.62;
+scene.add(fond);
+
+/* Pas de plan de pose. En incidence rasante, la réflexion de Fresnel monte à
+   un quel que soit le matériau : même un noir profond renvoyait le studio
+   entier et occupait la moitié du cadre. Le flacon se tient donc sur un simple
+   dégradé, comme sur toute photographie de produit — et son reflet suffit à le
+   poser. */
+
+/* Le reflet au sol : un double retourné sous un voile. Un rendu de réflexion
+   coûterait une seconde passe complète pour un objet en transmission. */
+const reflet = new THREE.Mesh(tour(PROFIL), verre.clone());
+reflet.material.transmission = 0.6;
+reflet.material.opacity = 0.22;
+reflet.material.transparent = true;
+reflet.scale.y = -1;
+reflet.position.y = -HAUT;
+const refletBouchon = new THREE.Mesh(bouchon.geometry, laiton.clone());
+refletBouchon.material.opacity = 0.18;
+refletBouchon.material.transparent = true;
+refletBouchon.scale.y = -1;
+refletBouchon.position.y = -HAUT;
+const doublure = new THREE.Group();
+doublure.add(reflet, refletBouchon);
+scene.add(doublure);
+
+scene.add(new THREE.AmbientLight(0xFFFFFF, 0.25));
+const rasant = new THREE.DirectionalLight(0xFFE9C8, 1.1);
+rasant.position.set(-0.4, 0.5, 0.6);
+scene.add(rasant);
+
+/* ---- pilotage ------------------------------------------------------------ */
+const vise = { tour: 0.5, hauteur: 0.05, rayon: 0.315 };
+const etat = { ...vise };
+let dernierGeste = performance.now();
+
+function placer(){
+  camera.position.set(
+    Math.sin(etat.tour) * Math.cos(etat.hauteur) * etat.rayon,
+    Math.sin(etat.hauteur) * etat.rayon,
+    Math.cos(etat.tour) * Math.cos(etat.hauteur) * etat.rayon,
+  );
+  camera.lookAt(0, -0.008, 0);   // le sujet remonte, la légende a sa place
+}
+
+const doigts = new Map();
+let ecart0 = 0, rayon0 = 0;
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  dernierGeste = performance.now();
+  if (doigts.size === 2) {
+    const [a, b] = [...doigts.values()];
+    ecart0 = Math.hypot(a.x - b.x, a.y - b.y); rayon0 = vise.rayon;
+  }
+});
+canvas.addEventListener('pointermove', (e) => {
+  const p = doigts.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  dernierGeste = performance.now();
+  if (doigts.size === 1) {
+    vise.tour -= dx * 0.006;
+    vise.hauteur = Math.max(-0.35, Math.min(0.75, vise.hauteur + dy * 0.004));
+  } else {
+    const [a, b] = [...doigts.values()];
+    const ecart = Math.hypot(a.x - b.x, a.y - b.y);
+    if (ecart0 > 0) vise.rayon = Math.max(0.14, Math.min(0.45, rayon0 * ecart0 / ecart));
+  }
+}, { passive: true });
+const lacher = (e) => { doigts.delete(e.pointerId); ecart0 = 0; };
+canvas.addEventListener('pointerup', lacher);
+canvas.addEventListener('pointercancel', lacher);
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  dernierGeste = performance.now();
+  vise.rayon = Math.max(0.14, Math.min(0.45, vise.rayon * (1 + Math.sign(e.deltaY) * 0.08)));
+}, { passive: false });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight, false);
+}, { passive: true });
+
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let last = performance.now();
+renderer.setAnimationLoop((now) => {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now;
+
+  /* Il tourne tout seul dès qu'on le laisse : un objet en verre immobile ne
+     dit rien de ce qu'il est. C'est le mouvement qui montre la réfraction. */
+  if (!reduit && now - dernierGeste > 2600) vise.tour += dt * 0.16;
+
+  const k = 1 - Math.exp(-7 * dt);
+  etat.tour += (vise.tour - etat.tour) * k;
+  etat.hauteur += (vise.hauteur - etat.hauteur) * k;
+  etat.rayon += (vise.rayon - etat.rayon) * k;
+  placer();
+  renderer.render(scene, camera);
+});
+
+placer(); renderer.render(scene, camera);
+requestAnimationFrame(() => document.getElementById('charge').classList.add('parti'));
+</script>
+</body>
+</html>
