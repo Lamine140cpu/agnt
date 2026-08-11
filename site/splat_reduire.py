@@ -47,6 +47,70 @@ def lire_splat(chemin):
     }
 
 
+def matrices_rotation(quat):
+    """uint8 (w,x,y,z) -> matrices de rotation, en lot."""
+    q = (quat.astype(np.float32) - 128.0) / 128.0
+    q /= np.maximum(np.linalg.norm(q, axis=1, keepdims=True), 1e-8)
+    w, x, y, z = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+    return np.stack([
+        1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y),
+        2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x),
+        2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y),
+    ], axis=1).reshape(-1, 3, 3)
+
+
+def redresser(g):
+    """Aligne la verticale de la scène sur +Y, positions et rotations comprises."""
+    R = matrices_rotation(g["rot"])
+    plat = np.argmin(g["ech"], axis=1)                     # l'axe le plus mince
+    normales = R[np.arange(len(R)), :, plat]
+
+    tri = np.sort(g["ech"], axis=1)
+    aire = tri[:, 1] * tri[:, 2] * (g["col"][:, 3] / 255.0)   # les deux grands axes
+    M = np.einsum("i,ij,ik->jk", aire, normales, normales)
+    axes = np.linalg.eigh(M)[1].T
+
+    # La direction la plus représentée n'est pas toujours la verticale : un mur
+    # de bibliothèque peut totaliser plus de surface que le sol. Entre les trois
+    # axes propres, on retient celui selon lequel la scène est la moins étendue
+    # — une pièce est toujours plus large que haute.
+    etendues = [np.percentile(g["pos"] @ a, 99) - np.percentile(g["pos"] @ a, 1)
+                for a in axes]
+    haut = axes[int(np.argmin(etendues))]
+
+    # Reste le sens : l'axe est trouvé, pas orienté. Le sol est le plan
+    # horizontal le plus dense d'une pièce, et il est sous le reste — si le pic
+    # de densité tombe au-dessus du milieu, l'axe pointe vers le bas.
+    proj = g["pos"] @ haut
+    hist, bords = np.histogram(proj, bins=120)
+    pic = (bords[np.argmax(hist)] + bords[np.argmax(hist) + 1]) / 2
+    if pic > np.median(proj):
+        haut = -haut
+
+    cible = np.array([0.0, 1.0, 0.0])
+    axe = np.cross(haut, cible)
+    sin, cos = np.linalg.norm(axe), float(haut @ cible)
+    if sin < 1e-6:
+        return g, haut
+    axe = axe / sin
+    K = np.array([[0, -axe[2], axe[1]], [axe[2], 0, -axe[0]], [-axe[1], axe[0], 0]])
+    Rot = np.eye(3) + K * sin + K @ K * (1 - cos)
+
+    g["pos"] = g["pos"] @ Rot.T
+    # la rotation se compose : R' = Rot · R, réencodée en quaternion
+    Rn = np.einsum("ij,njk->nik", Rot, R)
+    tr = Rn[:, 0, 0] + Rn[:, 1, 1] + Rn[:, 2, 2]
+    w = np.sqrt(np.maximum(1 + tr, 0)) / 2
+    d = np.maximum(4 * w, 1e-8)
+    q = np.stack([w,
+                  (Rn[:, 2, 1] - Rn[:, 1, 2]) / d,
+                  (Rn[:, 0, 2] - Rn[:, 2, 0]) / d,
+                  (Rn[:, 1, 0] - Rn[:, 0, 1]) / d], axis=1)
+    q /= np.maximum(np.linalg.norm(q, axis=1, keepdims=True), 1e-8)
+    g["rot"] = np.clip(q * 128 + 128, 0, 255).astype(np.uint8)
+    return g, haut
+
+
 def main():
     if len(sys.argv) < 3:
         sys.exit(__doc__.strip().splitlines()[-1])
@@ -79,7 +143,23 @@ def main():
     g = {k: v[indices] for k, v in g.items()}
     n = len(indices)
 
-    # 3. quantification
+    # 3. Redresser la scène.
+    #
+    #    Une reconstruction photogrammétrique sort dans le repère qu'a trouvé le
+    #    calcul de pose, sans rapport avec la verticale : le sol penche, et rien
+    #    ne paraît plus faux qu'une pièce de travers.
+    #
+    #    La verticale se lit dans les gaussiennes elles-mêmes. Celles qui
+    #    reposent sur une surface plane sont des disques, dont le plus petit axe
+    #    est la normale à cette surface. Dans une pièce, le sol et le plafond
+    #    totalisent plus de surface que n'importe quel mur : la direction
+    #    dominante de ces normales est la verticale. On la prend comme vecteur
+    #    propre principal de la matrice des normales — ce qui évite d'avoir à
+    #    leur choisir un sens.
+    g, haut = redresser(g)
+    print(f"  verticale trouvée : {np.round(haut, 3)}")
+
+    # 4. quantification
     bmin = g["pos"].min(axis=0)
     bmax = g["pos"].max(axis=0)
     etendue = np.maximum(bmax - bmin, 1e-6)

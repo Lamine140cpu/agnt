@@ -101,6 +101,10 @@ if (!document.createElement('canvas').getContext('webgl2')) {
 }
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+/* Les couleurs d'un splat sont déjà des couleurs d'écran : la conversion de
+   sortie de three.js en appliquerait une seconde, et tout ce qui est sombre
+   remonterait en gris laiteux. On la neutralise. */
+renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.setSize(innerWidth, innerHeight, false);
 
@@ -141,17 +145,18 @@ jauge.style.width = '100%';
    réglages de départ se surchargent par l'adresse pour la mise au point. */
 const reglage = reglages;
 const nuageMaille = scene.children[scene.children.length - 1];
-if (reglage.flip !== '0') nuageMaille.rotation.z = Math.PI;
+// la scène est déjà redressée par splat_reduire.py ; flip=1 la retourne
+if (reglage.flip === '1') nuageMaille.rotation.z = Math.PI;
 nuageMaille.updateMatrixWorld(true);
 
 const cible = new THREE.Vector3(...donnees.centre);
-if (reglage.flip !== '0') { cible.x = -cible.x; cible.y = -cible.y; }
+if (reglage.flip === '1') { cible.x = -cible.x; cible.y = -cible.y; }
 /* Cadrage d'ouverture : sur le fauteuil, à hauteur d'assise, assez près pour
    que la parallaxe se voie au premier geste. */
 const orbite = {
-  azimut: +(reglage.az ?? 2.40),
-  hauteur: +(reglage.ht ?? 0.15),
-  rayon: +(reglage.r ?? 2.50),
+  azimut: +(reglage.az ?? 1.57),
+  hauteur: +(reglage.ht ?? 0.14),
+  rayon: +(reglage.r ?? 2.40),
 };
 const vise = { ...orbite, cible: cible.clone() };
 window.PILOTE = { vise, orbite, cible };   // réglage du cadrage à la mise au point
@@ -160,7 +165,7 @@ function poser(){
   const { azimut, hauteur, rayon } = orbite;
   camera.position.set(
     cible.x + Math.sin(azimut) * Math.cos(hauteur) * rayon,
-    cible.y - Math.sin(hauteur) * rayon,
+    cible.y + Math.sin(hauteur) * rayon,
     cible.z + Math.cos(azimut) * Math.cos(hauteur) * rayon,
   );
   camera.lookAt(cible);

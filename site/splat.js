@@ -216,7 +216,7 @@ export function nuage(donnees, THREE) {
   const tPos = texture(THREE, pos, n, THREE.RGBAFormat, THREE.FloatType);
   const tCov = texture(THREE, cov, n * 2, THREE.RGBAFormat, THREE.FloatType);
   const tCol = texture(THREE, col, n, THREE.RGBAFormat, THREE.UnsignedByteType);
-  tCol.colorSpace = THREE.SRGBColorSpace;
+  // pas de colorSpace : texelFetch ne convertit rien, et le rendu non plus
 
   const geo = new THREE.InstancedBufferGeometry();
   geo.setAttribute('coin', new THREE.BufferAttribute(
