@@ -164,6 +164,13 @@ def main():
     parquet = base64.b64encode(image_compacte("assets/web/bois-parquet.jpg")).decode()
     page = page.replace("im.src = `assets/web/${fichier}.jpg`;",
                         "im.src = 'data:image/jpeg;base64,' + PARQUET_B64;")
+
+    # L'environnement reste intact : c'est du RGBE, mantisses en haut et
+    # exposants en bas. Le rééchantillonner mélangerait les deux moitiés, et
+    # interpoler un exposant n'a aucun sens.
+    env = base64.b64encode(open("assets/web/env-studio-rgbe.png", "rb").read()).decode()
+    page = page.replace("img.src = 'assets/web/env-studio-rgbe.png';",
+                        "img.src = 'data:image/png;base64,' + ENV_B64;")
     page = page.replace(
         "const charger = (nom) => new Promise((res, rej) =>\n"
         "  chargeur.load(`assets/mobilier/${nom}/${nom}.gltf`, res, undefined, rej));",
@@ -192,6 +199,7 @@ def main():
                         "const chargeur = new GLTFLoader();", 1)
     page = page.replace("const canvas = document.getElementById('c');",
                         "const PARQUET_B64 = '" + parquet + "';\n"
+                        "const ENV_B64 = '" + env + "';\n"
                         "const canvas = document.getElementById('c');", 1)
 
     page = page.replace("import * as THREE from './vendor/three.module.min.js';", trois)

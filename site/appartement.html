@@ -88,7 +88,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight, false);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 0.78;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -149,6 +149,43 @@ function matiere(fichier, repete, relief){
 }
 
 const parquet = await matiere('bois-parquet', [7, 5]);
+
+/* ---- l'environnement -----------------------------------------------------
+   Un matériau physique sans environnement n'a rien à refléter : le cuir devient
+   du carton, le laiton du plastique. C'est le premier poste du réalisme, bien
+   avant le nombre de polygones.
+
+   La HDRI de studio est chaude — moyenne (0,80 / 0,66 / 0,51). Elle jaunirait
+   la pièce du sol au plafond, alors on l'équilibre sur le vert. */
+const pmrem = new THREE.PMREMGenerator(renderer);
+await new Promise((res) => {
+  const img = new Image();
+  img.onload = () => {
+    const W = img.width, H = img.height / 2;
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(img, 0, 0);
+    const px = x.getImageData(0, 0, img.width, img.height).data;
+    const expo = W * H * 4, data = new Float32Array(W * H * 4);
+    const G = [0.657 / 0.801, 1, 0.657 / 0.507];
+    for (let j = 0; j < H; j++) {
+      const src = (H - 1 - j) * W;
+      for (let i = 0; i < W; i++) {
+        const k = src + i, o = (j * W + i) * 4;
+        const e = px[expo + k * 4], f = e ? Math.pow(2, e - 128) / 256 : 0;
+        for (let ch = 0; ch < 3; ch++) data[o + ch] = px[k * 4 + ch] * f * G[ch];
+        data[o + 3] = 1;
+      }
+    }
+    const t = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.FloatType);
+    t.mapping = THREE.EquirectangularReflectionMapping; t.needsUpdate = true;
+    scene.environment = pmrem.fromEquirectangular(t).texture;
+    scene.environmentIntensity = 0.42;
+    t.dispose(); res();
+  };
+  img.onerror = () => res();
+  img.src = 'assets/web/env-studio-rgbe.png';
+});
 
 const platre = new THREE.MeshStandardMaterial({
   color: 0xF0EEEA, roughness: 0.96,
@@ -221,25 +258,45 @@ fenetre(1.55, -P / 2, 0);
 
 /* Dehors : un plan hors correction tonale, donc franchement brûlé. Une fenêtre
    correctement exposée sur l'intérieur est toujours blanche. */
+/* Dehors : hors correction tonale, donc franchement brûlé — une fenêtre
+   correctement exposée sur l'intérieur est toujours blanche. Mais un ton plus
+   bas que le blanc pur, sans quoi le halo dévore le dormant. */
 const dehors = new THREE.Mesh(new THREE.PlaneGeometry(30, 18),
-  new THREE.MeshBasicMaterial({ color: 0xFFFFFF, toneMapped: false }));
+  new THREE.MeshBasicMaterial({ color: 0xF2F4F6, toneMapped: false }));
 dehors.position.set(0, 5, -9); scene.add(dehors);
 
 /* ---- lumière -------------------------------------------------------------
    Un soleil rasant qui entre par les baies et pose deux rectangles sur le
    parquet, une lumière d'hémisphère pour que le plafond ne soit pas noir, et
    l'ampoule de la suspension. Rien d'autre. */
-const soleil = new THREE.DirectionalLight(0xFFF6EA, 3.4);
-soleil.position.set(-2.4, 4.2, -9);
+/* Un seul soleil donne une ombre au couteau et un intérieur mort. Dehors il y
+   a le disque du soleil et, tout autour, un ciel entier : la lumière d'une
+   pièce vient surtout du second. On l'approche par trois sources décalées
+   devant les baies — l'ombre se dédouble et s'adoucit d'elle-même. */
+const soleil = new THREE.DirectionalLight(0xFFF4E4, 1.55);
+soleil.position.set(-2.4, 3.8, -9);
 soleil.castShadow = true;
 soleil.shadow.mapSize.set(2048, 2048);
 soleil.shadow.camera.left = -5; soleil.shadow.camera.right = 5;
 soleil.shadow.camera.top = 5; soleil.shadow.camera.bottom = -5;
 soleil.shadow.camera.near = 1; soleil.shadow.camera.far = 22;
-soleil.shadow.bias = -0.0005; soleil.shadow.normalBias = 0.02; soleil.shadow.radius = 3;
+soleil.shadow.bias = -0.0004; soleil.shadow.normalBias = 0.025; soleil.shadow.radius = 5;
 scene.add(soleil);
-scene.add(new THREE.HemisphereLight(0xEEF3FF, 0xE6D8C4, 0.75));
-scene.add(new THREE.AmbientLight(0xFFFFFF, 0.18));
+
+for (const [x, y, z, force] of [[-3.2, 2.2, -7, 0.32], [3.0, 2.6, -7, 0.32]]) {
+  const ciel = new THREE.DirectionalLight(0xE8F0FF, force);
+  ciel.position.set(x, y, z);
+  ciel.castShadow = true;
+  ciel.shadow.mapSize.set(1024, 1024);
+  ciel.shadow.camera.left = -5; ciel.shadow.camera.right = 5;
+  ciel.shadow.camera.top = 5; ciel.shadow.camera.bottom = -5;
+  ciel.shadow.camera.near = 1; ciel.shadow.camera.far = 20;
+  ciel.shadow.bias = -0.0005; ciel.shadow.normalBias = 0.03; ciel.shadow.radius = 6;
+  scene.add(ciel);
+}
+
+// le rebond du sol, qui remonte au plafond : sans lui le haut de la pièce est mort
+scene.add(new THREE.HemisphereLight(0xEDF2FF, 0xE0CDB2, 0.22));
 
 /* ---- le mobilier ---------------------------------------------------------
    Position, rotation, et parfois une hauteur — un vase se pose sur une table,
@@ -283,7 +340,7 @@ for (const m of MEUBLES) {
 }
 
 // l'ampoule de la suspension, allumée
-const feu = new THREE.PointLight(0xFFE0B4, 6, 6, 2);
+const feu = new THREE.PointLight(0xFFE0B4, 3.2, 5, 2);
 feu.position.set(-1.10, H - 0.62, 0.10);
 scene.add(feu);
 
