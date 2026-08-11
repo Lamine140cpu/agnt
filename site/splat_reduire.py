@@ -17,7 +17,10 @@ l'écran par son opacité et par sa surface, pas par son existence.
 la boîte englobante, les échelles dans un octet en échelle logarithmique.
 Trente-deux octets par gaussienne tombent à dix-sept, sans différence visible.
 
-    usage : python3 splat_reduire.py source.splat nom [nombre] [rayon]
+    usage : python3 splat_reduire.py source nom [nombre] [rayon]
+
+    La source est un fichier .splat, ou un dossier au format SOG
+    (meta.json et ses images WebP).
 """
 import os
 import struct
@@ -28,6 +31,7 @@ import numpy as np
 SITE = os.path.dirname(os.path.abspath(__file__))
 SORTIE = os.path.join(SITE, "assets", "splats")
 
+VOISINS = 6          # rang du voisin dont la distance sert de mesure de densité
 MAGIC = b"UMSP"
 VERSION = 1
 
@@ -44,6 +48,67 @@ def lire_splat(chemin):
         "ech": np.frombuffer(d[:, 12:24].tobytes(), dtype=np.float32).reshape(n, 3),
         "col": d[:, 24:28].copy(),
         "rot": d[:, 28:32].copy(),
+    }
+
+
+def lire_sog(dossier):
+    """Lit une scène au format SOG — celui de SuperSplat et de PlayCanvas.
+
+    Cinq images WebP et un meta.json, au lieu d'un tableau de flottants : les
+    positions y sont sur seize bits dans un espace logarithmique, les rotations
+    en « trois plus petites composantes », les échelles et les couleurs par
+    index dans un dictionnaire de 256 entrées. Vingt fois plus compact qu'un
+    .ply, d'où son intérêt — et d'où ce décodeur.
+
+    Les harmoniques sphériques d'ordre supérieur (shN) sont ignorées : elles ne
+    décrivent que la variation de couleur selon l'angle de vue, dont le rendu
+    ici ne tient pas compte.
+    """
+    import json
+    from PIL import Image
+
+    meta = json.load(open(os.path.join(dossier, "meta.json")))
+    n = meta["count"]
+
+    def plan(nom):
+        im = np.asarray(Image.open(os.path.join(dossier, nom)).convert("RGBA"))
+        return im.reshape(-1, 4)[:n]
+
+    ml, mu = plan("means_l.webp"), plan("means_u.webp")
+    q16 = (mu[:, :3].astype(np.uint32) << 8) | ml[:, :3].astype(np.uint32)
+    mins = np.array(meta["means"]["mins"], np.float64)
+    maxs = np.array(meta["means"]["maxs"], np.float64)
+    lin = mins + (q16 / 65535.0) * (maxs - mins)
+    # le logarithme est symétrique : on le défait des deux côtés de zéro
+    pos = (np.sign(lin) * (np.exp(np.abs(lin)) - 1)).astype(np.float32)
+
+    ech = np.exp(np.array(meta["scales"]["codebook"], np.float32)[plan("scales.webp")[:, :3]])
+
+    sh0 = plan("sh0.webp")
+    cb = np.array(meta["sh0"]["codebook"], np.float32)
+    SH_C0 = 0.28209479177387814
+    rgb = np.clip((0.5 + cb[sh0[:, :3]] * SH_C0) * 255.0, 0, 255)
+    col = np.concatenate([rgb, sh0[:, 3:4].astype(np.float32)], axis=1).astype(np.uint8)
+
+    qt = plan("quats.webp")
+    abc = (qt[:, :3].astype(np.float32) / 255.0 - 0.5) * 2.0 / np.sqrt(2.0)
+    reste = np.sqrt(np.maximum(0.0, 1.0 - (abc ** 2).sum(1)))
+    mode = np.clip(qt[:, 3].astype(np.int32) - 252, 0, 3)
+    quat = np.zeros((n, 4), np.float32)
+    # les trois composantes conservées gardent l'ordre (w,x,y,z), celle qui
+    # manque — la plus grande — reprend sa place, indiquée par le mode
+    for m in range(4):
+        ligne = mode == m
+        gardees = [k for k in range(4) if k != m]
+        for j, k in enumerate(gardees):
+            quat[ligne, k] = abc[ligne, j]
+        quat[ligne, m] = reste[ligne]
+
+    return {
+        "pos": pos,
+        "ech": ech.astype(np.float32),
+        "col": col,
+        "rot": np.clip(quat * 128 + 128, 0, 255).astype(np.uint8),
     }
 
 
@@ -118,7 +183,7 @@ def main():
     garder = int(sys.argv[3]) if len(sys.argv) > 3 else 400_000
     rayon = float(sys.argv[4]) if len(sys.argv) > 4 else 7.0
 
-    g = lire_splat(source)
+    g = lire_sog(source) if os.path.isdir(source) else lire_splat(source)
     n0 = len(g["pos"])
 
     # 1. l'arrière-plan lointain, reconstruit à travers les ouvertures
@@ -143,7 +208,26 @@ def main():
     g = {k: v[indices] for k, v in g.items()}
     n = len(indices)
 
-    # 3. Redresser la scène.
+    # 3. Les flotteurs.
+    #
+    #    Une reconstruction laisse toujours des gaussiennes suspendues dans le
+    #    vide, souvent claires et bien visibles : ce sont des reflets ou des
+    #    passants que le calcul n'a pas su placer. Elles se reconnaissent à ce
+    #    qu'elles n'ont pas de voisines — la matière réelle, elle, est dense.
+    from scipy.spatial import cKDTree
+    arbre = cKDTree(g["pos"])
+    voisin, _ = arbre.query(g["pos"], k=[VOISINS], workers=-1)
+    voisin = voisin[:, 0]
+    # Le seuil se prend sur la médiane, pas sur un centile haut : les flotteurs
+    # forment des amas — ils se tiennent compagnie — et un centile calculé sur
+    # l'ensemble les compterait comme normaux.
+    seuil = np.median(voisin) * 6.0
+    dense = voisin < seuil
+    print(f"  flotteurs écartés : {int((~dense).sum()):,}")
+    g = {k: v[dense] for k, v in g.items()}
+    n = int(dense.sum())
+
+    # 4. Redresser la scène.
     #
     #    Une reconstruction photogrammétrique sort dans le repère qu'a trouvé le
     #    calcul de pose, sans rapport avec la verticale : le sol penche, et rien
@@ -159,7 +243,21 @@ def main():
     g, haut = redresser(g)
     print(f"  verticale trouvée : {np.round(haut, 3)}")
 
-    # 4. quantification
+    # Restent les amas de flotteurs, que la densité ne distingue pas : ils se
+    # tiennent groupés. Mais ils ont trois traits communs — clairs, larges, et
+    # suspendus dans le tiers haut de la scène, là où il n'y a rien à décrire
+    # qu'un plafond. Les trois réunis ne se rencontrent pas dans la matière.
+    y = g["pos"][:, 1]
+    clair = g["col"][:, :3].mean(axis=1) > 190
+    large = np.cbrt(np.prod(np.maximum(g["ech"], 1e-8), axis=1)) > np.percentile(
+        np.cbrt(np.prod(np.maximum(g["ech"], 1e-8), axis=1)), 88)
+    en_l_air = y > np.percentile(y, 72)
+    fantome = clair & large & en_l_air
+    print(f"  amas clairs écartés : {int(fantome.sum()):,}")
+    g = {k: v[~fantome] for k, v in g.items()}
+    n = int((~fantome).sum())
+
+    # 5. quantification
     bmin = g["pos"].min(axis=0)
     bmax = g["pos"].max(axis=0)
     etendue = np.maximum(bmax - bmin, 1e-6)
@@ -185,8 +283,10 @@ def main():
         f.write(bloc.tobytes())
 
     poids = os.path.getsize(chemin)
+    lourd = (sum(os.path.getsize(os.path.join(source, f)) for f in os.listdir(source))
+             if os.path.isdir(source) else os.path.getsize(source))
     print(f"{nom}.ums : {n:,} gaussiennes sur {n0:,} — {poids/1048576:.1f} Mo "
-          f"(source {os.path.getsize(source)/1048576:.1f} Mo)")
+          f"(source {lourd/1048576:.1f} Mo)")
     print(f"  boîte {np.round(bmin,2)} → {np.round(bmax,2)}")
     print(f"  centre de la scène {np.round((bmin+bmax)/2, 2)}")
 

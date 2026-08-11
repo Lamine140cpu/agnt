@@ -55,7 +55,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);color:va
 </div>
 
 <div class="panneau">
-  <b>Une pièce réelle, pas une photo</b>
+  <b>Un lieu réel, pas une photo</b>
   <p>Ce n'est pas une image qui défile : c'est un volume, mesuré sur des
      photographies d'un lieu qui existe. Déplacez-vous dedans.</p>
 </div>
@@ -154,9 +154,9 @@ if (reglage.flip === '1') { cible.x = -cible.x; cible.y = -cible.y; }
 /* Cadrage d'ouverture : sur le fauteuil, à hauteur d'assise, assez près pour
    que la parallaxe se voie au premier geste. */
 const orbite = {
-  azimut: +(reglage.az ?? 1.57),
-  hauteur: +(reglage.ht ?? 0.14),
-  rayon: +(reglage.r ?? 2.40),
+  azimut: +(reglage.az ?? 4.71),
+  hauteur: +(reglage.ht ?? 0.22),
+  rayon: +(reglage.r ?? 3.10),
 };
 const vise = { ...orbite, cible: cible.clone() };
 window.PILOTE = { vise, orbite, cible };   // réglage du cadrage à la mise au point
