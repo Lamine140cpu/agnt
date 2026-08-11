@@ -105,7 +105,9 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
    sortie de three.js en appliquerait une seconde, et tout ce qui est sombre
    remonterait en gris laiteux. On la neutralise. */
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+/* Plafonner à 1,5 revenait à diviser par deux la finesse d'un écran de
+   téléphone, qui compte souvent trois pixels physiques pour un pixel CSS. */
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight, false);
 
 const scene = new THREE.Scene();
