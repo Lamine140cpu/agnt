@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Essai — splats</title>
+<style>html,body{margin:0;height:100%;background:#111}canvas{display:block;width:100%;height:100%}
+#etat{position:fixed;top:8px;left:10px;color:#fff;font:12px monospace;z-index:9}</style>
+</head><body>
+<canvas id="c"></canvas><div id="etat">chargement…</div>
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+import { chargerSplat, nuage } from './splat.js';
+
+const etat = document.getElementById('etat');
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: false });
+renderer.setPixelRatio(1); renderer.setSize(innerWidth, innerHeight, false);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
+
+const t0 = performance.now();
+const d = await chargerSplat('assets/splats/piece.ums', THREE);
+const m = nuage(d, THREE);
+scene.add(m);
+etat.textContent = `${d.n} gaussiennes, ${Math.round(performance.now()-t0)} ms — centre ${d.centre.map(v=>v.toFixed(1))}`;
+window.SCENE = { d, m, camera, scene, renderer, THREE };
+
+// caméra pilotée depuis la console de test
+window.vue = (px,py,pz, lx,ly,lz) => {
+  camera.position.set(px,py,pz); camera.lookAt(lx,ly,lz);
+  camera.updateMatrixWorld(true); renderer.render(scene, camera);
+};
+const c = d.centre;
+vue(c[0], c[1], c[2] + 4, c[0], c[1], c[2]);
+renderer.setAnimationLoop(() => renderer.render(scene, camera));
+</script></body></html>
