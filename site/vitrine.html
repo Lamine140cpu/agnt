@@ -135,6 +135,20 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
   display:block; margin-top:6px; max-width:30ch; margin-inline:auto;
   font-size:13px; color:var(--ink-soft); line-height:1.5;
 }
+/* Les plans photographiques. Empilés dans l'ordre de lecture : chacun se
+   révèle par-dessus le précédent, ce qui évite le creux qu'on obtiendrait en
+   croisant deux opacités à 50 %. */
+#photos{
+  position:fixed; inset:0; z-index:1; overflow:hidden; pointer-events:none;
+  opacity:0; transition:opacity .3s ease; background:var(--ground);
+}
+#photos.on{opacity:1}
+#photos img{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; opacity:0; will-change:transform,opacity;
+  transform-origin:50% 45%;
+}
+#webgl{transition:opacity .3s ease}
 :focus-visible{outline:2px solid var(--accent); outline-offset:3px}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:.001ms !important}
@@ -145,6 +159,7 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
 <body>
 
 <div id="wash"></div>
+<div id="photos" aria-hidden="true"></div>
 <canvas id="webgl"></canvas>
 <div id="grain"></div>
 
@@ -177,8 +192,8 @@ const DEMOS = [
     accent: '#3B5BFF',
     eyebrow: 'Location · visite',
     title: 'On traverse<br>l’appartement.',
-    lede: 'Le visiteur descend la page, la caméra passe d’une pièce à l’autre. Pas de galerie photo, pas de plan à déchiffrer.',
-    screens: 3,
+    lede: 'Le visiteur descend la page, les pièces s’enchaînent. Pas de galerie à cliquer, pas de plan à déchiffrer.',
+    screens: 6,
   },
   {
     id: 'canette',
@@ -195,19 +210,45 @@ const DEMOS = [
     eyebrow: 'Restauration · carte',
     title: 'On démonte<br>la recette.',
     lede: 'Le burger s’ouvre au fil du scroll. Chaque ingrédient se détache et se nomme, du pain du haut jusqu’au pain du bas.',
-    screens: 4,
+    screens: 5,
   },
 ];
 
-const INGREDIENTS = [
-  { nom: 'Pain brioché',   detail: 'Toasté au beurre, graines de sésame.' },
-  { nom: 'Sauce maison',   detail: 'Moutarde à l’ancienne, cornichon, aneth.' },
-  { nom: 'Cheddar affiné', detail: 'Douze mois, fondu à la cloche.' },
-  { nom: 'Steak 150 g',    detail: 'Race à viande, haché du jour, saisi à la plancha.' },
-  { nom: 'Tomate & salade',detail: 'Cœur de bœuf, sucrine croquante.' },
-  { nom: 'Pain du bas',    detail: 'Grillé côté mie pour ne pas s’imbiber.' },
-];
+/* ---------------------------------------------------------------- les plans
+   Un appartement et un burger sont faits de mille irrégularités qu'aucune
+   géométrie procédurale ne donne : au-delà d'un certain point, la 3D y
+   ressemble toujours à un dessin. Ces deux démonstrations passent donc en
+   photographie, et le scroll enchaîne les plans.
 
+   La canette, elle, reste en 3D : c'est un profil de révolution avec un film
+   imprimé collé dessus, la 3D la reproduit exactement — et elle seule permet
+   d'en faire le tour et de venir lire le texte imprimé.
+
+   Tant qu'un fichier manque dans assets/photos/, la démonstration concernée
+   retombe sur sa scène 3D. La page ne casse jamais faute d'image. */
+const PLANS = {
+  appart: [
+    { f: '1', nom: 'Séjour',      detail: '32 m², double exposition, parquet point de Hongrie.' },
+    { f: '2', nom: 'Séjour',      detail: 'Plein sud l’après-midi, fenêtres à petits bois.' },
+    { f: '3', nom: 'Cuisine',     detail: 'Ouverte, îlot central, plan en marbre.' },
+    { f: '4', nom: 'Cuisine',     detail: 'Évier sous plan, robinetterie noire.' },
+    { f: '5', nom: 'Dégagement',  detail: 'Le couloir dessert la chambre et la salle de bain.' },
+    { f: '6', nom: 'Chambre',     detail: '14 m², lit deux places, dressing intégré.' },
+    { f: '7', nom: 'Chambre',     detail: 'Linge en lin, exposition est.' },
+    { f: '8', nom: 'Salle de bain', detail: 'Vasque en noyer, zellige, sol en carreaux de ciment.' },
+  ],
+  burger: [
+    { f: '9',  nom: 'Le burger',      detail: 'Pain brioché, cheddar affiné, steak 150 g.' },
+    { f: '10', nom: 'Sauce maison',   detail: 'Moutarde à l’ancienne, cornichon, aneth.' },
+    { f: '11', nom: 'Cheddar affiné', detail: 'Douze mois, fondu à la cloche.' },
+    { f: '12', nom: 'Steak 150 g',    detail: 'Race à viande, haché du jour, saisi à la plancha.' },
+    { f: '13', nom: 'Tomate & salade',detail: 'Cœur de bœuf, sucrine croquante.' },
+    { f: '14', nom: 'Pain du bas',    detail: 'Grillé côté mie pour ne pas s’imbiber.' },
+    { f: '15', nom: 'La recette',     detail: 'Sept éléments, rien de plus.' },
+  ],
+};
+
+const INGREDIENTS = PLANS.burger;
 const PIECES = [
   { nom: 'Séjour',  detail: '32 m², double exposition, parquet point de Hongrie.' },
   { nom: 'Cuisine', detail: 'Ouverte, îlot central, tout équipée.' },
@@ -216,6 +257,30 @@ const PIECES = [
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canvas = document.getElementById('webgl');
+const scenePhotos = document.getElementById('photos');
+
+/** Charge les plans d'une démonstration, tout ou rien : une série amputée
+    d'un plan sauterait une pièce au milieu de la visite. Le premier fichier
+    sert de sonde — inutile de réclamer quinze images pour découvrir qu'aucune
+    n'est encore là. */
+const photos = {};
+async function chargerPlans(){
+  const lire = (f) => new Promise((res) => {
+    const im = new Image();
+    im.decoding = 'async'; im.alt = '';
+    im.onload = () => res(im); im.onerror = () => res(null);
+    im.src = `assets/photos/${f}.jpg`;
+  });
+  for (const [id, liste] of Object.entries(PLANS)) {
+    const tete = await lire(liste[0].f);
+    if (!tete) continue;
+    const suite = await Promise.all(liste.slice(1).map((p) => lire(p.f)));
+    if (suite.some((im) => !im)) continue;
+    const serie = [tete, ...suite];
+    serie.forEach((im) => scenePhotos.append(im));
+    photos[id] = serie;
+  }
+}
 
 /* ---------------------------------------------------------------- la page */
 function construire(){
@@ -410,14 +475,15 @@ async function boot(){
           cx.drawImage(img, 0, 0, S, S);
           couleur = cc;
         }
-        res({ map: prep(couleur, true), normalMap: prep(nc, false) });
+        res({ map: prep(couleur, true), normalMap: prep(nc, false), img });
       };
       img.onerror = () => res({});
       img.src = `assets/web/${nom}.jpg`;
     });
   }
 
-  const [parquet, platre, tissuTex, marbre, painTex, steakTex, cheddarTex, saladeTex, tomateTex] =
+  const [parquet, platre, tissuTex, marbre, painTex, steakTex, cheddarTex, saladeTex, tomateTex,
+         wrapLitchi, wrapPomme, wrapKiwi] =
     await Promise.all([
       /* Les UV des meubles sont en mètres : une même répétition garde donc la
          même échelle physique d'un objet à l'autre. Le sol, lui, est une boîte
@@ -437,6 +503,11 @@ async function boot(){
       matiere('cheddar',      [1.2, 1.2], 0.5, { gain: 1.10, sat: 0.58 }),
       matiere('salade',       [1.6, 1.6], 0.9, { gain: 1.20, sat: 0.72 }),
       matiere('tomate',       [1.2, 1.2], 0.5, { gain: 1.25, sat: 0.70 }),
+      /* Les trois packagings réellement imprimés. Un cylindre en couleur pleine
+         se lit comme du plastique : c'est l'artwork qui fait la canette. */
+      matiere('wrap-litchi', [1, 1], 0.12),
+      matiere('wrap-pomme',  [1, 1], 0.12),
+      matiere('wrap-kiwi',   [1, 1], 0.12),
     ]);
 
   /* ---- fabrique de scènes -----------------------------------------------
@@ -956,13 +1027,52 @@ async function boot(){
     recoudre(lathe);
     const alu = mat(0xC4CAD4, { metalness: 1, roughness: 0.22, envMapIntensity: 0.9 });
     const sleeveGeo = new THREE.CylinderGeometry(0.2915, 0.2915, 1.02, 96, 1, true);
-    const teintes = [0xA94FE0, 0xF04A6E, 0x1FC98F];
+    /* Le manchon fait 1,83 de tour pour 1,02 de haut, et l'objectif n'en voit
+       lisiblement qu'un tiers. Or l'artwork livré est un panneau frontal en
+       3:2 : plaqué sur les 360°, il ne présente que deux lettres. On le
+       recompose donc sur un développé complet — bloc de logotype recadré,
+       ramené à la proportion d'une étiquette de canette, sur un fond repris de
+       la teinte du bord de l'image pour que la jointure ne se voie pas. */
+    function developpe(img){
+      const L = 2048, H = Math.round(L * 1.02 / 1.83);
+      const c = document.createElement('canvas'); c.width = L; c.height = H;
+      const x = c.getContext('2d');
 
-    teintes.forEach((t, i) => {
+      /* Le recadrage garde une marge tout autour du logotype : ce sont ses
+         bords qu'on étirera ensuite, et il faut qu'ils soient du fond nu. Rogné
+         au ras des lettres, l'étirement les tirerait en traînées. */
+      const cw = img.width * 0.88, ch = img.height * 0.98;
+      const cx = (img.width - cw) / 2, cy = (img.height - ch) / 2;
+      const pw = L * 0.53, ph = pw * ch / cw;
+      const px = (L - pw) / 2, py = (H - ph) / 2;
+
+      /* Le reste du tour est obtenu en étirant les bords du panneau, et non
+         par un aplat : l'artwork porte un dégradé vertical, et un aplat
+         dessinerait un rectangle net autour du logotype — un autocollant. */
+      x.drawImage(img, cx, cy, cw, 2, 0, 0, L, py + 1);                    // haut
+      x.drawImage(img, cx, cy + ch - 2, cw, 2, 0, py + ph - 1, L, H - py - ph + 1); // bas
+      x.drawImage(img, cx, cy, 2, ch, 0, py, px + 1, ph);                  // gauche
+      x.drawImage(img, cx + cw - 2, cy, 2, ch, px + pw - 1, py, L - px - pw + 1, ph);
+      x.drawImage(img, cx, cy, cw, ch, px, py, pw, ph);                    // le panneau
+
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.anisotropy = maxAniso; t.needsUpdate = true;
+      return t;
+    }
+    const habillages = [wrapLitchi, wrapPomme, wrapKiwi].map((w) => developpe(w.img));
+
+    habillages.forEach((habit, i) => {
       const g = new THREE.Group();
       const corps = new THREE.Mesh(lathe, alu); corps.castShadow = true;
+      /* Diélectrique, pas métal : c'est de l'encre imprimée sur de l'aluminium.
+         Traité en métal, tout le corps renverrait l'environnement par-dessus
+         les dégradés déjà peints dans l'artwork. */
       const manchon = new THREE.Mesh(sleeveGeo,
-        mat(t, { roughness: 0.4, metalness: 0.12, envMapIntensity: 0.4, clearcoat: 0.25 }));
+        mat(0xFFFFFF, { map: habit,
+                        roughness: 0.42, metalness: 0.12, envMapIntensity: 0.4,
+                        clearcoat: 0.28, clearcoatRoughness: 0.25 }));
       manchon.position.y = 0.615 - H / 2;
       // languette : anneau aplati et son rivet, sans quoi le couvercle est nu
       const anneau = new THREE.Mesh(new THREE.TorusGeometry(0.082, 0.011, 8, 28), alu);
@@ -1180,6 +1290,7 @@ async function boot(){
     pos: TRAJETS.appart[0].pos.slice(),
     look: TRAJETS.appart[0].look.slice(),
     fov: TRAJETS.appart[0].fov,
+    plan: 0,          // position continue dans la série de plans photographiques
     ouverture: 0,     // écartement des couches du burger
     tour: 0,          // rotation des canettes
   };
@@ -1220,16 +1331,24 @@ async function boot(){
     cible.pos = mel(traj[i].pos, traj[i + 1].pos, f);
     cible.look = mel(traj[i].look, traj[i + 1].look, f);
     cible.fov = lerp(traj[i].fov, traj[i + 1].fov, f);
+    cible.plan = photos[choisie.id] ? local * (photos[choisie.id].length - 1) : 0;
     cible.ouverture = choisie.id === 'burger' ? Math.min(1, Math.max(0, (local - 0.12) / 0.62)) : 0;
     cible.tour = choisie.id === 'canette' ? local * Math.PI * 1.2 : 0;
 
     /* la légende nomme ce que la caméra regarde : pièce ou ingrédient */
     const leg = document.getElementById('legende');
-    let liste = null, part = 0;
-    if (choisie.id === 'appart') { liste = PIECES; part = (local - 0.30) / 0.68; }
-    if (choisie.id === 'burger') { liste = INGREDIENTS; part = (local - 0.30) / 0.66; }
-    if (liste && part > 0 && part < 1.04) {
-      const item = liste[Math.min(liste.length - 1, Math.floor(part * liste.length))];
+    let liste = null, part = 0, item = null;
+    if (photos[choisie.id]) {
+      // en photo, la légende nomme le plan sous les yeux, sans décalage
+      item = PLANS[choisie.id][Math.round(cible.plan)];
+    } else {
+      if (choisie.id === 'appart') { liste = PIECES; part = (local - 0.30) / 0.68; }
+      if (choisie.id === 'burger') { liste = INGREDIENTS; part = (local - 0.30) / 0.66; }
+      if (liste && part > 0 && part < 1.04) {
+        item = liste[Math.min(liste.length - 1, Math.floor(part * liste.length))];
+      }
+    }
+    if (item) {
       if (leg.dataset.nom !== item.nom) {
         leg.dataset.nom = item.nom;
         leg.querySelector('b').textContent = item.nom;
@@ -1365,6 +1484,35 @@ async function boot(){
       : 'Dites-nous en une ligne ce que vous vendez.';
   });
 
+  /* ---- les plans photographiques ----------------------------------------
+     Ils s'empilent dans l'ordre de lecture et chacun se révèle par-dessus le
+     précédent. Croiser deux opacités à 50 % laisserait passer le fond entre
+     les deux : le fondu tomberait dans un creux gris au milieu.
+
+     Chaque plan continue par ailleurs de se resserrer très lentement pendant
+     qu'on le regarde. Une photographie parfaitement immobile au milieu d'une
+     page qui bouge s'y lit comme un trou. */
+  function majPhotos(){
+    const serie = photos[demoActive.id];
+    scenePhotos.classList.toggle('on', !!serie);
+    canvas.style.opacity = serie ? '0' : '1';
+    if (!serie) return;
+
+    const t = etat.plan;
+    serie.forEach((im, k) => {
+      const d = t - k + 1;                       // 0 avant l'entrée, 1 une fois posé
+      const o = k === 0 ? 1 : ease(Math.min(Math.max((d - 0.32) / 0.40, 0), 1));
+      const vu = Math.min(Math.max(d, 0), 2) / 2;
+      im.style.opacity = o;
+      im.style.transform = `scale(${(1.085 - 0.085 * vu).toFixed(4)})`;
+      /* Le plan est caché une fois recouvert : celui du dessus est alors
+         opaque, et un calque de moins à composer à chaque image. */
+      im.style.visibility = (o > 0.002 && d < 2.4) ? 'visible' : 'hidden';
+    });
+  }
+
+  chargerPlans();          // sans attendre : la page démarre sur ses scènes 3D
+
   /* ---- boucle ----------------------------------------------------------- */
   const scenes = { appart, canette: canettes, burger };
   const vise = new THREE.Vector3();
@@ -1380,6 +1528,7 @@ async function boot(){
       etat.look[i] = lerp(etat.look[i], cible.look[i], k);
     }
     etat.fov = lerp(etat.fov, cible.fov, k);
+    etat.plan = lerp(etat.plan, cible.plan, k);
     etat.ouverture = lerp(etat.ouverture, cible.ouverture, k);
     etat.tour = lerp(etat.tour, cible.tour, k);
     pointer.sx = lerp(pointer.sx, pointer.x, k);
@@ -1406,6 +1555,11 @@ async function boot(){
     vise.set(etat.look[0], etat.look[1], etat.look[2]);
     camera.lookAt(vise);
     if (Math.abs(camera.fov - etat.fov) > 0.01) { camera.fov = etat.fov; camera.updateProjectionMatrix(); }
+
+    majPhotos();
+    /* Rien à calculer derrière une photographie plein cadre : on rend la
+       scène 3D de la démonstration suivante seulement, pas celle qu'on cache. */
+    if (photos[demoActive.id]) return;
 
     const scene = scenes[demoActive.id];
     renderer.setRenderTarget(rtScene);
