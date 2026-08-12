@@ -155,6 +155,16 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
       transparent 17%);
 }
 #voile.on{opacity:1}
+/* La parfumerie se photographie sur fond noir. Le reste du site est clair :
+   c'est donc la page qui bascule le temps d'un acte, plutôt que la scène qui
+   renonce à son parti pris. */
+html.nuit{
+  --ground:#0B0B0D; --ink:#F2F0EC; --ink-soft:#8E8A84;
+  --line:rgba(242,240,236,.16); --panel:rgba(242,240,236,.05);
+}
+html.nuit body{background:#0B0B0D}
+html.nuit #wash{opacity:.10}
+html.nuit #grain{opacity:.045}
 :focus-visible{outline:2px solid var(--accent); outline-offset:3px}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:.001ms !important}
@@ -211,6 +221,15 @@ const DEMOS = [
     link: { href: 'index.html', label: 'Voir le site complet' },
   },
   {
+    id: 'flacon',
+    accent: '#C8A24A',
+    nuit: true,
+    eyebrow: 'Parfum · packshot',
+    title: 'On lit ce qui<br>est gravé.',
+    lede: 'Le flacon tourne, la caméra s’approche, et chaque face livre sa mention. Le verre n’est pas une image : c’est la lumière qui le traverse.',
+    screens: 4,
+  },
+  {
     id: 'burger',
     accent: '#E8811F',
     eyebrow: 'Restauration · carte',
@@ -232,6 +251,17 @@ const DEMOS = [
 
    Tant qu'un fichier manque dans assets/photos/, la démonstration concernée
    retombe sur sa scène 3D. La page ne casse jamais faute d'image. */
+/* Les mentions gravées sur le flacon, une par quart de tour. Le principe est
+   celui de la canette : plutôt que d'empiler du texte sur une face — où tout
+   tiendrait dans le cadre à la fois et où l'on n'isolerait jamais rien —, on
+   en met une par secteur et c'est l'objet qui pivote. */
+const GRAVURES = [
+  { titre: 'SILLAGE',       sous: 'AMBRE & CUIR' },
+  { titre: 'AMBRE GRIS',    sous: 'RÉCOLTE DU LAOS' },
+  { titre: 'CUIR FUMÉ',     sous: 'TANNERIE DE FLORENCE' },
+  { titre: '50 ML',         sous: 'SANS ALCOOL DE SYNTHÈSE' },
+];
+
 const PLANS = {
   appart: [
     { f: '1', nom: 'Séjour',      detail: '32 m², double exposition, parquet point de Hongrie.' },
@@ -1110,6 +1140,179 @@ async function boot(){
   }
 
   /* ====================================================================== */
+  /*  DÉMO — le flacon de parfum                                            */
+  /* ====================================================================== */
+  /* Le verre est le seul cas où le temps réel bat la photographie : il ne se
+     décrit pas par une couleur mais par ce qu'il fait de la lumière. Une image
+     fixe n'en montre qu'un état ; ici chaque degré de rotation en montre un
+     autre. Et comme la canette, l'objet n'est pas téléchargé — un profil de
+     vingt nombres, et rien d'autre. */
+  const flacon = new THREE.Scene();
+  let flaconTourne = null;
+  {
+    /* Le studio est dessiné, pas photographié. Les reflets d'un objet en verre
+       viennent de la carte d'environnement, jamais des lampes de la scène : un
+       photographe de packshot ne place pas des ampoules, il place des boîtes à
+       lumière. Elles doivent être à bords francs — une tache molle ne se lit
+       pas comme du verre. */
+    const W = 1024, HH = 512;
+    const c = document.createElement('canvas'); c.width = W; c.height = HH;
+    const x = c.getContext('2d');
+    const ciel = x.createLinearGradient(0, 0, 0, HH);
+    ciel.addColorStop(0, '#2e2e36'); ciel.addColorStop(0.5, '#17171c');
+    ciel.addColorStop(1, '#0b0b0e');
+    x.fillStyle = ciel; x.fillRect(0, 0, W, HH);
+    const bande = (cx, large, haut, bas, force) => {
+      const g = x.createLinearGradient(cx - large / 2, 0, cx + large / 2, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.22, `rgba(255,255,255,${force})`);
+      g.addColorStop(0.78, `rgba(255,255,255,${force})`);
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = g; x.fillRect(cx - large / 2, HH * haut, large, HH * (bas - haut));
+    };
+    bande(W * 0.17, W * 0.085, 0.06, 0.74, 1.0);
+    bande(W * 0.83, W * 0.045, 0.10, 0.70, 0.75);
+    bande(W * 0.50, W * 0.30, 0.00, 0.13, 0.45);
+    const chaud = x.createLinearGradient(0, HH * 0.82, 0, HH);
+    chaud.addColorStop(0, 'rgba(200,162,74,0)');
+    chaud.addColorStop(1, 'rgba(200,162,74,0.5)');
+    x.fillStyle = chaud; x.fillRect(0, HH * 0.82, W, HH * 0.18);
+
+    // en flottant : une boîte à lumière dépasse largement le blanc d'un écran,
+    // et c'est ce dépassement qui fait l'éclat
+    const px = x.getImageData(0, 0, W, HH).data;
+    const data = new Float32Array(W * HH * 4);
+    for (let i = 0; i < W * HH; i++) {
+      for (let k = 0; k < 3; k++) {
+        const v = px[i * 4 + k] / 255;
+        data[i * 4 + k] = Math.pow(v, 2.2) * (1 + v * v * 44);
+      }
+      data[i * 4 + 3] = 1;
+    }
+    const tex = new THREE.DataTexture(data, W, HH, THREE.RGBAFormat, THREE.FloatType);
+    tex.mapping = THREE.EquirectangularReflectionMapping; tex.needsUpdate = true;
+    flacon.environment = pmrem.fromEquirectangular(tex).texture;
+    tex.dispose();
+
+    const PROFIL = [
+      [0.0000, 0.0000], [0.0250, 0.0000], [0.0288, 0.0022], [0.0300, 0.0060],
+      [0.0300, 0.0520], [0.0296, 0.0575], [0.0268, 0.0630], [0.0210, 0.0682],
+      [0.0150, 0.0716], [0.0112, 0.0740], [0.0104, 0.0768], [0.0104, 0.0836],
+      [0.0128, 0.0848], [0.0128, 0.0880], [0.0106, 0.0892], [0.0000, 0.0894],
+    ];
+    const HT = 0.0894;
+    const tourne = (pts, seg = 128) => {
+      const g = new THREE.LatheGeometry(
+        pts.map(([r, y]) => new THREE.Vector2(r, y - HT / 2)), seg);
+      g.computeVertexNormals(); return recoudre(g);
+    };
+
+    /* La gravure. Le verre n'est pas peint, il est dépoli par endroits : une
+       gravure se décrit donc par la rugosité et non par la couleur. Et comme
+       la rugosité du matériau est multipliée par sa carte, c'est la carte qui
+       décide — noir pour le poli, blanc pour le dépoli. */
+    const gc = document.createElement('canvas'); gc.width = 2048; gc.height = 1024;
+    const gx = gc.getContext('2d');
+    gx.fillStyle = '#000'; gx.fillRect(0, 0, 2048, 1024);
+    gx.fillStyle = '#fff'; gx.textAlign = 'center'; gx.textBaseline = 'middle';
+    GRAVURES.forEach((g, i) => {
+      const cx = 2048 * (i + 0.5) / GRAVURES.length;
+      gx.font = '300 96px ui-sans-serif, system-ui, sans-serif';
+      gx.letterSpacing = '30px';
+      gx.fillText(g.titre, cx + 15, 470);
+      gx.font = '300 40px ui-sans-serif, system-ui, sans-serif';
+      gx.letterSpacing = '16px';
+      gx.fillText(g.sous, cx + 8, 590);
+    });
+    const grave = new THREE.CanvasTexture(gc);
+    grave.wrapS = grave.wrapT = THREE.RepeatWrapping;
+    grave.anisotropy = maxAniso;
+
+    const verre = new THREE.MeshPhysicalMaterial({
+      color: 0xFFFFFF, metalness: 0, roughness: 0.85, roughnessMap: grave,
+      transmission: 1, ior: 1.52, thickness: 0.012,
+      attenuationColor: new THREE.Color(0xE0A64A), attenuationDistance: 0.35,
+      envMapIntensity: 1.25, clearcoat: 1, clearcoatRoughness: 0.02,
+    });
+
+    /* Le jus. Un flacon vide est une bouteille. Le liquide a son propre indice,
+       plus faible que le verre, et sa surface libre se creuse au contact de la
+       paroi — ce ménisque attrape la lumière comme un anneau de miroir, et
+       c'est à lui qu'on reconnaît un vrai niveau. */
+    const NIV = 0.0585;
+    const jus = new THREE.Mesh(tourne([
+      [0.0000, 0.0028], [0.0238, 0.0028], [0.0274, 0.0044], [0.0284, 0.0072],
+      [0.0284, NIV - 0.0022], [0.0283, NIV - 0.0008], [0.0276, NIV],
+      [0.0258, NIV - 0.0009], [0.0180, NIV - 0.0014], [0.0000, NIV - 0.0015],
+    ], 128), new THREE.MeshPhysicalMaterial({
+      color: 0xFFFFFF, metalness: 0, roughness: 0.03,
+      transmission: 1, ior: 1.36, thickness: 0.028,
+      attenuationColor: new THREE.Color(0xC26A12), attenuationDistance: 0.030,
+      envMapIntensity: 1.1,
+    }));
+
+    /* Le tube plongeur. C'est le détail qui date un flacon : il n'y en a sur
+       aucun rendu bâclé, et sur tous les vrais. */
+    const tube = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.0016, 0.0016, 0.062, 16, 1, true),
+      new THREE.MeshPhysicalMaterial({
+        color: 0xF2EFE6, roughness: 0.25, transmission: 0.75, thickness: 0.002,
+        ior: 1.46, side: THREE.DoubleSide,
+      }));
+    tube.position.set(0.0035, 0.0485 - HT / 2, 0);
+
+    const laiton = new THREE.MeshPhysicalMaterial({
+      color: 0xC9A24A, metalness: 1, roughness: 0.22, envMapIntensity: 1.4,
+    });
+    const bouchon = new THREE.Mesh(tourne([
+      [0.0000, 0.0836], [0.0150, 0.0836], [0.0168, 0.0850], [0.0172, 0.0880],
+      [0.0172, 0.1090], [0.0166, 0.1112], [0.0140, 0.1128], [0.0000, 0.1132],
+    ], 96), laiton);
+    const joint = new THREE.Mesh(tourne([
+      [0.0000, 0.0820], [0.0132, 0.0820], [0.0134, 0.0838], [0.0000, 0.0838],
+    ], 64), mat(0x141414, { roughness: 0.5 }));
+
+    flaconTourne = new THREE.Group();
+    flaconTourne.add(new THREE.Mesh(tourne(PROFIL), verre), jus, tube, bouchon, joint);
+    flacon.add(flaconTourne);
+
+    /* Le reflet : un double retourné sous un voile. Pas de plan de pose — en
+       incidence rasante la réflexion de Fresnel monte à un quel que soit le
+       matériau, et le sol renverrait le studio entier. */
+    const double = flaconTourne.clone();
+    double.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = o.material.clone();
+      o.material.transparent = true;
+      o.material.opacity = 0.20;
+      if (o.material.transmission) o.material.transmission = 0.6;
+    });
+    double.scale.y = -1; double.position.y = -HT;
+    flacon.add(double);
+    flaconTourne.userData.double = double;
+
+    const fondC = document.createElement('canvas'); fondC.width = 16; fondC.height = 256;
+    {
+      const fx = fondC.getContext('2d');
+      const g = fx.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0, '#2e2e36'); g.addColorStop(0.55, '#17171c');
+      g.addColorStop(1, '#0b0b0e');
+      fx.fillStyle = g; fx.fillRect(0, 0, 16, 256);
+    }
+    const fondT = new THREE.CanvasTexture(fondC);
+    fondT.colorSpace = THREE.SRGBColorSpace;
+    const fondM = new THREE.Mesh(new THREE.PlaneGeometry(3, 2.1),
+      new THREE.MeshBasicMaterial({ map: fondT }));
+    fondM.position.z = -0.62;
+    flacon.add(fondM);
+
+    flacon.add(new THREE.AmbientLight(0xFFFFFF, 0.25));
+    const rasant = new THREE.DirectionalLight(0xFFE9C8, 1.1);
+    rasant.position.set(-0.4, 0.5, 0.6);
+    flacon.add(rasant);
+  }
+
+  /* ====================================================================== */
   /*  DÉMO 3 — le burger, qui s'ouvre couche par couche                     */
   /* ====================================================================== */
   const burger = nouvelleScene({
@@ -1289,6 +1492,14 @@ async function boot(){
       { pos: [1.6, 0.5, 3.2], look: [0, 0, 0], fov: 28 },
       { pos: [0, 1.4, 5.2], look: [0, 0, 0], fov: 32 },
     ],
+    /* Le flacon fait neuf centimètres : la caméra travaille en centimètres, pas
+       en mètres, et la focale reste longue pour ne rien déformer. */
+    flacon: [
+      { pos: [0, 0.012, 0.620], look: [0, -0.004, 0], fov: 26 },
+      { pos: [0, 0.008, 0.430], look: [0,  0.002, 0], fov: 24 },
+      { pos: [0, 0.006, 0.370], look: [0,  0.004, 0], fov: 22 },
+      { pos: [0, 0.014, 0.560], look: [0, -0.002, 0], fov: 25 },
+    ],
     burger: [
       { pos: [ 0.00, 0.95, 4.10], look: [0, 0.38, 0], fov: 30 },
       { pos: [ 0.55, 1.35, 4.40], look: [0, 0.62, 0], fov: 30 },
@@ -1299,7 +1510,7 @@ async function boot(){
   };
 
   // profondeur de champ : une scène nette de bout en bout n'est pas une photo
-  const PLAGE = { appart: 4.2, canette: 1.5, burger: 1.7 };
+  const PLAGE = { appart: 4.2, canette: 1.5, flacon: 0.30, burger: 1.7 };
 
   /* #instant coupe l'interpolation : sans lui, toute capture d'écran est prise
      en pleine transition et donne une image trompeuse. Sert aussi aux
@@ -1311,6 +1522,7 @@ async function boot(){
     look: TRAJETS.appart[0].look.slice(),
     fov: TRAJETS.appart[0].fov,
     plan: 0,          // position continue dans la série de plans photographiques
+    grave: 2 * Math.PI * (0.25 - 0.5 / 4),   // le secteur gravé face à l'objectif
     ouverture: 0,     // écartement des couches du burger
     tour: 0,          // rotation des canettes
   };
@@ -1342,6 +1554,7 @@ async function boot(){
     if (choisie !== demoActive) {
       demoActive = choisie;
       document.documentElement.style.setProperty('--accent', choisie.accent);
+      document.documentElement.classList.toggle('nuit', !!choisie.nuit);
     }
 
     const traj = TRAJETS[choisie.id];
@@ -1354,6 +1567,16 @@ async function boot(){
     cible.plan = photos[choisie.id] ? local * (photos[choisie.id].length - 1) : 0;
     cible.ouverture = choisie.id === 'burger' ? Math.min(1, Math.max(0, (local - 0.12) / 0.62)) : 0;
     cible.tour = choisie.id === 'canette' ? local * Math.PI * 1.2 : 0;
+    /* Le secteur gravé qui fait face à l'objectif vaut 0,25 − θ/2π : c'est la
+       convention d'enroulement d'une géométrie de révolution, et la rotation
+       s'en déduit. Un quart de tour par arrêt, et chaque mention vient se
+       présenter d'elle-même. */
+    if (choisie.id === 'flacon') {
+      const n = GRAVURES.length;
+      const t = local * (n - 1), k = Math.min(Math.floor(t), n - 2);
+      const u = (k + 0.5 + ease(t - k)) / n;
+      cible.grave = 2 * Math.PI * (0.25 - u);
+    }
 
     /* la légende nomme ce que la caméra regarde : pièce ou ingrédient */
     const leg = document.getElementById('legende');
@@ -1614,7 +1837,7 @@ async function boot(){
   chargerPlans(THREE);     // sans attendre : la page démarre sur ses scènes 3D
 
   /* ---- boucle ----------------------------------------------------------- */
-  const scenes = { appart, canette: canettes, burger };
+  const scenes = { appart, canette: canettes, flacon, burger };
   const vise = new THREE.Vector3();
   let last = performance.now();
   lireScroll();
@@ -1629,6 +1852,7 @@ async function boot(){
     }
     etat.fov = lerp(etat.fov, cible.fov, k);
     etat.plan = lerp(etat.plan, cible.plan, k);
+    etat.grave = lerp(etat.grave, cible.grave, k);
     etat.ouverture = lerp(etat.ouverture, cible.ouverture, k);
     etat.tour = lerp(etat.tour, cible.tour, k);
     pointer.sx = lerp(pointer.sx, pointer.x, k);
@@ -1640,16 +1864,26 @@ async function boot(){
       c.position.y = 0.34 + rang * 0.02 + etat.ouverture * rang * 0.30;
       c.rotation.y = etat.ouverture * (i % 2 ? -0.2 : 0.2);
     });
+    // le flacon présente ses faces, et son reflet le suit
+    if (flaconTourne) {
+      flaconTourne.rotation.y = etat.grave;
+      flaconTourne.userData.double.rotation.y = etat.grave;
+    }
     // et les canettes tournent
     troisCanettes.forEach((g, i) => {
       g.rotation.y = etat.tour + i * 0.4;
       g.rotation.z = 0.04;
     });
 
-    const par = reduce ? 0 : 1;
+    /* Le parallaxe se mesure à la scène. Vingt-deux centimètres de débattement
+       devant un flacon de neuf le feraient sortir du cadre au moindre
+       mouvement de souris ; devant un appartement, ils ne se voient pas. On
+       l'exprime donc en fraction du recul. */
+    const par = reduce ? 0 : Math.hypot(
+      etat.pos[0] - etat.look[0], etat.pos[1] - etat.look[1], etat.pos[2] - etat.look[2]) * 0.05;
     camera.position.set(
-      etat.pos[0] + pointer.sx * 0.22 * par,
-      etat.pos[1] - pointer.sy * 0.14 * par,
+      etat.pos[0] + pointer.sx * par,
+      etat.pos[1] - pointer.sy * par * 0.64,
       etat.pos[2]
     );
     vise.set(etat.look[0], etat.look[1], etat.look[2]);
