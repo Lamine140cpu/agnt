@@ -65,24 +65,37 @@ body{
 .rail span{display:block; height:100%; width:0; background:var(--accent); border-radius:2px; transition:width .2s linear, background 1.1s ease}
 
 main{position:relative; z-index:4}
+/* La copie tient dans une colonne à gauche, l'objet est décalé à droite (voir
+   setViewOffset dans la boucle de rendu). Un titre posé en travers du sujet est
+   la faute qui trahit le gabarit : une marque met son texte dans le vide. */
 section{
   min-height:100vh; display:flex; flex-direction:column; justify-content:flex-end;
-  padding:0 var(--gut) clamp(88px,14vh,170px); text-align:center; pointer-events:none;
+  padding:0 var(--gut) clamp(88px,14vh,170px); text-align:left; pointer-events:none;
 }
 section > *{pointer-events:auto; position:relative}
-section::after{
-  content:""; position:absolute; left:0; right:0; bottom:0; height:44vh; z-index:-1;
-  background:linear-gradient(to top, color-mix(in srgb, var(--ground) 94%, transparent),
-                                     color-mix(in srgb, var(--ground) 58%, transparent) 44%, transparent);
-  pointer-events:none;
+/* Le voile appartient au texte, pas à la section. Étalé sur tout l'écran, il
+   frappe forcément le sujet : il avait effacé les arêtes du flacon sur fond
+   noir, puis lavé une canette jusqu'au blanc sur fond clair. Rattaché au bloc,
+   il n'existe que là où il y a quelque chose à lire — et les écrans de
+   respiration, qui n'ont pas de texte, n'ont plus de voile du tout. */
+.mot{position:relative; max-width:min(34ch,42vw); pointer-events:auto}
+.mot::before{
+  content:""; position:absolute; z-index:-1; pointer-events:none;
+  left:calc(-1 * var(--gut)); right:-7vw; top:-10vh; bottom:-14vh;
+  background:radial-gradient(116% 104% at 0% 62%,
+    color-mix(in srgb, var(--ground) 90%, transparent) 0%,
+    color-mix(in srgb, var(--ground) 44%, transparent) 44%,
+    transparent 78%);
 }
 h1,h2{font-family:var(--display); font-weight:400; text-transform:uppercase; margin:0; text-wrap:balance; line-height:.88}
 h1{font-size:clamp(2.6rem,9vw,6.2rem)}
 h2{font-size:clamp(2rem,6.4vw,4.2rem)}
-.lede{margin:14px auto 0; max-width:38ch; font-size:clamp(14px,1.6vw,17px); color:var(--ink-soft); line-height:1.55}
+.lede{margin:14px 0 0; max-width:34ch; font-size:clamp(14px,1.6vw,17px); color:var(--ink-soft); line-height:1.55}
 .eyebrow{
-  font-family:var(--mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
-  color:var(--accent); margin:0 0 14px; transition:color 1.1s ease;
+  font-family:var(--mono); font-size:11px; font-weight:600;
+  letter-spacing:.2em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 20px; max-width:26ch; line-height:1.6;
+  transition:color 1.1s ease;
 }
 .reveal{opacity:0; transform:translateY(16px); transition:opacity .36s ease, transform .36s cubic-bezier(.22,1,.36,1)}
 .posed .reveal{opacity:1; transform:none}
@@ -93,6 +106,9 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
 /* section finale : on remonte au centre et on ouvre le produit */
 .cta{justify-content:center; text-align:center}
 .cta::after{display:none}
+.cta .mot{max-width:none; width:100%}
+.cta .mot::before{display:none}
+.cta .lede{margin-inline:auto}
 .cta .box{
   max-width:640px; margin-inline:auto;
   background:color-mix(in srgb, var(--ground) 92%, transparent);
@@ -122,17 +138,25 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
   border:1px solid var(--line); border-radius:999px; padding:8px 14px; color:var(--ink-soft);
 }
 .legende{
-  position:fixed; z-index:6; left:50%; transform:translateX(-50%);
-  bottom:clamp(48px,8vh,86px); text-align:center; pointer-events:none;
+  position:fixed; z-index:6; left:var(--gut);
+  bottom:clamp(48px,8vh,86px); text-align:left; pointer-events:none;
   opacity:0; transition:opacity .3s ease;
 }
 .legende.on{opacity:1}
+.legende::before{
+  content:""; position:absolute; z-index:-1; pointer-events:none;
+  left:calc(-1 * var(--gut)); right:-8vw; top:-7vh; bottom:-9vh;
+  background:radial-gradient(112% 116% at 0% 62%,
+    color-mix(in srgb, var(--ground) 84%, transparent) 0%,
+    color-mix(in srgb, var(--ground) 38%, transparent) 44%,
+    transparent 78%);
+}
 .legende b{
   display:block; font-family:var(--display); font-weight:400; text-transform:uppercase;
   font-size:clamp(1.5rem,4.6vw,2.6rem); line-height:1;
 }
 .legende span{
-  display:block; margin-top:6px; max-width:30ch; margin-inline:auto;
+  display:block; margin-top:6px; max-width:28ch;
   font-size:13px; color:var(--ink-soft); line-height:1.5;
 }
 /* Les plans photographiques. Empilés dans l'ordre de lecture : chacun se
@@ -152,7 +176,10 @@ h2{font-size:clamp(2rem,6.4vw,4.2rem)}
     linear-gradient(to bottom,
       color-mix(in srgb, var(--ground) 82%, transparent) 0%,
       color-mix(in srgb, var(--ground) 30%, transparent) 9%,
-      transparent 17%);
+      transparent 17%),
+    /* Rien d'horizontal ici : la lisibilité du coin bas-gauche est l'affaire du
+       bloc de texte, qui porte son propre voile à sa propre taille. */
+    linear-gradient(to right, transparent, transparent);
 }
 #voile.on{opacity:1}
 /* La parfumerie se photographie sur fond noir. Le reste du site est clair :
@@ -337,7 +364,10 @@ function construire(){
   const d = document, main = d.getElementById('scene');
   const bloc = (classe, html) => {
     const s = d.createElement('section');
-    s.className = classe; s.innerHTML = html; return s;
+    s.className = classe;
+    // le texte porte son propre voile : d'où l'enveloppe, et pas de div nue
+    s.innerHTML = html ? `<div class="mot">${html}</div>` : '';
+    return s;
   };
 
   main.append(bloc('intro',
@@ -1058,9 +1088,13 @@ async function boot(){
   /* ====================================================================== */
   /*  DÉMO 2 — la canette, reprise du moteur produit                        */
   /* ====================================================================== */
+  /* Moins d'ambiante et moins de débouchage qu'avant. Une lumière qui vient de
+     partout supprime le modelé : le cylindre s'aplatit, les couleurs montent en
+     saturation et l'ensemble prend cet aspect de plastique qui trahit le rendu.
+     Un studio produit éclaire durement d'un côté et laisse l'autre tomber. */
   const canettes = nouvelleScene({
     soleil: [3.2, 5.4, 3.6], portee: 3.2, loin: 18,
-    key: 2.6, ambiant: 0.38, fill: 0.32, env: 1.2, doux: 3,
+    key: 3.1, ambiant: 0.18, fill: 0.24, env: 0.85, doux: 2,
   });
   const troisCanettes = [];
   {
@@ -1105,6 +1139,16 @@ async function boot(){
       x.drawImage(img, cx + cw - 2, cy, 2, ch, px + pw - 1, py, L - px - pw + 1, ph);
       x.drawImage(img, cx, cy, cw, ch, px, py, pw, ph);                    // le panneau
 
+      /* L'artwork est fait pour du papier, où l'encre ne s'éclaire pas. Posé sur
+         un objet qui reçoit une clé à 3, il repasse par le tone mapping et les
+         rouges saturés partent en aplat : la forme du cylindre disparaît sous la
+         couleur. On le rentre donc d'un cran avant de le plaquer — c'est ce que
+         fait un photographe en étalonnant, pas une trahison de la charte. */
+      x.globalCompositeOperation = 'source-atop';
+      x.filter = 'saturate(0.82) brightness(0.94)';
+      x.drawImage(c, 0, 0);
+      x.filter = 'none'; x.globalCompositeOperation = 'source-over';
+
       const t = new THREE.CanvasTexture(c);
       t.colorSpace = THREE.SRGBColorSpace;
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -1134,7 +1178,10 @@ async function boot(){
       g.position.x = (i - 1) * 0.95;
       canettes.add(g); troisCanettes.push(g);
     });
-    const socle = new THREE.Mesh(galette(3, 0.06, 0.02, 80), mat(0xE4E2E7, { roughness: 0.3, metalness: 0.4 }));
+    /* Le socle était clair et à demi métallique : il renvoyait le studio en une
+       nappe beige et remontait le pied des canettes, si bien que rien ne posait.
+       Sombre et mat, il rend le contact net et l'ombre reprend son travail. */
+    const socle = new THREE.Mesh(galette(3, 0.06, 0.02, 80), mat(0x9C9AA0, { roughness: 0.62, metalness: 0.05 }));
     socle.position.y = -H / 2 - 0.03; socle.receiveShadow = true;
     canettes.add(socle);
   }
@@ -1173,6 +1220,12 @@ async function boot(){
     bande(W * 0.17, W * 0.085, 0.06, 0.74, 1.0);
     bande(W * 0.83, W * 0.045, 0.10, 0.70, 0.75);
     bande(W * 0.50, W * 0.30, 0.00, 0.13, 0.45);
+    /* Le panneau du fond. Un flacon sur noir n'a rien à transmettre : il se
+       découpe en silhouette, et c'est ce qui le faisait passer pour du plastique
+       peint. On met donc une boîte à lumière derrière lui — le geste de base du
+       packshot en verre. Le corps s'allume par l'intérieur, l'épaule et le jus
+       prennent leur couleur, et la gravure se détache enfin sur du clair. */
+    bande(W * 0.50, W * 0.36, 0.22, 0.74, 0.42);
     const chaud = x.createLinearGradient(0, HH * 0.82, 0, HH);
     chaud.addColorStop(0, 'rgba(200,162,74,0)');
     chaud.addColorStop(1, 'rgba(200,162,74,0.5)');
@@ -1211,28 +1264,59 @@ async function boot(){
        gravure se décrit donc par la rugosité et non par la couleur. Et comme
        la rugosité du matériau est multipliée par sa carte, c'est la carte qui
        décide — noir pour le poli, blanc pour le dépoli. */
-    const gc = document.createElement('canvas'); gc.width = 2048; gc.height = 1024;
-    const gx = gc.getContext('2d');
-    gx.fillStyle = '#000'; gx.fillRect(0, 0, 2048, 1024);
-    gx.fillStyle = '#fff'; gx.textAlign = 'center'; gx.textBaseline = 'middle';
-    GRAVURES.forEach((g, i) => {
-      const cx = 2048 * (i + 0.5) / GRAVURES.length;
-      gx.font = '300 96px ui-sans-serif, system-ui, sans-serif';
-      gx.letterSpacing = '30px';
-      gx.fillText(g.titre, cx + 15, 470);
-      gx.font = '300 40px ui-sans-serif, system-ui, sans-serif';
-      gx.letterSpacing = '16px';
-      gx.fillText(g.sous, cx + 8, 590);
-    });
-    const grave = new THREE.CanvasTexture(gc);
-    grave.wrapS = grave.wrapT = THREE.RepeatWrapping;
-    grave.anisotropy = maxAniso;
+    /* Un cylindre montre un peu moins de la moitié de son tour à la fois : au
+       moindre débordement, la mention voisine entre dans le cadre et les deux
+       se superposent en transparence. « AMBRE GRIS » composé au chasse large
+       mesurait neuf cents pixels pour un secteur qui en fait cinq cent douze —
+       on lisait donc deux gravures l'une sur l'autre. Chaque ligne est
+       désormais ramenée par le calcul au tiers central de son quart de tour :
+       à l'arrêt, la mention de face est seule nette, et ses voisines sont
+       repliées sur la tranche où elles ne mesurent plus rien. */
+    const LARGE = 4096, HAUT = 2048;
+    const SECTEUR = LARGE / GRAVURES.length;
+    const lettrage = (fond, encre) => {
+      const c = document.createElement('canvas'); c.width = LARGE; c.height = HAUT;
+      const x = c.getContext('2d');
+      x.fillStyle = fond; x.fillRect(0, 0, LARGE, HAUT);
+      x.fillStyle = encre; x.textAlign = 'center'; x.textBaseline = 'middle';
 
+      const poser = (texte, corps, chasse, cx, cy, plafond) => {
+        let px = corps;
+        for (let n = 0; n < 24; n++) {
+          x.font = `300 ${px}px ui-sans-serif, system-ui, sans-serif`;
+          x.letterSpacing = `${Math.round(px * chasse)}px`;
+          if (x.measureText(texte).width <= plafond) break;
+          px -= Math.max(1, Math.round(px * 0.06));
+        }
+        // le chasse ajoute un blanc après la dernière lettre : on le reprend
+        x.fillText(texte, cx + Math.round(px * chasse) / 2, cy);
+      };
+
+      GRAVURES.forEach((g, i) => {
+        const cx = SECTEUR * (i + 0.5);
+        poser(g.titre, 190, 0.16, cx, 1200, SECTEUR * 0.42);
+        poser(g.sous,   82, 0.20, cx, 1420, SECTEUR * 0.36);
+      });
+      const t = new THREE.CanvasTexture(c);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.anisotropy = maxAniso;
+      return t;
+    };
+
+    /* Deux cartes pour une seule gravure, parce que dépolir fait deux choses à
+       la fois. La rugosité éteint le reflet — mais sur un fond noir, éteindre un
+       reflet ne donne que du noir sur du noir, et c'est exactement pourquoi le
+       texte ne se lisait pas. Ce qui rend une gravure visible, c'est qu'elle
+       cesse de transmettre : le verre dépoli diffuse au lieu de laisser passer,
+       et il s'allume. D'où la seconde carte, qui coupe la transmission là où la
+       première ajoute du grain. */
     const verre = new THREE.MeshPhysicalMaterial({
-      color: 0xFFFFFF, metalness: 0, roughness: 0.85, roughnessMap: grave,
-      transmission: 1, ior: 1.52, thickness: 0.012,
+      color: 0xFFFFFF, metalness: 0, roughness: 0.85,
+      roughnessMap: lettrage('#000000', '#ffffff'),
+      transmission: 1, transmissionMap: lettrage('#ffffff', '#000000'),
+      ior: 1.52, thickness: 0.012,
       attenuationColor: new THREE.Color(0xE0A64A), attenuationDistance: 0.35,
-      envMapIntensity: 1.25, clearcoat: 1, clearcoatRoughness: 0.02,
+      envMapIntensity: 1.5, clearcoat: 1, clearcoatRoughness: 0.02,
     });
 
     /* Le jus. Un flacon vide est une bouteille. Le liquide a son propre indice,
@@ -1272,8 +1356,24 @@ async function boot(){
       [0.0000, 0.0820], [0.0132, 0.0820], [0.0134, 0.0838], [0.0000, 0.0838],
     ], 64), mat(0x141414, { roughness: 0.5 }));
 
+    /* Les coordonnées d'une géométrie de révolution suivent le rang des points
+       du profil, pas la hauteur. Or ce profil décrit le corps avec deux points
+       et l'épaule avec dix : le milieu de l'image tombait donc au niveau du
+       goulot, et la gravure s'enroulait sur l'arrondi. On réattribue v à la
+       hauteur réelle, et le texte se pose enfin à plat sur le flanc. */
+    const gVerre = tourne(PROFIL);
+    {
+      const p = gVerre.attributes.position, uv = gVerre.attributes.uv;
+      let bas = Infinity, haut = -Infinity;
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i); if (y < bas) bas = y; if (y > haut) haut = y;
+      }
+      for (let i = 0; i < uv.count; i++) uv.setY(i, (p.getY(i) - bas) / (haut - bas));
+      uv.needsUpdate = true;
+    }
+
     flaconTourne = new THREE.Group();
-    flaconTourne.add(new THREE.Mesh(tourne(PROFIL), verre), jus, tube, bouchon, joint);
+    flaconTourne.add(new THREE.Mesh(gVerre, verre), jus, tube, bouchon, joint);
     flacon.add(flaconTourne);
 
     /* Le reflet : un double retourné sous un voile. Pas de plan de pose — en
@@ -1307,9 +1407,16 @@ async function boot(){
     flacon.add(fondM);
 
     flacon.add(new THREE.AmbientLight(0xFFFFFF, 0.25));
-    const rasant = new THREE.DirectionalLight(0xFFE9C8, 1.1);
+    const rasant = new THREE.DirectionalLight(0xFFE9C8, 1.6);
     rasant.position.set(-0.4, 0.5, 0.6);
     flacon.add(rasant);
+    /* Une seconde source, presque de face, uniquement pour le dépoli. La gravure
+       ne transmet plus rien : elle est devenue une surface diffuse, et une
+       surface diffuse ne se voit que si une lampe la regarde. Placée de côté
+       comme les autres, elle laissait le texte dans son propre ombre. */
+    const frisant = new THREE.DirectionalLight(0xFFFFFF, 1.8);
+    frisant.position.set(0.35, 0.20, 0.90);
+    flacon.add(frisant);
   }
 
   /* ====================================================================== */
@@ -1486,19 +1593,24 @@ async function boot(){
       { pos: [-0.70, 1.56,  1.90], look: [ 0.60, 1.02, -2.90], fov: 48 },  // la cuisine et son îlot
       { pos: [ 2.60, 1.52,  3.00], look: [ 4.10, 0.82, -1.90], fov: 50 },  // la chambre, passé la cloison
     ],
+    /* La canette occupait 92 % de la hauteur du cadre au plan serré : elle
+       sortait par le bas et ses voisines par les côtés. On recule et on allonge
+       la focale à la fois — l'objet garde sa présence, cesse d'être coupé, et se
+       trouve moins déformé qu'avant. Le vide autour n'est pas de la place
+       perdue, c'est lui qui fait cher. */
     canette: [
       { pos: [0, 0.9, 4.6], look: [0, 0, 0], fov: 30 },
-      { pos: [0, 0.2, 2.9], look: [0, 0, 0], fov: 28 },
-      { pos: [1.6, 0.5, 3.2], look: [0, 0, 0], fov: 28 },
-      { pos: [0, 1.4, 5.2], look: [0, 0, 0], fov: 32 },
+      { pos: [0, 0.15, 5.0], look: [0, 0, 0], fov: 24 },
+      { pos: [2.2, 0.4, 4.6], look: [0, 0, 0], fov: 24 },
+      { pos: [0, 1.4, 5.6], look: [0, 0, 0], fov: 32 },
     ],
     /* Le flacon fait neuf centimètres : la caméra travaille en centimètres, pas
        en mètres, et la focale reste longue pour ne rien déformer. */
     flacon: [
-      { pos: [0, 0.012, 0.620], look: [0, -0.004, 0], fov: 26 },
-      { pos: [0, 0.008, 0.430], look: [0,  0.002, 0], fov: 24 },
-      { pos: [0, 0.006, 0.370], look: [0,  0.004, 0], fov: 22 },
-      { pos: [0, 0.014, 0.560], look: [0, -0.002, 0], fov: 25 },
+      { pos: [0, 0.010, 0.680], look: [0, 0.004, 0], fov: 26 },
+      { pos: [0, 0.006, 0.520], look: [0, 0.008, 0], fov: 24 },
+      { pos: [0, 0.004, 0.460], look: [0, 0.010, 0], fov: 22 },
+      { pos: [0, 0.012, 0.620], look: [0, 0.004, 0], fov: 25 },
     ],
     burger: [
       { pos: [ 0.00, 0.95, 4.10], look: [0, 0.38, 0], fov: 30 },
@@ -1510,7 +1622,10 @@ async function boot(){
   };
 
   // profondeur de champ : une scène nette de bout en bout n'est pas une photo
-  const PLAGE = { appart: 4.2, canette: 1.5, flacon: 0.30, burger: 1.7 };
+  /* La canette passe de 1,5 à 2,6 : la caméra ayant reculé, l'ancienne plage
+     laissait ses voisines dans un flou de fond de studio — on ne lisait plus un
+     étagement, on lisait un défaut. */
+  const PLAGE = { appart: 4.2, canette: 2.6, flacon: 0.30, burger: 1.7 };
 
   /* #instant coupe l'interpolation : sans lui, toute capture d'écran est prise
      en pleine transition et donne une image trompeuse. Sert aussi aux
@@ -1522,7 +1637,7 @@ async function boot(){
     look: TRAJETS.appart[0].look.slice(),
     fov: TRAJETS.appart[0].fov,
     plan: 0,          // position continue dans la série de plans photographiques
-    grave: 2 * Math.PI * (0.25 - 0.5 / 4),   // le secteur gravé face à l'objectif
+    grave: -2 * Math.PI * (0.5 / 4),   // le secteur gravé face à l'objectif
     ouverture: 0,     // écartement des couches du burger
     tour: 0,          // rotation des canettes
   };
@@ -1534,7 +1649,7 @@ async function boot(){
     pointer.y = (e.clientY / innerHeight) * 2 - 1;
   }, { passive: true });
 
-  let demoActive = DEMOS[0], progression = 0;
+  let demoActive = DEMOS[0], progression = 0, saut = false;
 
   function lireScroll(){
     const span = Math.max(document.body.scrollHeight - innerHeight, 1);
@@ -1548,13 +1663,23 @@ async function boot(){
       const a = debut[d.id], b = a + d.screens;
       if (p >= a - 0.5 && p < b - 0.5) { choisie = d; local = (p - (a - 0.5)) / d.screens; }
     }
-    if (p >= debut[DEMOS[2].id] + DEMOS[2].screens - 0.5) { choisie = DEMOS[2]; local = 1; }
+    /* Le dernier acte, et non le troisième : cette ligne datait d'une page qui
+       n'en comptait que trois, et l'insertion du flacon la faisait retomber sur
+       lui au lieu du burger une fois le bas de page atteint. */
+    const dernier = DEMOS[DEMOS.length - 1];
+    if (p >= debut[dernier.id] + dernier.screens - 0.5) { choisie = dernier; local = 1; }
     local = Math.min(Math.max(local, 0), 1);
 
     if (choisie !== demoActive) {
       demoActive = choisie;
       document.documentElement.style.setProperty('--accent', choisie.accent);
       document.documentElement.classList.toggle('nuit', !!choisie.nuit);
+      /* Changer d'acte, c'est couper. Les scènes n'ont pas la même échelle — un
+         appartement se filme à cinq mètres, un flacon à quarante centimètres —
+         et rattraper l'une depuis l'autre faisait traverser le cadre à un
+         flacon gros comme une tête d'épingle. Une coupe franche, comme au
+         montage : personne n'a jamais vu une caméra reculer entre deux plans. */
+      saut = true;
     }
 
     const traj = TRAJETS[choisie.id];
@@ -1567,15 +1692,22 @@ async function boot(){
     cible.plan = photos[choisie.id] ? local * (photos[choisie.id].length - 1) : 0;
     cible.ouverture = choisie.id === 'burger' ? Math.min(1, Math.max(0, (local - 0.12) / 0.62)) : 0;
     cible.tour = choisie.id === 'canette' ? local * Math.PI * 1.2 : 0;
-    /* Le secteur gravé qui fait face à l'objectif vaut 0,25 − θ/2π : c'est la
-       convention d'enroulement d'une géométrie de révolution, et la rotation
-       s'en déduit. Un quart de tour par arrêt, et chaque mention vient se
-       présenter d'elle-même. */
+    /* Sur une géométrie de révolution, le point d'abscisse u se trouve à
+       l'angle 2πu, compté depuis la face qui regarde l'objectif. Amener le
+       secteur u devant la caméra demande donc de tourner de −2πu, et rien
+       d'autre : le quart de tour que j'avais ajouté ici décalait l'objet d'une
+       mention entière par rapport à la légende — on lisait « cuir fumé » à
+       l'écran devant un flacon qui affichait « ambre gris ». */
+    let faceGravee = -1;
     if (choisie.id === 'flacon') {
       const n = GRAVURES.length;
       const t = local * (n - 1), k = Math.min(Math.floor(t), n - 2);
       const u = (k + 0.5 + ease(t - k)) / n;
-      cible.grave = 2 * Math.PI * (0.25 - u);
+      cible.grave = -2 * Math.PI * u;
+      /* Le −0,25 fait basculer la légende aux trois quarts du mouvement, et non
+         à la moitié : sinon elle annonce la mention suivante alors que celle
+         d'avant est encore la mieux placée face à l'objectif. */
+      faceGravee = Math.min(n - 1, Math.max(0, Math.floor(u * n - 0.25)));
     }
 
     /* la légende nomme ce que la caméra regarde : pièce ou ingrédient */
@@ -1590,6 +1722,16 @@ async function boot(){
     } else {
       if (choisie.id === 'appart') { liste = PIECES; part = (local - 0.30) / 0.68; }
       if (choisie.id === 'burger') { liste = INGREDIENTS; part = (local - 0.30) / 0.66; }
+      /* Le flacon double sa gravure d'une légende à l'écran. Sur un verre,
+         le texte gravé n'est lisible que sous le bon angle — c'est vrai du
+         vrai flacon aussi — et une mention qu'on devine sans pouvoir la lire
+         irrite au lieu d'intriguer. La légende suit le même compte que la
+         rotation, si bien que l'écrit à l'écran et l'écrit sur l'objet
+         désignent toujours la même face. */
+      if (choisie.id === 'flacon' && faceGravee >= 0 && local > 0.10) {
+        const g = GRAVURES[faceGravee];
+        item = { nom: g.titre, detail: g.sous };
+      }
       if (liste && part > 0 && part < 1.04) {
         item = liste[Math.min(liste.length - 1, Math.floor(part * liste.length))];
       }
@@ -1708,7 +1850,10 @@ async function boot(){
   };
 
   addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    camera.aspect = innerWidth / innerHeight;
+    // le décalage de cadre est exprimé en pixels : il se recalcule à la taille
+    camera.clearViewOffset(); vueDecalee = null;
+    camera.updateProjectionMatrix();
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.setSize(innerWidth, innerHeight, false);
     allouer(); lireScroll();
@@ -1794,7 +1939,11 @@ async function boot(){
       la fenêtre — comme un object-fit: cover, mais en perspective. */
   function reculCouverture(){
     const t = Math.tan((PHOTO_FOV * Math.PI / 180) / 2);
-    return Math.min((H_PLAN / 2) / t, (L_PLAN / 2) / (t * camera.aspect)) * 0.93;
+    /* 0,86 et non 0,93 : la marge doit absorber deux choses à la fois, le
+       débattement de la souris et le relief qui pousse les sommets de premier
+       plan vers l'objectif. À 7 %, le bord de la nappe entrait dans le cadre et
+       cernait la photographie d'un liseré gris en haut et à droite. */
+    return Math.min((H_PLAN / 2) / t, (L_PLAN / 2) / (t * camera.aspect)) * 0.86;
   }
   const PHOTO_FOV = 42;
 
@@ -1838,13 +1987,16 @@ async function boot(){
 
   /* ---- boucle ----------------------------------------------------------- */
   const scenes = { appart, canette: canettes, flacon, burger };
+  const OBJETS = new Set(['canette', 'flacon']);   // les démos rendues en 3D
+  let vueDecalee = null;
   const vise = new THREE.Vector3();
   let last = performance.now();
   lireScroll();
 
   renderer.setAnimationLoop((now) => {
     const dt = Math.min((now - last) / 1000, 0.05); last = now;
-    const k = INSTANT ? 1 : 1 - Math.exp(-4.2 * dt);
+    const k = (INSTANT || saut) ? 1 : 1 - Math.exp(-4.2 * dt);
+    saut = false;
 
     for (let i = 0; i < 3; i++) {
       etat.pos[i] = lerp(etat.pos[i], cible.pos[i], k);
@@ -1889,6 +2041,20 @@ async function boot(){
     vise.set(etat.look[0], etat.look[1], etat.look[2]);
     camera.lookAt(vise);
     if (Math.abs(camera.fov - etat.fov) > 0.01) { camera.fov = etat.fov; camera.updateProjectionMatrix(); }
+
+    /* Le sujet se pousse à droite pour laisser la colonne de texte respirer.
+       On décale la fenêtre de projection plutôt que la caméra : déplacer la
+       caméra tournerait l'objet et changerait ses reflets, alors qu'ici la
+       lumière ne bouge pas — seul le cadre glisse.
+       Réservé aux objets : les démonstrations photographiques sont des plans
+       plein cadre, et les décaler montrerait le bord de l'image. */
+    const decale = OBJETS.has(demoActive.id) && innerWidth > 820 ? -0.16 : 0;
+    if (decale !== vueDecalee) {
+      vueDecalee = decale;
+      if (decale) camera.setViewOffset(innerWidth, innerHeight,
+                                       innerWidth * decale, 0, innerWidth, innerHeight);
+      else camera.clearViewOffset();
+    }
 
     /* Les plans photographiques traversent la même chaîne que les scènes 3D :
        même vignettage, même bloom, même grain. Sans quoi la page changerait de
