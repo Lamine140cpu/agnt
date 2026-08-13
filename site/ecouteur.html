@@ -308,7 +308,7 @@ function studio(){
       const v = px[i * 4 + k] / 255;
       // une boîte à lumière dépasse largement le blanc d'un écran, et c'est ce
       // dépassement qui fait l'éclat
-      data[i * 4 + k] = Math.pow(v, 2.2) * (1 + v * v * 26);
+      data[i * 4 + k] = Math.pow(v, 2.2) * (1 + Math.pow(v, 8) * 26);
     }
     data[i * 4 + 3] = 1;
   }
