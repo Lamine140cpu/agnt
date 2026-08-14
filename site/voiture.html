@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kilomètre — la voiture est prête</title>
+<style>
+:root{
+  --ground:#F0EFEC; --ink:#111214; --ink-soft:#75757B;
+  --line:rgba(17,18,20,.14); --accent:#1F5FD8;
+  --display:'Anton',ui-sans-serif,system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --gut:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+#webgl{position:fixed; inset:0; width:100%; height:100%; z-index:1; display:block}
+
+.bar{
+  position:fixed; top:0; left:0; right:0; z-index:6;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:20px var(--gut); font-family:var(--mono); font-size:10px;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--ink-soft);
+  pointer-events:none;
+}
+.bar b{font-weight:500; letter-spacing:.34em; color:var(--ink)}
+.rail{
+  position:fixed; z-index:6; left:50%; transform:translateX(-50%); bottom:20px;
+  width:min(220px,42vw); height:2px; background:var(--line); border-radius:2px;
+}
+.rail span{display:block; height:100%; width:0; background:var(--accent); border-radius:2px}
+
+main{position:relative; z-index:4}
+section{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:flex-end;
+  padding:0 var(--gut) clamp(88px,14vh,170px); pointer-events:none;
+}
+.mot{position:relative; max-width:min(34ch,42vw); pointer-events:auto}
+/* le voile appartient au texte, pas à la section : ailleurs il laverait l'objet */
+.mot::before{
+  content:""; position:absolute; z-index:-1; pointer-events:none;
+  left:calc(-1 * var(--gut)); right:-7vw; top:-10vh; bottom:-14vh;
+  background:radial-gradient(116% 104% at 0% 62%,
+    color-mix(in srgb, var(--ground) 90%, transparent) 0%,
+    color-mix(in srgb, var(--ground) 44%, transparent) 44%,
+    transparent 78%);
+}
+h1,h2{font-family:var(--display); font-weight:400; text-transform:uppercase;
+  margin:0; line-height:.9; text-wrap:balance}
+h1{font-size:clamp(2.4rem,7.6vw,5rem)}
+h2{font-size:clamp(1.9rem,5.4vw,3.4rem)}
+.lede{margin:14px 0 0; max-width:34ch; font-size:clamp(14px,1.6vw,17px);
+  color:var(--ink-soft); line-height:1.55}
+.eyebrow{
+  font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--accent); margin:0 0 20px;
+}
+.reveal{opacity:0; transform:translateY(16px);
+  transition:opacity .4s ease, transform .4s cubic-bezier(.22,1,.36,1)}
+.posed .reveal{opacity:1; transform:none}
+.posed h2.reveal{transition-delay:.12s}
+.posed .lede.reveal{transition-delay:.22s}
+
+.charge{
+  position:fixed; inset:0; z-index:9; display:grid; place-content:center; gap:18px;
+  justify-items:center; background:var(--ground); transition:opacity .7s ease;
+}
+.charge.parti{opacity:0; pointer-events:none}
+.charge i{display:block; width:120px; height:2px; background:var(--line); overflow:hidden}
+.charge i b{display:block; height:100%; width:0; background:var(--accent); transition:width .3s ease}
+.charge em{font-style:normal; font-family:var(--mono); font-size:10px;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--ink-soft)}
+@media (prefers-reduced-motion:reduce){
+  *,*::before{transition-duration:.001ms !important}
+  .reveal{opacity:1; transform:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="webgl"></canvas>
+<div class="bar"><b>Kilomètre</b><span>Location · Bordeaux</span></div>
+<div class="rail"><span id="bar"></span></div>
+<main id="scene"></main>
+<div class="charge" id="charge"><i><b id="jauge"></b></i><em id="etape">Chargement du véhicule</em></div>
+
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+import { GLTFLoader } from './vendor/GLTFLoader.js';
+
+/* ============================================================================
+   L'ordre des choses, remis à l'endroit.
+
+   J'ai passé une journée à écrire des formes au clavier. Aucun studio ne fait
+   ça : Lusion, le meilleur du métier, annonce que son pipeline « accepte les
+   fichiers GLB, USD ou OBJ ». La géométrie est un intrant du problème, pas le
+   problème. Elle vient d'un fichier client, d'un marché de modèles, ou d'un
+   modeleur.
+
+   Ce fichier prend donc un modèle qu'il n'a pas fait — un concept-car du
+   consortium Khronos, CC-BY 4.0, deux cent treize mille triangles — et lui
+   applique les deux choses qui restent notre travail :
+
+     1. la lumière, cuite avant l'affichage plutôt que devinée à chaque image ;
+     2. la chorégraphie, où le défilement fait le montage.
+
+   Sur la cuisson : le modèle n'est plus une fonction de distance, on ne peut
+   donc plus avancer dans un champ. Il faut interroger des triangles, et les
+   interroger un par un coûterait vingt-sept mille tests par rayon. D'où
+   l'arbre d'englobants construit plus bas — la structure qui rend le lancer
+   de rayons praticable, et que tout moteur de rendu embarque.
+   ============================================================================ */
+
+const canvas = document.getElementById('webgl');
+const charge = document.getElementById('charge');
+const jauge = document.getElementById('jauge');
+const etape = document.getElementById('etape');
+const { min, max, abs, sqrt, hypot, PI } = Math;
+const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
+
+/* ------------------------------------------------------------------- la page */
+const PLANS = [
+  {
+    eyebrow: 'Location · à partir de 39 € la journée',
+    titre: 'La voiture<br>est prête.',
+    lede: 'Pas d’agence, pas de comptoir, pas de file. On vous remet les clés là où vous êtes, et vous partez.',
+    pos: [6.6, 2.3, 7.8], look: [0, 0.78, 0], fov: 30,
+  },
+  {
+    eyebrow: 'Ce que vous louez',
+    titre: 'Cinq places,<br>et rien à discuter.',
+    lede: '250 km inclus par jour, boîte automatique, climatisation, régulateur. Le plein est fait, l’habitacle est nettoyé entre chaque location.',
+    pos: [1.4, 0.85, 9.2], look: [0, 0.72, 0.8], fov: 24,
+  },
+  {
+    eyebrow: 'L’état du véhicule',
+    titre: 'On vous montre<br>la vraie voiture.',
+    lede: 'Celle que vous aurez, sous tous les angles. Révision à jour, pneus contrôlés, contrôle technique dans le dossier — pas une photo de catalogue.',
+    pos: [13.8, 1.45, 0.8], look: [0, 0.80, 0], fov: 22,
+  },
+  {
+    eyebrow: 'Le détail',
+    titre: 'Jusqu’aux jantes<br>et aux pneus.',
+    lede: 'Approchez-vous autant que vous voulez. C’est le même objet, éclairé par la même lumière : rien n’est masqué par un plan large.',
+    pos: [3.4, 0.78, 4.0], look: [1.05, 0.48, 1.7], fov: 26,
+  },
+  {
+    eyebrow: 'Le coffre',
+    titre: 'De quoi partir<br>à quatre.',
+    lede: '391 litres, banquette rabattable, seuil bas. Deux grandes valises et deux cabines, ou un week-end de courses.',
+    pos: [-6.4, 2.1, -6.9], look: [0, 0.82, -0.4], fov: 30,
+  },
+  {
+    eyebrow: 'Réserver',
+    titre: 'Dites-nous<br>quand.',
+    lede: 'Deux dates, un message, et c’est réservé. Réponse en moins d’une heure aux horaires d’ouverture.',
+    pos: [7.8, 3.1, 9.4], look: [0, 0.85, 0], fov: 32,
+  },
+];
+
+/* ------------------------------------------------------------------- studio
+   Deux grands panneaux, un plafond, un sol plus sombre que le fond. Le tableau
+   de flottants est conservé : c'est lui qu'on interrogera pendant la cuisson.
+   Le studio sert donc deux fois — aux reflets à l'écran, et aux rayons avant
+   l'écran. Les deux racontent alors la même lumière. */
+function studio(){
+  const W = 512, H = 256;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+
+  const ciel = x.createLinearGradient(0, 0, 0, H);
+  ciel.addColorStop(0.00, '#FFFFFF');
+  ciel.addColorStop(0.42, '#EFEEEC');
+  ciel.addColorStop(0.60, '#BEBCB8');
+  ciel.addColorStop(1.00, '#6B6965');
+  x.fillStyle = ciel; x.fillRect(0, 0, W, H);
+
+  const panneau = (cx, large, haut, bas, force) => {
+    const g = x.createLinearGradient(cx - large / 2, 0, cx + large / 2, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.18, `rgba(255,255,255,${force})`);
+    g.addColorStop(0.82, `rgba(255,255,255,${force})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(cx - large / 2, H * haut, large, H * (bas - haut));
+  };
+  panneau(W * 0.20, W * 0.17, 0.03, 0.58, 1.0);
+  panneau(W * 0.70, W * 0.09, 0.10, 0.50, 0.66);
+  panneau(W * 0.50, W * 0.58, 0.00, 0.09, 0.52);
+
+  const px = x.getImageData(0, 0, W, H).data;
+  const data = new Float32Array(W * H * 4);
+  for (let i = 0; i < W * H; i++) {
+    for (let k = 0; k < 3; k++) {
+      const v = px[i * 4 + k] / 255;
+      /* Le relèvement doit frapper les panneaux et rien d'autre. En v², un gris
+         moyen ressortait déjà à 1,5 — au-dessus du blanc d'écran — et l'objet
+         entier se retrouvait surexposé, cuisson comprise puisque les rayons
+         lisent ce même tableau. En v⁸, le fond reste à sa place et seules les
+         boîtes à lumière dépassent, ce qui est précisément leur rôle. */
+      data[i * 4 + k] = Math.pow(v, 2.2) * (1 + Math.pow(v, 8) * 10);
+    }
+    data[i * 4 + 3] = 1;
+  }
+  /* Étalonnage. Un studio dessiné à la main n'a aucun niveau absolu : le mien
+     sortait à plusieurs fois le blanc en moyenne, si bien qu'un cuir noir —
+     qui ne renvoie pourtant que quatre pour cent — remontait au gris moyen. On
+     ramène donc l'éclairement d'une surface tournée vers le haut à un.
+
+     Le facteur sin(θ) est l'angle solide : sur une image équirectangulaire, les
+     rangées proches des pôles couvrent beaucoup moins de ciel que celles de
+     l'équateur, et les compter à parts égales fausse la moyenne. */
+  {
+    let somme = 0, poids = 0;
+    for (let b = 0; b < H; b++) {
+      const theta = (b + 0.5) / H * PI;
+      const w = Math.sin(theta) * max(Math.cos(theta), 0);   // angle solide × loi de Lambert
+      if (w <= 0) continue;
+      for (let a = 0; a < W; a++) {
+        const i = (b * W + a) * 4;
+        somme += w * (0.2126 * data[i] + 0.7152 * data[i+1] + 0.0722 * data[i+2]);
+        poids += w;
+      }
+    }
+    const k = poids > 0 ? (somme / poids) : 1;
+    if (k > 0) for (let i = 0; i < data.length; i++) data[i] /= k;
+  }
+
+  const lire = (dx, dy, dz, out) => {
+    const u = 0.5 + Math.atan2(dx, -dz) / (2 * PI);
+    const v = Math.acos(borne(dy, -1, 1)) / PI;
+    const i = ((borne((v * H) | 0, 0, H - 1)) * W + borne((u * W) | 0, 0, W - 1)) * 4;
+    out[0] = data[i]; out[1] = data[i + 1]; out[2] = data[i + 2];
+  };
+  const tex = new THREE.DataTexture(data.slice(), W, H, THREE.RGBAFormat, THREE.FloatType);
+  tex.mapping = THREE.EquirectangularReflectionMapping; tex.needsUpdate = true;
+  return { tex, lire };
+}
+
+/* ============================================================================
+   L'ARBRE D'ENGLOBANTS
+
+   Un rayon contre vingt-sept mille triangles, c'est vingt-sept mille tests.
+   Multiplié par les sommets et par les directions, cela ferait des milliards.
+
+   L'arbre range les triangles dans des boîtes emboîtées : si le rayon rate la
+   boîte, il rate d'un coup tout ce qu'elle contient. Le coût passe du nombre
+   de triangles à son logarithme. C'est la structure que porte tout moteur de
+   rendu, et elle tient en soixante lignes.
+
+   Découpage à la médiane sur l'axe le plus long des centres — pas le plus
+   savant des critères, mais celui qui ne dégénère jamais.
+   ============================================================================ */
+function arbre(tri){
+  const n = tri.length / 9;
+  const ordre = new Int32Array(n);
+  const cx = new Float32Array(n), cy = new Float32Array(n), cz = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    ordre[i] = i;
+    cx[i] = (tri[i * 9] + tri[i * 9 + 3] + tri[i * 9 + 6]) / 3;
+    cy[i] = (tri[i * 9 + 1] + tri[i * 9 + 4] + tri[i * 9 + 7]) / 3;
+    cz[i] = (tri[i * 9 + 2] + tri[i * 9 + 5] + tri[i * 9 + 8]) / 3;
+  }
+
+  /* Nœuds à plat plutôt qu'en objets : un tableau typé se parcourt sans
+     déréférencer, et le lancer de rayons ne fait que ça. */
+  const MAXN = 2 * Math.ceil(n / 4) + 64;
+  const bmin = new Float32Array(MAXN * 3), bmax = new Float32Array(MAXN * 3);
+  const gauche = new Int32Array(MAXN), debut = new Int32Array(MAXN), compte = new Int32Array(MAXN);
+  let nb = 0;
+
+  const bati = (de, a) => {
+    const moi = nb++;
+    let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+    for (let i = de; i < a; i++) {
+      const t = ordre[i] * 9;
+      for (let k = 0; k < 3; k++) {
+        const px = tri[t + k * 3], py = tri[t + k * 3 + 1], pz = tri[t + k * 3 + 2];
+        if (px < x0) x0 = px; if (px > x1) x1 = px;
+        if (py < y0) y0 = py; if (py > y1) y1 = py;
+        if (pz < z0) z0 = pz; if (pz > z1) z1 = pz;
+      }
+    }
+    bmin[moi * 3] = x0; bmin[moi * 3 + 1] = y0; bmin[moi * 3 + 2] = z0;
+    bmax[moi * 3] = x1; bmax[moi * 3 + 1] = y1; bmax[moi * 3 + 2] = z1;
+
+    if (a - de <= 6) { gauche[moi] = -1; debut[moi] = de; compte[moi] = a - de; return moi; }
+
+    const ex = x1 - x0, ey = y1 - y0, ez = z1 - z0;
+    const axe = ex > ey ? (ex > ez ? cx : cz) : (ey > ez ? cy : cz);
+    const mid = (de + a) >> 1;
+    // tri partiel : seul le rang médian doit être juste
+    const tranche = Array.from(ordre.subarray(de, a)).sort((p, q) => axe[p] - axe[q]);
+    ordre.set(tranche, de);
+
+    gauche[moi] = -2;                       // marque : nœud interne
+    const g = bati(de, mid), d = bati(mid, a);
+    gauche[moi] = g; debut[moi] = d; compte[moi] = 0;
+    return moi;
+  };
+  bati(0, n);
+
+  /* Le lancer. On ne cherche pas le triangle le plus proche : savoir qu'il y en
+     a un suffit pour de l'occlusion, et s'arrêter au premier divise le coût. */
+  const pile = new Int32Array(64);
+  function bloque(ox, oy, oz, dx, dy, dz, tmax){
+    const ix = 1 / dx, iy = 1 / dy, iz = 1 / dz;
+    let sp = 0; pile[sp++] = 0;
+    while (sp > 0) {
+      const nd = pile[--sp], b = nd * 3;
+      // traversée par tranches : on coupe l'intervalle du rayon par chaque paire de plans
+      let t0 = 0.0001, t1 = tmax;
+      let a1 = (bmin[b] - ox) * ix, a2 = (bmax[b] - ox) * ix;
+      t0 = max(t0, min(a1, a2)); t1 = min(t1, max(a1, a2));
+      a1 = (bmin[b + 1] - oy) * iy; a2 = (bmax[b + 1] - oy) * iy;
+      t0 = max(t0, min(a1, a2)); t1 = min(t1, max(a1, a2));
+      a1 = (bmin[b + 2] - oz) * iz; a2 = (bmax[b + 2] - oz) * iz;
+      t0 = max(t0, min(a1, a2)); t1 = min(t1, max(a1, a2));
+      if (t0 > t1) continue;
+
+      if (gauche[nd] >= 0) { pile[sp++] = gauche[nd]; pile[sp++] = debut[nd]; continue; }
+
+      for (let i = debut[nd]; i < debut[nd] + compte[nd]; i++) {
+        const t = ordre[i] * 9;
+        // Möller–Trumbore
+        const e1x = tri[t+3]-tri[t], e1y = tri[t+4]-tri[t+1], e1z = tri[t+5]-tri[t+2];
+        const e2x = tri[t+6]-tri[t], e2y = tri[t+7]-tri[t+1], e2z = tri[t+8]-tri[t+2];
+        const px = dy*e2z - dz*e2y, py = dz*e2x - dx*e2z, pz = dx*e2y - dy*e2x;
+        const det = e1x*px + e1y*py + e1z*pz;
+        if (det > -1e-12 && det < 1e-12) continue;
+        const inv = 1 / det;
+        const sx = ox-tri[t], sy = oy-tri[t+1], sz = oz-tri[t+2];
+        const u = (sx*px + sy*py + sz*pz) * inv;
+        if (u < 0 || u > 1) continue;
+        const qx = sy*e1z - sz*e1y, qy = sz*e1x - sx*e1z, qz = sx*e1y - sy*e1x;
+        const v = (dx*qx + dy*qy + dz*qz) * inv;
+        if (v < 0 || u + v > 1) continue;
+        const dist = (e2x*qx + e2y*qy + e2z*qz) * inv;
+        if (dist > 0.0002 && dist < tmax) return dist;
+      }
+    }
+    return -1;
+  }
+  return { bloque };
+}
+
+/* ============================================================================
+   LA CUISSON
+
+   Depuis chaque sommet, un éventail de rayons. Ceux qui s'échappent rapportent
+   la couleur du studio dans leur direction ; ceux qui butent rapportent, au
+   second passage, ce que renvoie l'endroit touché. Le tout divisé par ce que
+   recevrait un point parfaitement dégagé, ce qui donne un facteur sans unité —
+   un partout où le ciel est libre, plus faible dans les plis.
+
+   Ce facteur multiplie la couleur du matériau. Le rendu temps réel ne fait
+   plus ensuite que du direct et du reflet, ce qu'il sait faire.
+   ============================================================================ */
+/* La portée du lancer se mesure à l'objet. Cinquante-cinq centimètres
+   convenaient à un appareil photo ; devant une voiture de quatre mètres
+   cinquante, aucun rayon n'atteindrait plus le capot depuis le bas de caisse.
+   Vingt rayons au lieu de vingt-huit, aussi : la cuisson grandit avec le
+   nombre de sommets, et il y en a ici huit fois plus. */
+const RAYONS = 20, PORTEE = 1.8, ALBEDO = 0.55;
+
+function* cuire(lots, bvh, lire){
+  const dirs = [];
+  const or_ = (1 + sqrt(5)) / 2;
+  for (let i = 0; i < RAYONS; i++) {
+    const t = (i + 0.5) / RAYONS;
+    const z = 1 - 2 * t, r = sqrt(max(0, 1 - z * z));
+    const a = 2 * PI * i / or_;
+    dirs.push([Math.cos(a) * r, Math.sin(a) * r, z]);
+  }
+
+  const c = new Float32Array(3);
+
+  /* Une grille grossière retient ce que renvoie chaque coin de l'objet ;
+     interroger exactement le sommet le plus proche coûterait un second arbre,
+     et au millimètre près une grille suffit. */
+  const G = 20;
+  let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+  for (const l of lots) for (let i = 0; i < l.pos.length; i += 3) {
+    const px = l.pos[i], py = l.pos[i+1], pz = l.pos[i+2];
+    if (px<x0) x0=px; if (px>x1) x1=px; if (py<y0) y0=py; if (py>y1) y1=py;
+    if (pz<z0) z0=pz; if (pz>z1) z1=pz;
+  }
+  const ex = (x1-x0)||1, ey = (y1-y0)||1, ez = (z1-z0)||1;
+  const cellule = (x, y, z) =>
+    borne(((x-x0)/ex*G)|0, 0, G-1) + G * (borne(((y-y0)/ey*G)|0, 0, G-1)
+      + G * borne(((z-z0)/ez*G)|0, 0, G-1));
+
+  const sacR = new Float32Array(G*G*G), sacG = new Float32Array(G*G*G);
+  const sacB = new Float32Array(G*G*G), sacN = new Float32Array(G*G*G);
+
+  // — premier passage : le direct, et la trace de ce qui a été touché
+  for (const l of lots) {
+    const n = l.pos.length / 3;
+    l.touche = new Int32Array(n * RAYONS).fill(-1);
+    l.libre = new Float32Array(n * 3);      // ce que le sommet recevrait seul au monde
+    l.direct = new Float32Array(n * 3);     // ce qu'il reçoit vraiment, obstacles compris
+    for (let i = 0; i < n; i++) {
+      const px = l.pos[i*3], py = l.pos[i*3+1], pz = l.pos[i*3+2];
+      const nx = l.nor[i*3], ny = l.nor[i*3+1], nz = l.nor[i*3+2];
+      // on décolle le long de la normale : sinon le sommet se heurte à ses propres faces
+      const ox = px + nx*0.0004, oy = py + ny*0.0004, oz = pz + nz*0.0004;
+      let r = 0, g = 0, b = 0, lr = 0, lg = 0, lb = 0;
+      for (let k = 0; k < RAYONS; k++) {
+        const [dx, dy, dz] = dirs[k];
+        const cos = dx*nx + dy*ny + dz*nz;
+        if (cos <= 0.02) continue;
+        /* La référence est prise ici, sommet par sommet et dans la même
+           direction : c'est ce que recevrait ce point précis si l'objet
+           n'existait pas autour de lui. Une référence unique et globale — ce
+           que j'avais écrit — ne mesure plus l'occlusion mais l'orientation,
+           or l'orientation, three.js la calcule déjà avec la carte
+           d'environnement. On comptait la lumière deux fois, et tout blanchissait. */
+        lire(dx, dy, dz, c);
+        lr += cos*c[0]; lg += cos*c[1]; lb += cos*c[2];
+        const d = bvh.bloque(ox, oy, oz, dx, dy, dz, PORTEE);
+        if (d < 0) { r += cos*c[0]; g += cos*c[1]; b += cos*c[2]; }
+        else l.touche[i*RAYONS + k] = cellule(ox + dx*d, oy + dy*d, oz + dz*d);
+      }
+      l.libre[i*3] = lr || 1e-6; l.libre[i*3+1] = lg || 1e-6; l.libre[i*3+2] = lb || 1e-6;
+      l.direct[i*3] = r; l.direct[i*3+1] = g; l.direct[i*3+2] = b;
+      if ((i & 2047) === 0) yield;
+    }
+    /* La grille retient une fraction, pas des watts : « ce coin-ci reçoit sept
+       dixièmes de ce qu'il recevrait à découvert ». C'est sans unité, donc
+       transposable au sommet qui l'interrogera ensuite. */
+    for (let i = 0; i < n; i++) {
+      const cl = cellule(l.pos[i*3], l.pos[i*3+1], l.pos[i*3+2]);
+      sacR[cl] += l.direct[i*3] / l.libre[i*3];
+      sacG[cl] += l.direct[i*3+1] / l.libre[i*3+1];
+      sacB[cl] += l.direct[i*3+2] / l.libre[i*3+2];
+      sacN[cl]++;
+    }
+    yield;
+  }
+
+  /* — second passage : le rebond, rendu aux plis.
+     Un rayon bouché rapporte la fraction que renvoie l'endroit touché,
+     rapportée à ce que le sommet récepteur aurait reçu dans cette même
+     direction. Sur un objet clair ce rebond n'est pas un détail : c'est lui
+     qui empêche les creux de virer au gris sale. */
+  for (const l of lots) {
+    const n = l.pos.length / 3;
+    l.couleur = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const nx = l.nor[i*3], ny = l.nor[i*3+1], nz = l.nor[i*3+2];
+      let r = l.direct[i*3], g = l.direct[i*3+1], b = l.direct[i*3+2];
+      for (let k = 0; k < RAYONS; k++) {
+        const cl = l.touche[i*RAYONS + k];
+        if (cl < 0 || sacN[cl] === 0) continue;
+        const [dx, dy, dz] = dirs[k];
+        const cos = dx*nx + dy*ny + dz*nz;
+        if (cos <= 0.02) continue;
+        lire(dx, dy, dz, c);
+        r += cos*ALBEDO*c[0]*sacR[cl]/sacN[cl];
+        g += cos*ALBEDO*c[1]*sacG[cl]/sacN[cl];
+        b += cos*ALBEDO*c[2]*sacB[cl]/sacN[cl];
+      }
+      l.couleur[i*3]   = borne(r / l.libre[i*3],   0, 1);
+      l.couleur[i*3+1] = borne(g / l.libre[i*3+1], 0, 1);
+      l.couleur[i*3+2] = borne(b / l.libre[i*3+2], 0, 1);
+      if ((i & 4095) === 0) yield;
+    }
+    l.touche = null; l.direct = null; l.libre = null;
+    yield;
+  }
+}
+
+/* ============================================================================ */
+
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false }); }
+catch (e) { etape.textContent = 'WebGL indisponible'; }
+if (renderer) demarrer();
+
+async function demarrer(){
+  const souffle = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+  const avance = (p, txt) => { jauge.style.width = (p * 100) + '%'; if (txt) etape.textContent = txt; };
+
+  renderer.setPixelRatio(min(devicePixelRatio, 1.75));
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 600);
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const { tex, lire } = studio();
+  scene.environment = pmrem.fromEquirectangular(tex).texture;
+  tex.dispose();
+
+  // ---- le modèle -----------------------------------------------------------
+  avance(0.06, 'Chargement du modèle');
+  await souffle();
+  const chargeur = new GLTFLoader();
+  const gltf = await new Promise((res, rej) =>
+    chargeur.load('assets/vehicule/CarConcept.glb', res, undefined, rej));
+
+  const objet = gltf.scene;
+  objet.updateWorldMatrix(true, true);
+
+  /* Redressement. glTF veut Y en haut, mais un modèle exporté depuis un
+     logiciel en Z-haut arrive parfois couché — celui-ci mesure quatre mètres
+     cinquante sur son axe Y, ce qui ne peut être qu'une longueur. On le
+     détecte plutôt que de coder la rotation en dur : le prochain fichier
+     n'aura pas forcément le même travers. */
+  {
+    const b = new THREE.Box3().setFromObject(objet);
+    const t = b.getSize(new THREE.Vector3());
+    if (t.y > t.z && t.y > t.x) {
+      objet.rotation.x = -PI / 2;
+      objet.updateWorldMatrix(true, true);
+    }
+  }
+
+  /* On pose l'objet : centré en x et z, assis sur y = 0. Un modèle importé
+     arrive dans le repère de qui l'a fait, jamais dans le nôtre. */
+  const enveloppe = new THREE.Box3().setFromObject(objet);
+  const centre = enveloppe.getCenter(new THREE.Vector3());
+  objet.position.set(-centre.x, -enveloppe.min.y, -centre.z);
+  objet.updateWorldMatrix(true, true);
+  scene.add(objet);
+
+  // ---- les triangles, en repère monde -------------------------------------
+  avance(0.18, 'Construction de l’arbre');
+  await souffle();
+
+  const lots = [];
+  let nTri = 0;
+  objet.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    const g = o.geometry;
+    const p = g.attributes.position, nrm = g.attributes.normal;
+    const n = p.count;
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3);
+    const v = new THREE.Vector3(), m = o.matrixWorld;
+    const nm = new THREE.Matrix3().getNormalMatrix(m);
+    for (let i = 0; i < n; i++) {
+      v.fromBufferAttribute(p, i).applyMatrix4(m);
+      pos[i*3] = v.x; pos[i*3+1] = v.y; pos[i*3+2] = v.z;
+      v.fromBufferAttribute(nrm, i).applyMatrix3(nm).normalize();
+      nor[i*3] = v.x; nor[i*3+1] = v.y; nor[i*3+2] = v.z;
+    }
+    const idx = g.index ? g.index.array : null;
+    nTri += (idx ? idx.length : n) / 3;
+    lots.push({ mesh: o, geo: g, pos, nor, idx });
+  });
+
+  const tri = new Float32Array(nTri * 9);
+  let t = 0;
+  for (const l of lots) {
+    const c = l.idx ? l.idx.length : l.pos.length / 3;
+    for (let i = 0; i < c; i++) {
+      const a = (l.idx ? l.idx[i] : i) * 3;
+      tri[t++] = l.pos[a]; tri[t++] = l.pos[a+1]; tri[t++] = l.pos[a+2];
+    }
+  }
+  const t0 = performance.now();
+  const bvh = arbre(tri);
+  const tArbre = performance.now() - t0;
+
+  // ---- la cuisson, découpée pour ne pas figer la page ----------------------
+  avance(0.28, 'Cuisson de la lumière');
+  const t1 = performance.now();
+  const travail = cuire(lots, bvh, lire);
+  let fait = 0;
+  const total = lots.reduce((s, l) => s + l.pos.length / 3, 0) / 2048 + lots.length * 2;
+  for (;;) {
+    const debut = performance.now();
+    let fini = false;
+    while (performance.now() - debut < 24) { if (travail.next().done) { fini = true; break; } fait++; }
+    if (fini) break;
+    avance(0.28 + 0.68 * min(fait / total, 1));
+    await souffle();
+  }
+  const tCuisson = performance.now() - t1;
+
+  for (const l of lots) {
+    l.geo.setAttribute('color', new THREE.BufferAttribute(l.couleur, 3));
+    const mats = Array.isArray(l.mesh.material) ? l.mesh.material : [l.mesh.material];
+    for (const m of mats) { m.vertexColors = true; m.envMapIntensity = 1.0; m.needsUpdate = true; }
+  }
+  console.log(`voiture : ${nTri} triangles — arbre ${tArbre.toFixed(0)} ms, ` +
+              `cuisson ${tCuisson.toFixed(0)} ms`);
+
+  // ---- le décor ------------------------------------------------------------
+  const fondC = document.createElement('canvas'); fondC.width = 64; fondC.height = 512;
+  {
+    const fx = fondC.getContext('2d');
+    const g = fx.createLinearGradient(0, 0, 0, 512);
+    g.addColorStop(0.00, '#FCFBF9'); g.addColorStop(0.34, '#F3F2EF');
+    g.addColorStop(0.56, '#E4E3DF'); g.addColorStop(0.78, '#CBC9C4');
+    g.addColorStop(1.00, '#A9A7A2');
+    fx.fillStyle = g; fx.fillRect(0, 0, 64, 512);
+    /* Le tramage. Un degrade propre se casse en bandes visibles des qu'il
+       traverse la courbe du tone mapping : chaque palier de quantification
+       s'etire alors sur des dizaines de pixels a l'ecran. Un demi-niveau de
+       bruit aleatoire par pixel rend la frontiere introuvable a l'oeil, sans
+       rien changer a la couleur moyenne. */
+    const im = fx.getImageData(0, 0, 64, 512);
+    for (let i = 0; i < im.data.length; i += 4) {
+      const n = (Math.random() - 0.5) * 2.2;
+      im.data[i] += n; im.data[i + 1] += n; im.data[i + 2] += n;
+    }
+    fx.putImageData(im, 0, 0);
+  }
+  const fondT = new THREE.CanvasTexture(fondC); fondT.colorSpace = THREE.SRGBColorSpace;
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(300, 48, 32),
+    new THREE.MeshBasicMaterial({ map: fondT, side: THREE.BackSide })));
+
+  const sol = new THREE.Mesh(new THREE.PlaneGeometry(60, 60),
+    new THREE.ShadowMaterial({ opacity: 0.28 }));
+  sol.rotation.x = -PI / 2; sol.position.y = 0.002; sol.receiveShadow = true;
+  scene.add(sol);
+
+  const cle = new THREE.DirectionalLight(0xFFFFFF, 1.1);
+  cle.position.set(-9, 22, 12);
+  cle.castShadow = true;
+  cle.shadow.mapSize.set(2048, 2048);
+  cle.shadow.camera.left = -5; cle.shadow.camera.right = 5;
+  cle.shadow.camera.top = 5; cle.shadow.camera.bottom = -5;
+  cle.shadow.camera.near = 8; cle.shadow.camera.far = 46;
+  cle.shadow.bias = -0.0006; cle.shadow.normalBias = 0.05;
+  cle.shadow.radius = 3;
+  scene.add(cle);
+
+  // ---- la page -------------------------------------------------------------
+  const main = document.getElementById('scene');
+  PLANS.forEach((p, i) => {
+    const s = document.createElement('section');
+    s.innerHTML = `<div class="mot">
+      <p class="eyebrow reveal">${p.eyebrow}</p>
+      ${i === 0 ? '<h1' : '<h2'} class="reveal">${p.titre}${i === 0 ? '</h1>' : '</h2>'}
+      <p class="lede reveal">${p.lede}</p></div>`;
+    main.append(s);
+  });
+  document.querySelectorAll('main > section').forEach((s) => {
+    new IntersectionObserver(([e]) => e.target.classList.toggle('posed', e.isIntersecting),
+      { rootMargin: '-25% 0px -25% 0px' }).observe(s);
+  });
+
+  const ease = (t) => t * t * (3 - 2 * t);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const mel = (a, b, t) => a.map((v, i) => lerp(v, b[i], t));
+
+  const etat = { pos: PLANS[0].pos.slice(), look: PLANS[0].look.slice(), fov: PLANS[0].fov };
+  const cible = { pos: etat.pos.slice(), look: etat.look.slice(), fov: etat.fov };
+  const souris = { x: 0, y: 0, sx: 0, sy: 0 };
+
+  addEventListener('pointermove', (e) => {
+    souris.x = (e.clientX / innerWidth) * 2 - 1;
+    souris.y = (e.clientY / innerHeight) * 2 - 1;
+  }, { passive: true });
+
+  function lireScroll(){
+    const span = max(document.body.scrollHeight - innerHeight, 1);
+    const p = borne(scrollY / span, 0, 1);
+    document.getElementById('bar').style.width = (p * 100) + '%';
+    const t = p * (PLANS.length - 1);
+    const i = min(Math.floor(t), PLANS.length - 2);
+    const f = ease(t - i);
+    cible.pos = mel(PLANS[i].pos, PLANS[i + 1].pos, f);
+    cible.look = mel(PLANS[i].look, PLANS[i + 1].look, f);
+    cible.fov = lerp(PLANS[i].fov, PLANS[i + 1].fov, f);
+  }
+  addEventListener('scroll', lireScroll, { passive: true });
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    renderer.setPixelRatio(min(devicePixelRatio, 1.75));
+    renderer.setSize(innerWidth, innerHeight, false);
+    lireScroll();
+  }, { passive: true });
+  lireScroll();
+
+  const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const INSTANT = location.hash === '#instant';
+  const vise = new THREE.Vector3();
+  let dernier = performance.now();
+
+  renderer.setAnimationLoop((now) => {
+    const dt = min((now - dernier) / 1000, 0.05); dernier = now;
+    const k = INSTANT ? 1 : 1 - Math.exp(-4.6 * dt);
+    for (let i = 0; i < 3; i++) {
+      etat.pos[i] = lerp(etat.pos[i], cible.pos[i], k);
+      etat.look[i] = lerp(etat.look[i], cible.look[i], k);
+    }
+    etat.fov = lerp(etat.fov, cible.fov, k);
+    souris.sx = lerp(souris.sx, souris.x, k);
+    souris.sy = lerp(souris.sy, souris.y, k);
+
+    /* Le débattement se mesure à la scène : exprimé en fraction du recul, il
+       vaut autant devant un appareil de vingt centimètres que devant une
+       pièce. Écrit en dur, il conviendrait à l'un et pas à l'autre. */
+    const par = lent ? 0 : hypot(etat.pos[0] - etat.look[0],
+      etat.pos[1] - etat.look[1], etat.pos[2] - etat.look[2]) * 0.05;
+    camera.position.set(etat.pos[0] + souris.sx * par,
+      etat.pos[1] - souris.sy * par * 0.6, etat.pos[2]);
+    vise.set(etat.look[0], etat.look[1], etat.look[2]);
+    camera.lookAt(vise);
+    if (abs(camera.fov - etat.fov) > 0.01) { camera.fov = etat.fov; camera.updateProjectionMatrix(); }
+
+    /* Le sujet se pousse à droite pour laisser la colonne de texte respirer :
+       on décale la fenêtre de projection, pas la caméra — déplacer la caméra
+       tournerait l'objet et changerait ses reflets. */
+    if (innerWidth > 820) camera.setViewOffset(innerWidth, innerHeight,
+      innerWidth * -0.15, 0, innerWidth, innerHeight);
+    else camera.clearViewOffset();
+
+    renderer.render(scene, camera);
+  });
+
+  avance(1, 'Prêt');
+  charge.classList.add('parti');
+}
+</script>
+</body>
+</html>
