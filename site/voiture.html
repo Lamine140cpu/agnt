@@ -75,6 +75,18 @@ h2{font-size:clamp(1.9rem,5.4vw,3.4rem)}
 .charge i b{display:block; height:100%; width:0; background:var(--accent); transition:width .3s ease}
 .charge em{font-style:normal; font-family:var(--mono); font-size:10px;
   letter-spacing:.2em; text-transform:uppercase; color:var(--ink-soft)}
+/* L'habitacle est sombre, la page est claire : le texte y devient illisible.
+   C'est donc la page qui bascule le temps des plans interieurs, plutot que
+   l'habitacle qui renonce a etre sombre. Le voile suit automatiquement,
+   puisqu'il est fait de --ground. */
+html.dedans{
+  --ground:#0C0D0F; --ink:#F3F2EF; --ink-soft:#9A999E;
+  --line:rgba(243,242,239,.16); --accent:#5B93FF;
+}
+html.dedans body{background:#0C0D0F}
+body, .bar, h1, h2, .lede, .eyebrow{
+  transition:color .5s ease, background-color .5s ease;
+}
 @media (prefers-reduced-motion:reduce){
   *,*::before{transition-duration:.001ms !important}
   .reveal{opacity:1; transform:none}
@@ -148,6 +160,24 @@ const PLANS = [
     titre: 'Jusqu’aux jantes<br>et aux pneus.',
     lede: 'Approchez-vous autant que vous voulez. C’est le même objet, éclairé par la même lumière : rien n’est masqué par un plan large.',
     pos: [3.4, 0.78, 4.0], look: [1.05, 0.48, 1.7], fov: 26,
+  },
+  {
+    eyebrow: 'Le poste de conduite',
+    titre: 'Et maintenant,<br>on entre.',
+    lede: 'La caméra ne se contente pas de tourner autour : elle passe le pare-brise et va s’asseoir à la place du conducteur. Rien n’a été ajouté pour ce plan — l’habitacle était là depuis le début.',
+    pos: [1.75, 1.42, 2.75], look: [0.10, 0.86, 0.95], fov: 40,
+  },
+  {
+    eyebrow: 'Au volant',
+    titre: 'Volant en main,<br>pédales aux pieds.',
+    lede: 'Position de conduite réelle, à un mètre du sol. Le creux sous la planche de bord est sombre parce qu’il voit moins de ciel — c’est le calcul du chargement, pas une lampe qu’on aurait baissée.',
+    pos: [0.02, 1.03, 0.02], look: [0.00, 0.80, 1.15], fov: 58,
+  },
+  {
+    eyebrow: 'La planche de bord',
+    titre: 'Jusqu’à<br>la pédale.',
+    lede: 'Compteurs, colonne de direction, accélérateur et frein avec leurs biellettes. Un habitacle complet se visite comme une pièce — et coûte le même prix qu’une carrosserie vide.',
+    pos: [0.28, 0.92, 0.52], look: [-0.05, 0.58, 1.38], fov: 46,
   },
   {
     eyebrow: 'Le coffre',
@@ -676,6 +706,14 @@ async function demarrer(){
     cible.pos = mel(PLANS[i].pos, PLANS[i + 1].pos, f);
     cible.look = mel(PLANS[i].look, PLANS[i + 1].look, f);
     cible.fov = lerp(PLANS[i].fov, PLANS[i + 1].fov, f);
+
+    /* Dedans ou dehors. On le deduit de la distance au centre de la voiture
+       plutot que d'un numero de plan : ajouter un acte interieur plus tard ne
+       demandera alors rien de plus. Le seuil est pris sur la cible et non sur
+       l'etat courant, pour que la page ait fini de basculer quand la camera
+       arrive. */
+    const dedans = hypot(cible.pos[0], cible.pos[1] - 0.7, cible.pos[2]) < 2.3;
+    document.documentElement.classList.toggle('dedans', dedans);
   }
   addEventListener('scroll', lireScroll, { passive: true });
   addEventListener('resize', () => {
@@ -716,7 +754,12 @@ async function demarrer(){
     /* Le sujet se pousse à droite pour laisser la colonne de texte respirer :
        on décale la fenêtre de projection, pas la caméra — déplacer la caméra
        tournerait l'objet et changerait ses reflets. */
-    if (innerWidth > 820) camera.setViewOffset(innerWidth, innerHeight,
+    /* Le décalage vaut pour un objet posé devant soi, pas pour un habitacle
+       qui remplit déjà le cadre : à l'intérieur, pousser l'image à droite
+       couperait le volant. On le relâche donc quand la caméra entre dans la
+       voiture — détectée par sa distance au centre, sous deux mètres. */
+    const dedans = hypot(etat.pos[0], etat.pos[1] - 0.7, etat.pos[2]) < 2.0;
+    if (innerWidth > 820 && !dedans) camera.setViewOffset(innerWidth, innerHeight,
       innerWidth * -0.15, 0, innerWidth, innerHeight);
     else camera.clearViewOffset();
 
