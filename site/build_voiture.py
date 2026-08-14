@@ -32,6 +32,7 @@ from build_appareil import envelopper                  # noqa: E402
 SITE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(SITE, "dist", "voiture.html")
 GLB = os.path.join(SITE, "assets", "vehicule", "CarConcept.glb")
+ENV = os.path.join(SITE, "assets", "studio", "hall-equirect.jpg")
 
 COTE = 1024        # côté maximal d'une carte
 QUALITE = 88
@@ -137,6 +138,16 @@ def main():
         "  for (let i = 0; i < __b.length; i++) __u[i] = __b.charCodeAt(i);\n"
         "  const gltf = await new Promise((res, rej) =>\n"
         "    chargeur.parse(__u.buffer, '', res, rej));")
+    # La panoramique passe en URL data:. Une balise <img> l'accepte — c'est
+    # fetch() qu'une politique stricte refuse, pas le chargement d'une image.
+    env64 = base64.b64encode(open(ENV, "rb").read()).decode()
+    # L'ordre compte : const n'est pas hissé, et déclarer la chaîne après son
+    # usage donnait « Cannot access ENV_B64 before initialization ».
+    page = page.replace("const ENV_STUDIO = 'assets/studio/hall-equirect.jpg';",
+                        "const ENV_B64 = " + json.dumps(env64) + ";\n"
+                        "const ENV_STUDIO = 'data:image/jpeg;base64,' + ENV_B64;")
+    print(f"  panoramique {len(env64)/1024:.0f} Ko en base64")
+
     page = page.replace("const chargeur = new GLTFLoader();",
                         "const MODELE_B64 = " + json.dumps(b64) + ";\n"
                         "  const chargeur = new GLTFLoader();", 1)

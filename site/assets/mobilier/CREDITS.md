@@ -13,3 +13,13 @@ Elle est faite ici parce que ces gens ont fait le travail.
   Utilisé comme figurant dans `voiture.html` en attendant le véhicule réel du
   client. 213 347 triangles, vernis, irisation et transmission.
   https://github.com/KhronosGroup/glTF-Sample-Assets
+
+## Images génératives
+
+Les fichiers de `assets/studio/` ont été produits par un modèle génératif à la
+demande du commanditaire. `hall-equirect.jpg` sert de source de lumière et de
+reflets ; `studio-equirect.jpg` en est une variante plus neutre.
+
+Aucune ne représente un produit ni une marque existante. Voir `PHOTOS.md` pour
+la règle : le décor et la matière peuvent être générés, jamais le véhicule
+mis en location.

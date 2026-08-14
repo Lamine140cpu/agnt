@@ -128,6 +128,7 @@ import { GLTFLoader } from './vendor/GLTFLoader.js';
    de rayons praticable, et que tout moteur de rendu embarque.
    ============================================================================ */
 
+const ENV_STUDIO = 'assets/studio/hall-equirect.jpg';
 const canvas = document.getElementById('webgl');
 const charge = document.getElementById('charge');
 const jauge = document.getElementById('jauge');
@@ -194,61 +195,67 @@ const PLANS = [
 ];
 
 /* ------------------------------------------------------------------- studio
-   Deux grands panneaux, un plafond, un sol plus sombre que le fond. Le tableau
-   de flottants est conservé : c'est lui qu'on interrogera pendant la cuisson.
-   Le studio sert donc deux fois — aux reflets à l'écran, et aux rayons avant
-   l'écran. Les deux racontent alors la même lumière. */
-function studio(){
-  const W = 512, H = 256;
+   La lumière vient maintenant d'une panoramique équirectangulaire, et non plus
+   de deux rectangles blancs dessinés dans un canvas. Mais une image ordinaire
+   est en huit bits : son blanc vaut un, alors qu'une boîte à lumière vaut
+   trente fois cela. Livrée telle quelle, elle éclaire tout et ne fait briller
+   rien — le métal reste mou, le vernis reste plat.
+
+   On lui rend donc sa dynamique. L'exposant élevé est ce qui compte : à la
+   puissance vingt, un mur à 90 % de blanc ne bouge presque pas, tandis qu'un
+   panneau à 99 % s'envole. On ne restitue pas la mesure d'origine — elle est
+   perdue au moment où l'image a été écrêtée — mais on rétablit l'écart, et
+   c'est l'écart qui fait l'éclat.
+
+   L'étalonnage qui suit ramène ensuite l'éclairement d'une surface tournée
+   vers le haut à un, ce qui dispense de régler l'exposition à la main : on
+   peut donc pousser la ré-extension sans crainte. */
+async function studio(fichier){
+  const W = 1024, H = 512;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
 
-  const ciel = x.createLinearGradient(0, 0, 0, H);
-  ciel.addColorStop(0.00, '#FFFFFF');
-  ciel.addColorStop(0.42, '#EFEEEC');
-  ciel.addColorStop(0.60, '#BEBCB8');
-  ciel.addColorStop(1.00, '#6B6965');
-  x.fillStyle = ciel; x.fillRect(0, 0, W, H);
-
-  const panneau = (cx, large, haut, bas, force) => {
-    const g = x.createLinearGradient(cx - large / 2, 0, cx + large / 2, 0);
-    g.addColorStop(0, 'rgba(255,255,255,0)');
-    g.addColorStop(0.18, `rgba(255,255,255,${force})`);
-    g.addColorStop(0.82, `rgba(255,255,255,${force})`);
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    x.fillStyle = g; x.fillRect(cx - large / 2, H * haut, large, H * (bas - haut));
-  };
-  panneau(W * 0.20, W * 0.17, 0.03, 0.58, 1.0);
-  panneau(W * 0.70, W * 0.09, 0.10, 0.50, 0.66);
-  panneau(W * 0.50, W * 0.58, 0.00, 0.09, 0.52);
+  let depuisImage = false;
+  try {
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i); i.onerror = () => rej(new Error('image'));
+      i.src = fichier;
+    });
+    x.drawImage(img, 0, 0, W, H);
+    depuisImage = true;
+  } catch (e) {
+    /* Repli sur le studio dessiné. Une page qui reste noire faute d'une image
+       est pire qu'une page à l'éclairage approximatif. */
+    const ciel = x.createLinearGradient(0, 0, 0, H);
+    ciel.addColorStop(0, '#FFFFFF'); ciel.addColorStop(0.42, '#EFEEEC');
+    ciel.addColorStop(0.60, '#BEBCB8'); ciel.addColorStop(1, '#6B6965');
+    x.fillStyle = ciel; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#FFFFFF';
+    x.fillRect(W * 0.11, H * 0.03, W * 0.17, H * 0.55);
+    x.fillRect(W * 0.66, H * 0.10, W * 0.09, H * 0.40);
+  }
 
   const px = x.getImageData(0, 0, W, H).data;
   const data = new Float32Array(W * H * 4);
+  const AMPLEUR = depuisImage ? 30 : 10, DURETE = depuisImage ? 20 : 8;
   for (let i = 0; i < W * H; i++) {
     for (let k = 0; k < 3; k++) {
       const v = px[i * 4 + k] / 255;
-      /* Le relèvement doit frapper les panneaux et rien d'autre. En v², un gris
-         moyen ressortait déjà à 1,5 — au-dessus du blanc d'écran — et l'objet
-         entier se retrouvait surexposé, cuisson comprise puisque les rayons
-         lisent ce même tableau. En v⁸, le fond reste à sa place et seules les
-         boîtes à lumière dépassent, ce qui est précisément leur rôle. */
-      data[i * 4 + k] = Math.pow(v, 2.2) * (1 + Math.pow(v, 8) * 10);
+      data[i * 4 + k] = Math.pow(v, 2.2) * (1 + Math.pow(v, DURETE) * AMPLEUR);
     }
     data[i * 4 + 3] = 1;
   }
-  /* Étalonnage. Un studio dessiné à la main n'a aucun niveau absolu : le mien
-     sortait à plusieurs fois le blanc en moyenne, si bien qu'un cuir noir —
-     qui ne renvoie pourtant que quatre pour cent — remontait au gris moyen. On
-     ramène donc l'éclairement d'une surface tournée vers le haut à un.
 
-     Le facteur sin(θ) est l'angle solide : sur une image équirectangulaire, les
-     rangées proches des pôles couvrent beaucoup moins de ciel que celles de
-     l'équateur, et les compter à parts égales fausse la moyenne. */
+  /* Étalonnage : l'éclairement d'une surface tournée vers le haut vaut un.
+     Le facteur sin(θ) est l'angle solide — sur une image équirectangulaire,
+     les rangées proches des pôles couvrent bien moins de ciel que celles de
+     l'équateur, et les compter à parts égales fausserait la moyenne. */
   {
     let somme = 0, poids = 0;
     for (let b = 0; b < H; b++) {
       const theta = (b + 0.5) / H * PI;
-      const w = Math.sin(theta) * max(Math.cos(theta), 0);   // angle solide × loi de Lambert
+      const w = Math.sin(theta) * max(Math.cos(theta), 0);
       if (w <= 0) continue;
       for (let a = 0; a < W; a++) {
         const i = (b * W + a) * 4;
@@ -256,7 +263,7 @@ function studio(){
         poids += w;
       }
     }
-    const k = poids > 0 ? (somme / poids) : 1;
+    const k = poids > 0 ? somme / poids : 1;
     if (k > 0) for (let i = 0; i < data.length; i++) data[i] /= k;
   }
 
@@ -268,7 +275,7 @@ function studio(){
   };
   const tex = new THREE.DataTexture(data.slice(), W, H, THREE.RGBAFormat, THREE.FloatType);
   tex.mapping = THREE.EquirectangularReflectionMapping; tex.needsUpdate = true;
-  return { tex, lire };
+  return { tex, lire, depuisImage };
 }
 
 /* ============================================================================
@@ -528,7 +535,10 @@ async function demarrer(){
 
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
-  const { tex, lire } = studio();
+  /* Surtout pas « charge » ici : c'est déjà le voile de chargement, et le
+     masquer par un booléen faisait échouer sa disparition en fin de course. */
+  const { tex, lire, depuisImage } = await studio(ENV_STUDIO);
+  console.log(depuisImage ? 'studio : panoramique chargée' : 'studio : repli dessiné');
   scene.environment = pmrem.fromEquirectangular(tex).texture;
   tex.dispose();
 
