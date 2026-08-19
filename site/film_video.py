@@ -21,6 +21,22 @@ assets/film/ — pour que build_film.py n'ait rien à savoir de leur provenance.
     serie : « large » (défaut, recadrage paysage) ou « etroit » (portrait,
             pour les téléphones — c'est un recadrage, pas une réduction :
             une composition pensée en 16:9 ne tient pas debout en 9:16)
+
+Un plan peut être rogné dans le temps en suffixant son nom :
+
+    plan.mp4@0-200      ne garde que les images 0 à 200
+    plan.mp4@12-        jette les douze premières
+    plan.mp4@-200       jette tout après la 200e
+
+C'est indispensable sur une vidéo générée : les modèles finissent presque
+toujours sur un gel d'une à deux secondes. Gardé tel quel, ce gel occupe le
+même espace de défilement que le reste — un cinquième de la page où plus rien
+ne bouge.
+
+    python3 film_video.py plan.mp4 profil
+
+mesure l'écart entre images consécutives, signale les coupes et dit où le
+mouvement s'arrête. À lancer avant toute extraction.
 """
 import os
 import sys
@@ -34,11 +50,22 @@ SITE = os.path.dirname(os.path.abspath(__file__))
 # Les fichiers d'abord, les réglages ensuite. On les sépare en regardant le
 # disque plutôt qu'en comptant les positions : ça laisse passer un nombre
 # quelconque de plans sans que l'appel change de forme.
+def _decouper(arg):
+    """« fichier.mp4@12-200 » -> (fichier, 12, 200). Bornes absentes : None."""
+    chemin, _, plage = arg.partition("@")
+    if not os.path.isfile(chemin):
+        return None
+    a, _, b = plage.partition("-") if plage else ("", "", "")
+    return chemin, int(a) if a.strip() else None, int(b) if b.strip() else None
+
+
 _args = sys.argv[1:]
-SOURCES = [a for a in _args if os.path.isfile(a)]
-_reste = [a for a in _args if not os.path.isfile(a)]
+SOURCES = [c for c in map(_decouper, _args) if c]
+_reste = [a for a in _args if _decouper(a) is None]
 if not SOURCES:
     sys.exit(__doc__)
+PROFIL = "profil" in _reste
+_reste = [a for a in _reste if a != "profil"]
 
 IMAGES = int(_reste[0]) if len(_reste) > 0 else 150
 LARGEUR = int(_reste[1]) if len(_reste) > 1 else 1440
@@ -66,8 +93,8 @@ def recadrer(img, rapport):
     return img[y:y + nh, :]
 
 
-def inspecter(chemin):
-    """Ouvre un plan et rend (capture, nombre d'images, i/s)."""
+def inspecter(chemin, a, b):
+    """Ouvre un plan et rend (capture, première image, dernière image)."""
     cap = cv2.VideoCapture(chemin)
     if not cap.isOpened():
         sys.exit(f"illisible : {chemin}")
@@ -75,15 +102,69 @@ def inspecter(chemin):
     fps = cap.get(cv2.CAP_PROP_FPS) or 0
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    debut = max(a or 0, 0)
+    fin = min(b if b is not None else total - 1, total - 1)
+    if fin <= debut:
+        sys.exit(f"plage vide sur {chemin} : {debut}-{fin}")
+    rogne = f"  → garde {debut}-{fin}" if (debut, fin) != (0, total - 1) else ""
     print(f"  {os.path.basename(chemin):28s} {total:4d} images · {fps:4.1f} i/s · "
-          f"{w}×{h} · {total / fps if fps else 0:5.1f} s")
-    return cap, total, fps
+          f"{w}×{h} · {total / fps if fps else 0:5.1f} s{rogne}")
+    return cap, debut, fin
+
+
+def profil(chemin):
+    """Écart moyen entre images consécutives : coupes et zones mortes.
+
+    Une coupe est un pic isolé très au-dessus du voisinage. Une zone morte est
+    une traînée proche de zéro — typiquement le gel de fin. Les deux sont
+    invisibles en lecture normale et ruineuses au défilement, où elles
+    occupent quand même leur part entière de la page."""
+    cap = cv2.VideoCapture(chemin)
+    if not cap.isOpened():
+        sys.exit(f"illisible : {chemin}")
+    ecarts, precedent = [], None
+    while True:
+        ok, img = cap.read()
+        if not ok:
+            break
+        g = cv2.cvtColor(cv2.resize(img, (320, 180)), cv2.COLOR_BGR2GRAY).astype(np.float32)
+        if precedent is not None:
+            ecarts.append(float(np.abs(g - precedent).mean()))
+        precedent = g
+    cap.release()
+    if not ecarts:
+        sys.exit("aucune image lisible")
+
+    d = np.array(ecarts)
+    print(f"\n{os.path.basename(chemin)} — {len(d) + 1} images, "
+          f"mouvement moyen {d.mean():.2f}")
+    pas = max(len(d) // 24, 1)
+    for i in range(0, len(d), pas):
+        t = d[i:i + pas]
+        print(f"  {i:4d}  {t.mean():6.2f}  {'#' * min(int(t.mean() * 5), 60)}")
+
+    coupes = [i + 1 for i, v in enumerate(d) if v > d.mean() + 5 * d.std()]
+    print(f"\ncoupes : {coupes if coupes else 'aucune'}")
+    if coupes:
+        print("  une coupe se remonte aussi mal qu'elle se descend. Si elle tombe")
+        print("  là où un texte change, elle passe pour un changement de chapitre.")
+
+    vivant = [i for i, v in enumerate(d) if v > 0.6]
+    if vivant and vivant[-1] < len(d) - 4:
+        print(f"\ngel de fin : plus rien ne bouge après l'image {vivant[-1]} "
+              f"({len(d) - vivant[-1]} images)")
+        print(f"  suggestion : {os.path.basename(chemin)}@{vivant[0]}-{vivant[-1] + 9}")
 
 
 def main():
+    if PROFIL:
+        for chemin, _, _ in SOURCES:
+            profil(chemin)
+        return
+
     print(f"{len(SOURCES)} plan(s) :")
-    plans = [inspecter(s) for s in SOURCES]
-    durees = [t for _, t, _ in plans]
+    plans = [inspecter(*s) for s in SOURCES]
+    durees = [f - d + 1 for _, d, f in plans]
     somme = sum(durees)
     if somme < IMAGES:
         print(f"  ATTENTION : {somme} images disponibles pour {IMAGES} demandées.\n"
@@ -105,15 +186,16 @@ def main():
 
     hh = int(round(LARGEUR / CIBLE))
     ecrites, saut = 0, 0
-    for p, ((cap, total, _), quota) in enumerate(zip(plans, quotas)):
+    for p, ((cap, debut, fin), quota) in enumerate(zip(plans, quotas)):
         if quota <= 0:
             cap.release()
             continue
         # Les plans enchaînés démarrent sur l'image de fin du précédent : la
         # reprendre la ferait tenir deux fois plus longtemps à l'écran, et le
         # défilement buterait à chaque jointure.
-        debut = 1 if p > 0 and total > 1 else 0
-        rangs = np.linspace(debut, max(total - 1, debut), quota).round().astype(int)
+        if p > 0 and fin > debut:
+            debut += 1
+        rangs = np.linspace(debut, fin, quota).round().astype(int)
 
         precedent = None
         for rang in rangs:
@@ -142,9 +224,12 @@ def main():
     print(f"écrit {ecrites} images {LARGEUR}×{hh} dans {SORTIE} — {poids:.1f} Mo")
     if saut:
         print(f"  {saut} image(s) répétée(s) faute de positionnement exact")
-    # 46 Ko l'image livrée, mesurés sur la première série. C'est le seul
-    # chiffre qui décide de la longueur d'une chorégraphie.
-    print(f"  soit environ {ecrites * 46 / 1024:.1f} Mo une fois livrées")
+    # Fourchette mesurée : 20 Ko l'image sur une prise de vue réelle à fond
+    # doux, 46 Ko sur nos rendus 3D, plus contrastés et plus détaillés. C'est
+    # le chiffre qui décide de la longueur d'une chorégraphie, pas le temps
+    # de calcul — d'où la fourchette plutôt qu'un nombre faussement précis.
+    print(f"  soit {ecrites * 20 / 1024:.1f} à {ecrites * 46 / 1024:.1f} Mo une fois livrées, "
+          f"selon le contraste de l'image")
     print("\nensuite : python3 build_film.py 72 1280")
 
 
