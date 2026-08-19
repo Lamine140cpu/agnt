@@ -18,7 +18,8 @@ assets/film/ — pour que build_film.py n'ait rien à savoir de leur provenance.
 
     usage : python3 film_video.py plan1.mp4 [plan2.mp4 ...] [images] [largeur] [serie]
 
-    serie : « large » (défaut, recadrage paysage) ou « etroit » (portrait,
+    serie : « large » (défaut, paysage), « accueil » (paysage, prologue de
+            la vitrine) ou « etroit » (portrait,
             pour les téléphones — c'est un recadrage, pas une réduction :
             une composition pensée en 16:9 ne tient pas debout en 9:16)
 
@@ -71,9 +72,12 @@ IMAGES = int(_reste[0]) if len(_reste) > 0 else 150
 LARGEUR = int(_reste[1]) if len(_reste) > 1 else 1440
 SERIE = _reste[2] if len(_reste) > 2 else "large"
 
-FORMATS = {"large": 16 / 9, "etroit": 9 / 16}
+# « accueil » est le prologue de la vitrine du studio : même cadrage que
+# « large », mais un dossier à part, pour que les deux séquences puissent
+# coexister sans que l'une écrase l'autre.
+FORMATS = {"large": 16 / 9, "etroit": 9 / 16, "accueil": 16 / 9}
 if SERIE not in FORMATS:
-    sys.exit(f"série inconnue : {SERIE} (large ou etroit)")
+    sys.exit(f"série inconnue : {SERIE} — attendu : {', '.join(FORMATS)}")
 CIBLE = FORMATS[SERIE]
 SORTIE = os.path.join(SITE, "assets", "film", SERIE)
 
