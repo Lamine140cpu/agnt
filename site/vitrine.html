@@ -1630,7 +1630,12 @@ async function boot(){
   /* #instant coupe l'interpolation : sans lui, toute capture d'écran est prise
      en pleine transition et donne une image trompeuse. Sert aussi aux
      vérifications automatiques. */
-  const INSTANT = location.hash === '#instant';
+  /* `includes` et non `===` : la capture hors ligne demande « #film-instant »,
+     les deux à la fois — le film pour le crochet de capture, l'instantané pour
+     que la caméra soit arrivée quand on photographie. Avec une égalité stricte
+     la moitié des images étaient prises en pleine transition. */
+  const INSTANT = location.hash.includes('instant');
+  const FILM = location.hash.includes('film');
 
   const etat = {
     pos: TRAJETS.appart[0].pos.slice(),
@@ -2092,6 +2097,15 @@ async function boot(){
        la mise au point flouterait la photographie d'un bout à l'autre. */
     matMix.uniforms.plage.value = photos[demoActive.id] ? 1e6 : PLAGE[demoActive.id];
     tirer(matMix, null);
+
+    /* La capture se fait ICI, dans la boucle, juste après le dernier tracé à
+       l'écran. Le tampon de dessin est vidé dès qu'il a été composé : lu de
+       l'extérieur, il ne rendrait que du noir. Et c'est dix fois plus rapide
+       qu'une capture d'écran, qui force une recomposition de toute la page. */
+    if (FILM && window.__demande) {
+      window.__image = renderer.domElement.toDataURL('image/jpeg', 0.94);
+      window.__demande = false;
+    }
   });
 }
 </script>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ultra Motion</title>
+<!-- Fontes embarquées, pas appelées chez un tiers. Une page qui dépend d'un
+     hôte extérieur substitue sa police de secours en silence quand cet hôte
+     est lent ou bloqué : on croit voir sa maquette, on voit autre chose.
+     Produit par fontes_locales.py. -->
+<link rel="stylesheet" href="assets/fonts/ultra.css">
+<style>
+/* ============================================================================
+   ULTRA MOTION — la vitrine du studio.
+
+   Un parti pris de couleur unique, assumé : la page ne bascule pas en clair.
+   Le sujet est une cabine de projection, et une cabine de projection éclairée
+   n'existe pas. Toutes les couleurs sont donc peintes explicitement — rien
+   n'est laissé au fond de l'hôte — mais il n'y a qu'un seul jeu.
+
+   La palette vient de là aussi : le noir n'est pas neutre, il tire sur le bleu
+   comme un écran éteint ; l'accent est l'ambre d'une lampe inactinique, le
+   seul éclairage qu'on tolère à côté d'une pellicule. Il ne sert qu'à deux
+   choses — les numéros de chapitre et le seul bouton de la page.
+   ============================================================================ */
+:root{
+  --noir:#0A0C0E;        /* le fond, bleuté */
+  --nuit:#12161A;        /* la surface soulevée */
+  --os:#EDE9E3;          /* blanc chaud, jamais #fff */
+  --gris:#8A8F96;        /* gris froid, accordé au fond */
+  --sourd:#5C626A;       /* gris de second plan */
+  --ambre:#C8873A;       /* lampe inactinique */
+  --ligne:rgba(237,233,227,.13);
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --marge:clamp(22px,6vw,110px);
+  --max:1380px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
+  font-size:clamp(15px,1.05vw,17px);line-height:1.65;-webkit-font-smoothing:antialiased}
+::selection{background:var(--ambre);color:var(--noir)}
+:focus-visible{outline:2px solid var(--ambre);outline-offset:4px;border-radius:2px}
+
+/* ------------------------------------------------------------ la typographie
+   Trois rôles, trois familles. Le serif ne sert QUE aux grandes phrases : dès
+   qu'il descend au niveau du paragraphe il perd son tranchant. Le mono ne sert
+   qu'à ce qui se mesure — numéros, unités, libellés. Entre les deux, la sans
+   porte tout le reste sans se faire remarquer, ce qui est son travail. */
+.titre{font-family:var(--serif);font-weight:400;line-height:.98;letter-spacing:-.015em;
+  text-wrap:balance;margin:0}
+.t-xxl{font-size:clamp(3.1rem,10.5vw,9.5rem)}
+.t-xl{font-size:clamp(2.5rem,6.4vw,5.2rem)}
+.t-l{font-size:clamp(1.9rem,3.4vw,3rem)}
+.ital{font-style:italic}
+.corps{margin:0;color:var(--gris);max-width:62ch}
+.corps strong{color:var(--os);font-weight:500}
+.eti{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sourd);margin:0}
+.eti b{color:var(--ambre);font-weight:500}
+
+/* --------------------------------------------------------------- la structure
+   Une seule gouttière, une seule largeur maximale, partout. C'est ce qui tient
+   une page longue : le lecteur n'a jamais à retrouver le bord du texte. */
+.bande{max-width:var(--max);margin:0 auto;padding:0 var(--marge)}
+.bloc{padding:clamp(86px,13vh,170px) 0}
+.regle{border-top:1px solid var(--ligne)}
+
+/* En-tête et pied fixes, en mono, très discrets : ce sont des repères, pas des
+   éléments de composition. */
+.tete{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;
+  justify-content:space-between;align-items:center;gap:16px;
+  padding:18px var(--marge);font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--sourd);
+  pointer-events:none;mix-blend-mode:difference}
+.tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
+.tete span{display:none}
+@media (min-width:720px){.tete span{display:inline}}
+
+/* ================================================================== LE FILM
+   La toile est fixe et couvre l'écran ; le défilement ne la déplace pas, il
+   change l'image qu'elle affiche. Les sections du prologue sont transparentes
+   et passent par-dessus. La suite du site, elle, est opaque : elle recouvre la
+   toile sans qu'on ait à l'éteindre en JavaScript. */
+#toile{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:block;
+  background:var(--noir)}
+/* Le voile : fixe, plein écran, strictement horizontal. Un dégradé incliné
+   dans une boîte plus haute que large trace sa propre diagonale, et cette
+   diagonale se voit. Leçon payée sur le film précédent. */
+#prologue{position:relative;z-index:3}
+#prologue::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(10,12,14,.95) 0%,rgba(10,12,14,.88) 26%,
+    rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
+#prologue section{min-height:100svh;display:flex;flex-direction:column;
+  justify-content:flex-end;padding-bottom:clamp(76px,12vh,150px)}
+@media (max-width:820px){
+  #prologue::before{background:linear-gradient(transparent 6%,rgba(10,12,14,.45) 34%,
+    rgba(10,12,14,.9) 66%,rgba(10,12,14,.96) 100%)}
+}
+.mot{max-width:min(46ch,50vw)}
+@media (max-width:820px){.mot{max-width:none}}
+.mot .corps{margin-top:20px}
+.mot .eti{margin-bottom:26px}
+
+/* Le reste du site : opaque, il recouvre la toile. */
+#suite{position:relative;z-index:4;background:var(--noir)}
+
+/* La marque, en ouverture. Interlettrage large : un mot de onze signes tenu
+   sur toute la largeur se lit comme une enseigne, pas comme un titre. */
+.marque{font-family:var(--serif);font-size:clamp(2.6rem,11.5vw,10rem);line-height:.9;
+  letter-spacing:.02em;margin:0 0 6px}
+.defiler{display:flex;align-items:center;gap:12px;margin-top:38px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--sourd)}
+.defiler i{display:block;width:52px;height:1px;background:var(--sourd);
+  transform-origin:left;animation:tirer 2.6s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes tirer{0%{transform:scaleX(0);opacity:0}
+  30%{transform:scaleX(1);opacity:1}70%{transform:scaleX(1);opacity:1}
+  100%{transform:scaleX(1);opacity:0}}
+
+/* ============================================================== LES CHAPITRES
+   Le numéro romain n'est pas un ornement : la page décrit une chaîne de
+   production, et une chaîne a un ordre. I précède II parce que la composition
+   précède le calcul, pas parce que ça fait sérieux. */
+.chapitre{display:grid;gap:clamp(28px,4vw,64px);align-items:start}
+@media (min-width:900px){.chapitre{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}}
+.chapitre .corps + .corps{margin-top:18px}
+
+/* Les pièces : quatre travaux réels, chacun avec son image. */
+.pieces{display:grid;gap:clamp(20px,2.6vw,34px);margin-top:clamp(40px,6vh,72px)}
+@media (min-width:760px){.pieces{grid-template-columns:1fr 1fr}}
+.piece{position:relative;display:flex;flex-direction:column;background:var(--nuit);
+  border:1px solid var(--ligne);overflow:hidden}
+.piece figure{margin:0;aspect-ratio:16/10;background:#000;overflow:hidden}
+.piece img{display:block;width:100%;height:100%;object-fit:cover;
+  transition:transform .9s cubic-bezier(.22,1,.36,1)}
+.piece:hover img,.piece:focus-within img{transform:scale(1.035)}
+.piece .dedans{padding:clamp(20px,2.4vw,32px);display:flex;flex-direction:column;gap:10px;
+  border-top:1px solid var(--ligne)}
+.piece h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.5rem,2.6vw,2.1rem);
+  line-height:1;margin:0}
+.piece .corps{font-size:.95em}
+.piece .fiche{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--sourd)}
+.piece .fiche b{color:var(--gris);font-weight:400}
+
+/* Le procédé : trois étapes, séparées par des filets et non par des cartes.
+   Une carte suggère qu'on peut prendre les étapes dans le désordre. */
+.etapes{margin-top:clamp(40px,6vh,72px);display:grid;gap:0}
+.etape{display:grid;gap:10px clamp(24px,4vw,64px);padding:clamp(26px,3.4vw,44px) 0;
+  border-top:1px solid var(--ligne)}
+.etape:last-child{border-bottom:1px solid var(--ligne)}
+@media (min-width:900px){.etape{grid-template-columns:auto minmax(0,4fr) minmax(0,6fr);
+  align-items:baseline}}
+.etape .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ambre)}
+.etape h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,2.4vw,2rem);
+  line-height:1.05;margin:0}
+
+/* Les chiffres. Tous mesurés — c'est la seule raison pour laquelle ils ont le
+   droit d'être écrits aussi gros. Chiffres tabulaires : sans ça les colonnes
+   dansent d'une ligne à l'autre. */
+.chiffres{margin-top:clamp(40px,6vh,72px);display:grid;gap:1px;background:var(--ligne);
+  border:1px solid var(--ligne)}
+@media (min-width:640px){.chiffres{grid-template-columns:1fr 1fr}}
+@media (min-width:1000px){.chiffres{grid-template-columns:repeat(4,1fr)}}
+.chiffre{background:var(--noir);padding:clamp(24px,3vw,40px);display:flex;
+  flex-direction:column;gap:8px}
+.chiffre .val{font-family:var(--serif);font-size:clamp(2.6rem,5.2vw,4.2rem);line-height:.9;
+  font-variant-numeric:tabular-nums;color:var(--os)}
+.chiffre .val u{text-decoration:none;font-size:.4em;color:var(--gris);margin-left:.15em}
+.chiffre .quoi{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--sourd)}
+.chiffre .note{font-size:.88em;color:var(--gris);margin:0}
+
+/* L'invitation : le seul endroit ambre plein de la page. Sa rareté est ce qui
+   lui donne son poids. */
+.appel{display:inline-flex;align-items:center;gap:14px;margin-top:36px;
+  padding:17px 30px;background:var(--ambre);color:var(--noir);text-decoration:none;
+  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;pointer-events:auto;
+  transition:background .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
+.appel:hover{background:#DCA157;transform:translateY(-2px)}
+.appel span{transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.appel:hover span{transform:translateX(5px)}
+.sous{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--sourd)}
+
+.pied{border-top:1px solid var(--ligne);padding:clamp(40px,6vh,64px) 0 clamp(30px,4vh,48px);
+  display:flex;flex-wrap:wrap;gap:20px 40px;justify-content:space-between;align-items:baseline;
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--sourd)}
+
+/* L'apparition. Une seule, discrète, et coupée net si le visiteur a demandé
+   moins de mouvement — auquel cas tout est visible d'emblée. */
+.pose{opacity:0;transform:translateY(20px);
+  transition:opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)}
+.vu .pose{opacity:1;transform:none}
+.vu .pose:nth-child(2){transition-delay:.08s}
+.vu .pose:nth-child(3){transition-delay:.16s}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms!important;animation:none!important}
+  .pose{opacity:1;transform:none}
+}
+
+/* Le chargement. Il porte un nom, parce qu'un chargement qui dit ce qu'il fait
+   fait déjà partie du film. */
+.voile{position:fixed;inset:0;z-index:90;background:var(--noir);
+  display:grid;place-content:center;justify-items:center;gap:22px;
+  transition:opacity .9s ease}
+.voile.parti{opacity:0;pointer-events:none}
+.voile em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sourd)}
+.voile .jauge{width:min(230px,52vw);height:1px;background:var(--ligne);overflow:hidden}
+.voile .jauge b{display:block;height:100%;width:0;background:var(--ambre);
+  transition:width .3s ease}
+.voile .pct{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--os);
+  font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<canvas id="toile"></canvas>
+
+<header class="tete"><b>Ultra Motion</b><span>Studio · Bordeaux</span></header>
+
+<main>
+<div id="prologue">
+
+  <section class="bande">
+    <div class="mot">
+      <p class="eti"><b>I</b> · Le plan</p>
+      <h1 class="marque">Ultra&nbsp;Motion</h1>
+      <p class="corps">Nous construisons des sites où le défilement ne fait pas
+        glisser une page : il déroule un film. Celui-ci est déjà tourné. Vous ne
+        faites que tourner la manivelle.</p>
+      <p class="defiler"><i></i> Défiler</p>
+    </div>
+  </section>
+
+  <section class="bande">
+    <div class="mot">
+      <p class="eti"><b>II</b> · Le principe</p>
+      <p class="titre t-xl">Rien n’est calculé<br><span class="ital">chez vous.</span></p>
+      <p class="corps">Un site en trois dimensions demande au téléphone du visiteur
+        de recalculer la scène soixante fois par seconde, et lui impose
+        <strong>733 Ko de moteur</strong> avant la première image. Nous faisons
+        l’inverse : la scène est calculée une fois, ici, sans limite de temps —
+        puis livrée en images.</p>
+      <p class="corps">Ce que vous regardez en ce moment en est une. Il n’y a
+        aucun moteur 3D sur cette page.</p>
+    </div>
+  </section>
+
+  <section class="bande">
+    <div class="mot">
+      <p class="eti"><b>III</b> · Ce que ça change</p>
+      <p class="titre t-xl">Le rendu cesse<br>d’être <span class="ital">pressé.</span></p>
+      <p class="corps">Seize millisecondes : c’est tout ce qu’une image a pour
+        exister en temps réel. Hors ligne, elle peut en prendre huit secondes.
+        Le verre a de vrais reflets, les creux ont de vraies ombres, la lumière
+        rebondit vraiment.</p>
+      <p class="corps">Le visiteur, lui, ne reçoit que le résultat.</p>
+    </div>
+  </section>
+
+  <section class="bande">
+    <div class="mot">
+      <p class="eti"><b>IV</b> · La portée</p>
+      <p class="titre t-xl">Un objet, une pièce,<br>un <span class="ital">plat.</span></p>
+      <p class="corps">La chaîne ne sait pas ce qu’elle regarde. Un appartement
+        photographié, une canette modélisée, un flacon de verre, un burger
+        démonté en l’air : ce sont les quatre séquences que vous venez de
+        traverser, et elles sortent toutes du même atelier.</p>
+      <p class="corps">Ce qui change d’un sujet à l’autre, ce n’est pas le moteur.
+        C’est la matière — et c’est elle qui décide du travail.</p>
+    </div>
+  </section>
+
+</div>
+
+<div id="suite">
+
+  <!-- =============================================================== LES PIÈCES -->
+  <section class="bloc bande" id="pieces">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>V</b> · Les pièces</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Quatre objets,<br>
+          quatre <span class="ital">matières.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Chaque démonstration ci-dessous existe. Elles ne sont
+          pas des maquettes : ce sont des pages qui tournent, dont les images de
+          cette section sont extraites. Le sujet change à chaque fois, parce que
+          c’est la matière qui décide de la difficulté — un verre dépoli ne se
+          rend pas comme une canette d’aluminium.</p>
+      </div>
+    </div>
+
+    <div class="pieces">
+      <article class="piece pose">
+        <figure><img src="assets/pieces/flacon.jpg" alt="Flacon de parfum en verre noir, bouchon doré, sur fond sombre" loading="lazy" width="1600" height="1000"></figure>
+        <div class="dedans">
+          <h3>Le flacon</h3>
+          <p class="corps">Verre transmissif, gravure dépolie, ambre en suspension.
+            La gravure se lit parce que le dépoli arrête la transmission : elle
+            devient diffuse là où le reste est transparent.</p>
+          <p class="fiche"><b>Parfumerie</b> · <b>Verre</b> · <b>740 Ko</b></p>
+        </div>
+      </article>
+
+      <article class="piece pose">
+        <figure><img src="assets/pieces/ecouteur.jpg" alt="Écouteur sans fil vu de près sur fond sombre" loading="lazy" width="1600" height="1000"></figure>
+        <div class="dedans">
+          <h3>L’écouteur</h3>
+          <p class="corps">Plastique laqué et grille métallique, deux matières que
+            tout oppose sous la même lampe. C’est le cas d’école : celui où une
+            erreur d’étalonnage se voit immédiatement.</p>
+          <p class="fiche"><b>Électronique</b> · <b>Laque</b> · <b>760 Ko</b></p>
+        </div>
+      </article>
+
+      <article class="piece pose">
+        <figure><img src="assets/pieces/canette.jpg" alt="Canettes de boisson alignées sur un plateau métallique" loading="lazy" width="1600" height="1000"></figure>
+        <div class="dedans">
+          <h3>La canette</h3>
+          <p class="corps">Aluminium brossé, impression pleine, condensation. Le
+            métal n’a pas de couleur propre : il ne montre que ce qui l’entoure,
+            ce qui fait de l’environnement le vrai sujet.</p>
+          <p class="fiche"><b>Boisson</b> · <b>Aluminium</b> · <b>2,9 Mo</b></p>
+        </div>
+      </article>
+
+      <article class="piece pose">
+        <figure><img src="assets/pieces/voiture.jpg" alt="Habitacle de voiture vu depuis la place du conducteur" loading="lazy" width="1600" height="1000"></figure>
+        <div class="dedans">
+          <h3>La voiture</h3>
+          <p class="corps">Un plan unique de huit secondes, découpé en cent
+            soixante-dix images. La caméra avance, passe le pare-brise et va
+            s’asseoir au volant — sans coupe, et dans les deux sens.</p>
+          <p class="fiche"><b>Location</b> · <b>Film</b> · <b>6,2 Mo</b></p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============================================================== LE PROCÉDÉ -->
+  <section class="bloc bande regle" id="procede">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>VI</b> · Le procédé</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Trois temps,<br>
+          dans cet <span class="ital">ordre.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">L’ordre compte. On ne peut pas calculer avant d’avoir
+          composé, ni livrer avant d’avoir calculé — et c’est justement parce que
+          les trois sont séparés que le dernier peut être aussi léger.</p>
+      </div>
+    </div>
+
+    <div class="etapes">
+      <div class="etape pose">
+        <p class="num">01</p>
+        <h3>On compose</h3>
+        <p class="corps">Un objet, une lumière, un mouvement. Le modèle vient d’un
+          scan, d’un achat ou d’un tournage — jamais de coordonnées tapées à la
+          main, qui est la façon la plus sûre de rater une forme qu’on connaît
+          par cœur.</p>
+      </div>
+      <div class="etape pose">
+        <p class="num">02</p>
+        <h3>On calcule</h3>
+        <p class="corps">Chaque image est rendue hors ligne, sans contrainte de
+          temps : arbre d’englobants, lancer de rayons, un rebond de lumière
+          cuit dans les sommets. Ce qui coûterait vingt images par seconde en
+          direct ne coûte plus rien, parce que plus personne n’attend.</p>
+      </div>
+      <div class="etape pose">
+        <p class="num">03</p>
+        <h3>On livre</h3>
+        <p class="corps">La séquence part en WebP, avec une fenêtre glissante qui
+          ne garde en mémoire que les images proches de celle qu’on regarde. Le
+          navigateur ne décode jamais plus d’une vingtaine d’images à la fois,
+          quelle que soit la longueur du film.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== LES CHIFFRES -->
+  <section class="bloc bande regle" id="chiffres">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>VII</b> · Les chiffres</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Mesurés,<br>
+          pas <span class="ital">estimés.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Chacun de ces nombres a été relevé sur le code de
+          cette page ou sur celui d’un site de référence, pas repris d’une fiche
+          commerciale. Ils sont vérifiables : le dépôt est ouvert.</p>
+      </div>
+    </div>
+
+    <div class="chiffres">
+      <div class="chiffre pose">
+        <p class="val">7<u>Ko</u></p>
+        <p class="quoi">Le lecteur</p>
+        <p class="note">Tout le code qui déroule le film, commentaires retirés.</p>
+      </div>
+      <div class="chiffre pose">
+        <p class="val">0<u>Ko</u></p>
+        <p class="quoi">Moteur 3D livré</p>
+        <p class="note">Contre 733 Ko de three.js sur la voie temps réel.</p>
+      </div>
+      <div class="chiffre pose">
+        <p class="val">20<u>Ko</u></p>
+        <p class="quoi">L’image livrée</p>
+        <p class="note">WebP, 1280 px de large, sur une prise de vue réelle.</p>
+      </div>
+      <div class="chiffre pose">
+        <p class="val">20<u>max</u></p>
+        <p class="quoi">Images en mémoire</p>
+        <p class="note">Quelle que soit la longueur de la séquence.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ L'INVITATION -->
+  <section class="bloc bande regle" id="parler">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>VIII</b> · Parler</p>
+        <p class="titre t-xl pose" style="margin-top:20px">Montrez-nous<br>
+          votre <span class="ital">objet.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Une photo suffit pour commencer. Nous vous disons ce
+          qu’on peut en tirer, à quoi ressemblerait la page, et ce que ça coûte —
+          avant que vous n’engagiez quoi que ce soit.</p>
+        <p class="pose"><a class="appel" href="mailto:bonjour@ultramotion.fr">
+          Écrire au studio <span>→</span></a></p>
+        <p class="sous pose">Réponse sous 48 h · Sans engagement</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bande">
+    <div class="pied">
+      <span>© 2026 Ultra Motion</span>
+      <span>Bordeaux</span>
+      <span>bonjour@ultramotion.fr</span>
+    </div>
+  </footer>
+
+</div>
+</main>
+
+<div class="voile" id="voile">
+  <em id="etape">Composition du mouvement</em>
+  <div class="jauge"><b id="jauge"></b></div>
+  <p class="pct" id="pct">0 %</p>
+</div>
+
+<script>
+/* ============================================================================
+   Le prologue est un film déroulé par le défilement.
+
+   Aucune 3D ici : une toile en deux dimensions, et le défilement décide quelle
+   image y est peinte. Les images viennent de notre propre scène, calculée hors
+   ligne. On échange le calcul chez le visiteur contre du transfert — et on
+   gagne une qualité que le temps réel ne donnera jamais.
+
+   Deux difficultés, deux réponses :
+
+   1. La séquence entière est trop lourde pour être chargée d'un bloc. D'où la
+      FENÊTRE GLISSANTE : on ne garde que les images proches de celle qu'on
+      regarde, on précharge devant, on jette derrière.
+
+   2. Décoder une image bloque le fil principal et fait saccader le défilement.
+      D'où createImageBitmap, qui décode ailleurs et rend un objet que la toile
+      dessine sans retravail.
+   ============================================================================ */
+const canvas = document.getElementById('toile');
+/* alpha:false — la toile est opaque, le navigateur n'a pas à la composer avec
+   ce qu'il y a dessous. desynchronized:true — on renonce à la synchronisation
+   stricte avec le reste de la page, ce qui réduit la latence du geste. */
+const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+const voile = document.getElementById('voile');
+const jauge = document.getElementById('jauge');
+const pct = document.getElementById('pct');
+const etape = document.getElementById('etape');
+const { min, max, round, abs, exp } = Math;
+const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
+
+const SEQ = { chemin: 'assets/film/accueil/f', images: 160,
+              avant: 24, arriere: 8, oubli: 38 };
+/* La construction dépose les images ici ; sans elle on va les lire sur le
+   disque. Le lecteur n'a pas à savoir lequel des deux. */
+const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || null;
+if (SOURCES && SOURCES.accueil) SEQ.images = SOURCES.accueil.length;
+
+/* Le type déclaré doit être le vrai. L'écrire en dur marchait tant que le
+   navigateur reniflait les octets — rien ne l'y oblige, et un navigateur
+   strict rejette alors le lot entier, donc une page noire. */
+function typeDe(u){
+  if (u[0] === 0xFF && u[1] === 0xD8) return 'image/jpeg';
+  if (u[8] === 0x57 && u[9] === 0x45 && u[10] === 0x42 && u[11] === 0x50) return 'image/webp';
+  if (u[0] === 0x89 && u[1] === 0x50) return 'image/png';
+  return 'application/octet-stream';
+}
+
+function source(i){
+  if (SOURCES && SOURCES.accueil) {
+    const b = atob(SOURCES.accueil[i]), u = new Uint8Array(b.length);
+    for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
+    return Promise.resolve(new Blob([u], { type: typeDe(u) }));
+  }
+  return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`)
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); });
+}
+
+/* Repli pour les navigateurs sans createImageBitmap — Safari ne l'a qu'à partir
+   de la version 15. Sans lui, TOUTES les images échouaient et la page se
+   révélait sur une toile vide. Un <img> décode sur le fil principal et se voit
+   au défilement, mais un site lent vaut mieux qu'un site noir. */
+function decoder(blob){
+  if (typeof createImageBitmap === 'function') return createImageBitmap(blob);
+  return new Promise((ok, non) => {
+    const im = new Image(), url = URL.createObjectURL(blob);
+    im.onload = () => { URL.revokeObjectURL(url); ok(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); non(new Error('décodage')); };
+    im.src = url;
+  });
+}
+
+const cache = new Map();
+const encours = new Set();
+let dessinee = -1, echecs = 0;
+
+async function charger(i){
+  if (i < 0 || i >= SEQ.images || cache.has(i) || encours.has(i)) return;
+  encours.add(i);
+  try { cache.set(i, await decoder(await source(i))); }
+  catch (e) { echecs++; }
+  encours.delete(i);
+}
+
+/* La fenêtre glissante. On demande ce qui vient, on tolère un peu de ce qui
+   précède — le défilement se remonte — et on libère le reste. */
+function fenetre(centre){
+  for (let d = 0; d <= SEQ.avant; d++) {
+    charger(centre + d);
+    if (d <= SEQ.arriere) charger(centre - d);
+  }
+  if (cache.size > SEQ.oubli * 2) {
+    for (const i of cache.keys())
+      if (abs(i - centre) > SEQ.oubli) { cache.get(i).close?.(); cache.delete(i); }
+  }
+}
+
+/* Dessin en « couvrir » : l'image remplit la toile sans se déformer, quitte à
+   déborder. Recalculé à chaque dessin, la fenêtre pouvant changer. */
+function dessiner(i){
+  const im = cache.get(i);
+  if (!im) return false;
+  const cw = canvas.width, ch = canvas.height;
+  const k = max(cw / im.width, ch / im.height);
+  ctx.drawImage(im, (cw - im.width * k) / 2, (ch - im.height * k) / 2,
+                im.width * k, im.height * k);
+  dessinee = i;
+  return true;
+}
+
+function redimensionner(){
+  const dpr = min(devicePixelRatio || 1, 2);
+  canvas.width = round(innerWidth * dpr);
+  canvas.height = round(innerHeight * dpr);
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  /* La toile perd tous ses réglages quand on change sa taille : à replacer
+     ici, jamais une seule fois au démarrage. Par défaut l'agrandissement est
+     bilinéaire ; « high » emploie un filtre à plusieurs passes, ce qui se voit
+     dès qu'on affiche une source plus petite que l'écran. Gratuit. */
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  if (dessinee >= 0) dessiner(dessinee);
+}
+addEventListener('resize', redimensionner, { passive: true });
+
+/* Le film ne couvre que le prologue : au-delà, la suite du site est opaque et
+   recouvre la toile. On mesure donc la progression sur le prologue seul, pas
+   sur toute la page — sinon le film se terminerait bien après avoir disparu. */
+const prologue = document.getElementById('prologue');
+function progression(){
+  const course = max(prologue.offsetHeight - innerHeight, 1);
+  return borne(scrollY / course, 0, 1);
+}
+
+const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let vise = 0, courant = 0, dernier = performance.now();
+
+function boucle(now){
+  const dt = min((now - dernier) / 1000, 0.05); dernier = now;
+  vise = progression() * (SEQ.images - 1);
+  /* Le rattrapage. Sauter à l'image visée donne un défilement nerveux ; la
+     rattraper à taux constant donne l'inertie d'une caméra. */
+  courant = lent ? vise : courant + (vise - courant) * (1 - exp(-9 * dt));
+  const i = borne(round(courant), 0, SEQ.images - 1);
+  fenetre(i);
+  if (i !== dessinee) dessiner(i);
+  requestAnimationFrame(boucle);
+}
+
+/* L'apparition des blocs. Un seul observateur pour toute la page. */
+const oeil = new IntersectionObserver((entrees) => {
+  for (const e of entrees) if (e.isIntersecting) {
+    e.target.classList.add('vu');
+    oeil.unobserve(e.target);        // une apparition, pas un clignotant
+  }
+}, { rootMargin: '-12% 0px -12% 0px' });
+document.querySelectorAll('#suite section, #suite .piece, #suite .etape, #suite .chiffre')
+  .forEach((n) => oeil.observe(n));
+
+/* ------------------------------------------------------------- le démarrage */
+(async function demarrer(){
+  redimensionner();
+  const amorce = min(16, SEQ.images);
+  let faites = 0;
+  await Promise.all(Array.from({ length: amorce }, (v, i) =>
+    charger(i).then(() => {
+      const p = round(++faites / amorce * 100);
+      jauge.style.width = p + '%';
+      pct.textContent = p + ' %';
+    })));
+
+  /* Si rien n'a pu être décodé, on le DIT. La page se révélait autrefois quand
+     même, sur une toile vide : le visiteur voyait un écran noir sans savoir si
+     ça chargeait encore, si c'était cassé, ou si c'était voulu. */
+  if (!cache.size) {
+    etape.textContent = 'Séquence introuvable';
+    return;
+  }
+  if (echecs) console.warn(`${echecs} image(s) non décodée(s)`);
+
+  dessiner(0);
+  requestAnimationFrame(boucle);
+  voile.classList.add('parti');
+})();
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@
    Le fragment #instant coupe l'interpolation de la caméra : sans lui, chaque
    capture serait prise en pleine transition et la séquence tremblerait.
 
-     usage : node film_rendu.mjs [images] [largeur] [hauteur] [dossier]
+     usage : node film_rendu.mjs [images] [largeur] [hauteur] [dossier] [page]
    ============================================================================ */
 import pkg from '/opt/node22/lib/node_modules/playwright/index.js';
 const { chromium } = pkg;
@@ -24,7 +24,8 @@ const IMAGES  = Number(process.argv[2] || 240);
 const LARGEUR = Number(process.argv[3] || 1280);
 const HAUTEUR = Number(process.argv[4] || 720);
 const DOSSIER = process.argv[5] || 'assets/film/large';
-const SOURCE  = 'http://localhost:8731/voiture.html#film-instant';
+const PAGE    = process.argv[6] || 'voiture.html';
+const SOURCE  = `http://localhost:8731/${PAGE}#film-instant`;
 
 mkdirSync(DOSSIER, { recursive: true });
 
@@ -36,8 +37,13 @@ page.on('pageerror', (e) => erreurs.push(e.message));
 
 const t0 = Date.now();
 await page.goto(SOURCE, { waitUntil: 'load', timeout: 180000 });
-await page.waitForSelector('.charge.parti', { timeout: 300000 });
-await page.waitForTimeout(2500);
+/* Toutes les pages n'ont pas d'écran de chargement — vitrine.html n'en a
+   aucun. Attendre « .charge.parti » sur celles-là n'échouait pas franchement :
+   ça expirait au bout de cinq minutes, ce qui ressemblait à une page bloquée
+   alors qu'elle était prête depuis dix secondes. On n'attend donc le voile que
+   s'il existe. */
+if (await page.$('.charge')) await page.waitForSelector('.charge.parti', { timeout: 300000 });
+await page.waitForTimeout(4000);
 console.log(`page prête et lumière cuite en ${((Date.now() - t0) / 1000).toFixed(1)} s`);
 
 /* On MASQUE les textes, on ne les supprime pas. La nuance a coûté une série
