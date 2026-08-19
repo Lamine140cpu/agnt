@@ -10,7 +10,7 @@ Le tableau embarqué se dépose dans `window.__FILM`, que le lecteur consulte au
 démarrage. En développement, la variable n'existe pas et le lecteur va lire le
 disque : le même fichier sert dans les deux cas.
 
-    usage : python3 build_film.py [qualité] [largeur] [artefact]
+    usage : python3 build_film.py [qualité] [largeur] [artefact] [net=N]
 
 Deux sorties, parce que deux hébergements attendent deux choses opposées :
 
@@ -32,14 +32,21 @@ import os
 import sys
 from glob import glob
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 SITE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(SITE, "dist", "film.html")
 OUT_ARTEFACT = os.path.join(SITE, "dist", "film-artefact.html")
 
-_args = [a for a in sys.argv[1:] if a != "artefact"]
+_args = [a for a in sys.argv[1:] if a != "artefact" and not a.startswith("net=")]
 ARTEFACT = "artefact" in sys.argv[1:]
+# Masque flou. Mesuré sur la vidéo générée : la source est molle AVANT toute
+# compression, et la toile la réaffiche agrandie — jusqu'à 2,25 fois sur un
+# écran dense. Passer la qualité WebP de 72 à 86 coûte 13 Ko l'image et ne
+# gagne presque rien, parce que la compression n'était pas le goulot. Le
+# masque, lui, coûte 2 Ko et sépare les détails fins. Il s'applique APRÈS la
+# réduction, qui est elle-même adoucissante.
+NETTETE = next((int(a[4:]) for a in sys.argv[1:] if a.startswith("net=")), 55)
 sys.argv = [sys.argv[0]] + _args
 
 QUALITE = int(sys.argv[1]) if len(sys.argv) > 1 else 76
@@ -62,6 +69,10 @@ def encoder(dossier):
         im = Image.open(f).convert("RGB")
         if im.width > LARGEUR:
             im = im.resize((LARGEUR, round(LARGEUR * im.height / im.width)), Image.LANCZOS)
+        if NETTETE:
+            # seuil 3 : on ne renforce que ce qui est déjà un contour, pour ne
+            # pas réveiller le bruit de compression des aplats.
+            im = im.filter(ImageFilter.UnsharpMask(radius=1.1, percent=NETTETE, threshold=3))
         tampon = io.BytesIO()
         # method=6 : l'encodeur cherche plus longtemps. On construit une fois,
         # la page est servie des milliers de fois — le calcul est du bon côté.

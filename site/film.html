@@ -320,11 +320,23 @@ function dessiner(i){
 }
 
 function redimensionner(){
+  /* On garde la pleine définition de l'écran même quand la source est plus
+     petite. Plafonner la toile à la largeur de la source paraît logique — on
+     n'invente pas de détail — mais c'est un piège : l'agrandissement se ferait
+     alors en deux fois, d'abord ici puis par le compositeur, et deux
+     interpolations enchaînées sont plus molles qu'une seule. */
   const dpr = min(devicePixelRatio || 1, 2);
   canvas.width = round(innerWidth * dpr);
   canvas.height = round(innerHeight * dpr);
   canvas.style.width = innerWidth + 'px';
   canvas.style.height = innerHeight + 'px';
+  /* La toile perd tous ses réglages quand on change sa taille : à replacer
+     ici, jamais une seule fois au démarrage. Par défaut l'agrandissement est
+     bilinéaire ; « high » emploie un filtre à plusieurs passes, ce qui se voit
+     dès qu'on affiche une source plus petite que l'écran — exactement notre
+     cas. C'est le seul gain de netteté qui ne coûte pas un octet. */
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   if (dessinee >= 0) dessiner(dessinee);
 }
 addEventListener('resize', redimensionner, { passive: true });
