@@ -10,7 +10,20 @@ Le tableau embarqué se dépose dans `window.__FILM`, que le lecteur consulte au
 démarrage. En développement, la variable n'existe pas et le lecteur va lire le
 disque : le même fichier sert dans les deux cas.
 
-    usage : python3 build_film.py [qualité]
+    usage : python3 build_film.py [qualité] [largeur] [artefact]
+
+Deux sorties, parce que deux hébergements attendent deux choses opposées :
+
+  dist/film.html           document complet — c'est ce qu'on livre au client
+                           et ce qu'on ouvre en double-cliquant. Il lui faut
+                           son <!DOCTYPE>, son <html>, son <meta viewport>.
+
+  dist/film-artefact.html  fragment, écrit seulement si on passe « artefact ».
+                           L'hébergement d'artefact fournit lui-même
+                           l'enveloppe ; les balises de structure y feraient
+                           doublon.
+
+Le mot « artefact » ajoute la seconde sortie, il ne remplace pas la première.
 """
 import base64
 import io
@@ -23,6 +36,12 @@ from PIL import Image
 
 SITE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(SITE, "dist", "film.html")
+OUT_ARTEFACT = os.path.join(SITE, "dist", "film-artefact.html")
+
+_args = [a for a in sys.argv[1:] if a != "artefact"]
+ARTEFACT = "artefact" in sys.argv[1:]
+sys.argv = [sys.argv[0]] + _args
+
 QUALITE = int(sys.argv[1]) if len(sys.argv) > 1 else 76
 # Largeur de livraison. Les images sont calculées plus grandes qu'elles ne
 # seront servies : réduire après coup lisse le bruit du rendu et coûte moins
@@ -98,6 +117,18 @@ def main():
     poids = len(page) / 1048576
     print(f"\nécrit {OUT} — {poids:.2f} Mo "
           f"(dont {total*1.34/1048576:.2f} Mo d'images en base64)")
+
+    if ARTEFACT:
+        # On ne retire QUE les quatre balises de structure. Le <title> et les
+        # <meta> restent : l'enveloppe les absorbe dans son propre en-tête, et
+        # le titre doit rester dans les premiers kilo-octets pour être lu —
+        # c'est pour ça que les images sont injectées après lui, pas avant.
+        tete = page.split("<head>", 1)[1].split("</head>", 1)[0]
+        corps = page.split("<body>", 1)[1].rsplit("</body>", 1)[0]
+        fragment = tete.strip() + "\n" + corps.strip() + "\n"
+        open(OUT_ARTEFACT, "w", encoding="utf-8").write(fragment)
+        print(f"écrit {OUT_ARTEFACT} — {len(fragment)/1048576:.2f} Mo (fragment)")
+
     if poids > 15.5:
         print("  ATTENTION : au-delà de la limite d'un artefact, baisser la qualité")
 
