@@ -51,6 +51,20 @@ h2{font-size:clamp(1.9rem,5.4vw,3.4rem)}
 .posed h2.reveal{transition-delay:.12s}
 .posed .lede.reveal{transition-delay:.22s}
 
+/* La carte de fin. Centrée, sans voile latéral : le plan se termine sur une
+   image calme, le logo n'a donc pas besoin qu'on assombrisse quoi que ce soit
+   pour rester lisible. */
+section.fin{justify-content:center;align-items:center;padding-bottom:0;text-align:center}
+section.fin .mot{max-width:none}
+section.fin .mot::before{left:-12vw;right:-12vw;top:-16vh;bottom:-16vh;
+  background:radial-gradient(70% 60% at 50% 50%,
+    color-mix(in srgb, var(--ground) 78%, transparent) 0%,
+    color-mix(in srgb, var(--ground) 30%, transparent) 52%, transparent 76%)}
+section.fin .lede{margin:20px auto 0;font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase}
+.marque{margin:0;font-weight:800;text-transform:uppercase;line-height:.9;
+  letter-spacing:-.03em;font-size:clamp(2.6rem,9vw,6.5rem)}
+
 /* Thème sombre pour les plans d'habitacle, comme sur la version temps réel. */
 html.dedans{--ground:#0C0D0F;--ink:#F3F2EF;--ink-soft:#9A999E;
   --line:rgba(243,242,239,.16);--accent:#5B93FF}
@@ -116,34 +130,39 @@ const { min, max, round, floor, abs } = Math;
 const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
 
 /* ------------------------------------------------------------------ la page */
+/* Les actes suivent les trois temps du plan : la voiture vient à nous, la
+   caméra entre dans l'habitacle, et l'image s'apaise pour laisser la place au
+   logo. Les positions `at` sont à recaler sur la vidéo réelle — elles disent
+   où, dans la séquence, chaque texte doit se poser. */
 const ACTES = [
   { at: 0.00, eyebrow: 'Location · à partir de 39 € la journée',
-    titre: 'La voiture<br>est prête.',
+    titre: 'La voiture<br>vient à vous.',
     lede: 'Pas d’agence, pas de comptoir, pas de file. On vous remet les clés là où vous êtes, et vous partez.' },
-  { at: 0.13, eyebrow: 'Ce que vous louez',
+  { at: 0.16, eyebrow: 'Ce que vous louez',
     titre: 'Cinq places,<br>et rien à discuter.',
     lede: '250 km inclus par jour, boîte automatique, climatisation, régulateur. Le plein est fait, l’habitacle nettoyé entre chaque location.' },
-  { at: 0.26, eyebrow: 'L’état du véhicule',
+  { at: 0.34, eyebrow: 'L’état du véhicule',
     titre: 'On vous montre<br>la vraie voiture.',
-    lede: 'Celle que vous aurez, sous tous les angles. Révision à jour, pneus contrôlés, contrôle technique dans le dossier.' },
-  { at: 0.39, eyebrow: 'Le détail',
-    titre: 'Jusqu’aux jantes<br>et aux pneus.',
-    lede: 'Chaque image de cette séquence a été calculée sans contrainte de temps. Aucune n’a eu à tenir en seize millisecondes.' },
-  { at: 0.52, eyebrow: 'Le poste de conduite',
+    lede: 'Celle que vous aurez, en entier, sans montage. Révision à jour, pneus contrôlés, contrôle technique dans le dossier.' },
+  { at: 0.50, eyebrow: 'Le poste de conduite',
     titre: 'Et maintenant,<br>on entre.',
-    lede: 'La caméra passe le pare-brise et va s’asseoir à la place du conducteur.' },
-  { at: 0.63, eyebrow: 'Au volant', dedans: true,
+    lede: 'La caméra ne coupe pas : elle avance, passe le pare-brise et va s’asseoir à la place du conducteur.' },
+  { at: 0.64, eyebrow: 'Au volant', dedans: true,
     titre: 'Volant en main,<br>pédales aux pieds.',
-    lede: 'Position de conduite réelle, à un mètre du sol. Les creux sont sombres parce qu’ils voient moins de ciel — c’est un calcul, pas un réglage de lampe.' },
-  { at: 0.73, eyebrow: 'La planche de bord', dedans: true,
-    titre: 'Jusqu’à<br>la pédale.',
-    lede: 'Compteurs, colonne de direction, accélérateur et frein avec leurs biellettes.' },
-  { at: 0.86, eyebrow: 'Le coffre',
-    titre: 'De quoi partir<br>à quatre.',
-    lede: '391 litres, banquette rabattable, seuil bas. Deux grandes valises et deux cabines.' },
-  { at: 1.00, eyebrow: 'Réserver',
+    lede: 'Position de conduite réelle, à un mètre du sol. Vous voyez ce que vous verrez.' },
+  { at: 0.78, eyebrow: 'La planche de bord', dedans: true,
+    titre: 'Jusqu’au grain<br>du plastique.',
+    lede: 'Compteurs, colonne de direction, commandes sous les doigts. Rien n’a été retouché après coup.' },
+  { at: 0.90, eyebrow: 'Réserver',
     titre: 'Dites-nous<br>quand.',
     lede: 'Deux dates, un message, et c’est réservé. Réponse en moins d’une heure aux horaires d’ouverture.' },
+  /* Le logo n'est PAS dans la vidéo : il est écrit ici, en texte. Un logo
+     généré est difforme et frémit d'une image à l'autre ; celui-ci est net à
+     toutes les tailles, sélectionnable, lu par un lecteur d'écran, et se
+     change sans rien régénérer. Il se pose sur la dernière image du plan,
+     dont le prompt demande qu'elle soit calme et sans détail au centre. */
+  { at: 1.00, fin: true, marque: 'Kilomètre',
+    lede: 'Location de voitures · Bordeaux · 05 56 00 00 00' },
 ];
 
 /* ---------------------------------------------------------------- la séquence
@@ -163,6 +182,13 @@ const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || {};
 const portrait = matchMedia('(max-aspect-ratio: 4/5)').matches;
 const aEtroit = !!SOURCES.etroit || !SOURCES.large;   // sur disque, on suppose le dossier présent
 const SEQ = (portrait && aEtroit) ? SEQUENCES.etroit : SEQUENCES.large;
+
+/* Le compte ci-dessus n'est qu'un défaut pour le mode disque. Dès que la
+   construction a injecté les images, c'est elle qui a raison : sans ça, une
+   séquence de 180 images s'arrêterait à 150 et le dernier quart du
+   défilement resterait figé sur la même image. */
+for (const [nom, seq] of Object.entries(SEQUENCES))
+  if (SOURCES[nom]) seq.images = SOURCES[nom].length;
 
 function source(i){
   const t = SOURCES[SEQ === SEQUENCES.etroit ? 'etroit' : 'large'];
@@ -236,10 +262,17 @@ addEventListener('resize', redimensionner, { passive: true });
 const main = document.getElementById('scene');
 ACTES.forEach((a, i) => {
   const s = document.createElement('section');
-  s.innerHTML = `<div class="mot">
-    <p class="eyebrow reveal">${a.eyebrow}</p>
-    ${i === 0 ? '<h1' : '<h2'} class="reveal">${a.titre}${i === 0 ? '</h1>' : '</h2>'}
-    <p class="lede reveal">${a.lede}</p></div>`;
+  if (a.fin) {
+    s.className = 'fin';
+    s.innerHTML = `<div class="mot">
+      <p class="marque reveal">${a.marque}</p>
+      <p class="lede reveal">${a.lede}</p></div>`;
+  } else {
+    s.innerHTML = `<div class="mot">
+      <p class="eyebrow reveal">${a.eyebrow}</p>
+      ${i === 0 ? '<h1' : '<h2'} class="reveal">${a.titre}${i === 0 ? '</h1>' : '</h2>'}
+      <p class="lede reveal">${a.lede}</p></div>`;
+  }
   main.append(s);
 });
 document.querySelectorAll('main > section').forEach((s) => {

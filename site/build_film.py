@@ -78,7 +78,11 @@ def main():
 
     head = src.split("<head>", 1)[1].split("</head>", 1)[0]
     body = src.split("<body>", 1)[1].rsplit("</body>", 1)[0]
-    head = re.sub(r'<meta charset[^>]*>\s*', "", head)
+    # On garde le charset. Il avait été retiré parce que l'enveloppe d'artefact
+    # fournit le sien ; mais le même fichier est aussi servi tel quel chez le
+    # client, et sans lui le navigateur retombe en latin-1 : « Kilomètre »
+    # s'affichait « KilomÃ¨tre ». Une balise en double est sans effet, une
+    # balise manquante casse tous les accents.
     head = re.sub(r'<meta name="viewport"[^>]*>\s*', "", head)
     page = head.strip() + "\n" + charge + body.strip() + "\n"
 

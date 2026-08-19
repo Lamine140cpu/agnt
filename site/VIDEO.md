@@ -1,9 +1,91 @@
-# La chorégraphie du film — prompts complets
+# La vidéo du film — prompts complets
 
 Le lecteur (`film.html`) ne calcule rien. Il affiche une suite d'images que le
 défilement parcourt dans les deux sens. Tout le spectacle est donc décidé
-**avant**, dans les vidéos sources. Ce fichier contient la chorégraphie, les
-prompts à coller tels quels, et la raison de chaque contrainte.
+**avant**, dans la vidéo source.
+
+Deux chemins, et le premier suffit :
+
+- **[Le plan unique](#le-plan-unique)** — une vidéo de 8 s, un seul mouvement
+  continu, découpée en 180 images. C'est le chemin normal.
+- **[La chorégraphie en six beats](#la-chorégraphie--six-beats)** — six plans
+  enchaînés, cinquante secondes. Plus long à produire, à garder pour plus tard.
+
+---
+
+# Le plan unique
+
+**Une vidéo, 8 secondes, un seul mouvement.** La voiture vient à nous, la
+caméra entre dans l'habitacle, l'image s'apaise. C'est tout.
+
+## Ce qui n'est PAS dans la vidéo : le logo
+
+Le logo ne se génère pas. Trois raisons, et elles sont sans appel :
+
+- Un texte généré est **difforme** — lettres approximatives, espacements
+  faux. C'est la faiblesse la mieux connue des modèles d'image.
+- Même réussi, il **frémit** d'une image à l'autre. Or la fin du plan est
+  exactement l'endroit où le visiteur s'arrête et regarde.
+- C'est le logo **du client**. Il doit être le sien, au pixel près, et
+  changer sans qu'on régénère quoi que ce soit.
+
+Il est donc écrit **en HTML par-dessus la séquence** — net à toutes les
+tailles, sélectionnable, lu par un lecteur d'écran, zéro octet. C'est déjà en
+place dans `film.html` (dernier acte, `fin: true`).
+
+Ce que la vidéo doit fournir à la place : **une dernière seconde calme, avec
+du vide au centre**, pour que le logo ait où se poser. Le prompt le demande.
+
+## La coupe au milieu
+
+« La voiture roule vers nous **puis** nous montre l'intérieur » : entre les
+deux, un modèle vidéo va spontanément faire une **coupe**. Au défilement, une
+coupe est un saut brutal que le visiteur déclenche lui-même, dans les deux
+sens.
+
+La parade est de ne jamais lui laisser le choix : le mouvement est **un seul
+axe, vers l'avant, du début à la fin**. La voiture avance vers nous et
+s'arrête ; la caméra, elle, continue d'avancer, passe le pare-brise, et se
+pose derrière le volant. Rien ne s'interrompt, donc rien ne peut être coupé.
+C'est aussi le plus confortable à parcourir : une seule direction, aucune
+ambiguïté quand on remonte.
+
+## Le prompt
+
+```
+Un seul plan continu de huit secondes, sans aucune coupe, qui commence devant une voiture citadine et se termine derrière son volant.
+
+MOUVEMENT. Le plan est un mouvement unique vers l'avant, à vitesse rigoureusement constante du début à la fin, sans jamais s'interrompre. Première phase : la voiture roule lentement vers la caméra, de face, légèrement décalée de trois quarts, et s'immobilise en douceur sans à-coup ni plongée sur ses suspensions. Deuxième phase, enchaînée sans coupe : la caméra continue d'avancer en ligne droite vers la voiture arrêtée, longe le capot, franchit le pare-brise et pénètre dans l'habitacle. Troisième phase : la caméra ralentit et s'immobilise à la place du conducteur, à hauteur des yeux, face à la planche de bord. Il n'y a AUCUNE coupe, AUCUN fondu, AUCUN changement de plan, AUCUN saut : la caméra ne quitte jamais son axe, ne pivote pas, ne recule jamais, et le mouvement vers l'avant est continu de la première à la dernière image.
+
+DERNIÈRE SECONDE. Le plan se termine sur un cadrage calme et stable de l'habitacle vu de la place du conducteur, avec une large zone unie et sans détail au centre de l'image — pare-brise donnant sur un fond clair et uniforme. Rien ne bouge pendant cette dernière seconde.
+
+SUJET. Une voiture citadine cinq portes moderne, carrosserie gris anthracite métallisé propre et polie, jantes en alliage à cinq branches gris foncé, pneus noirs mats, phares à diodes allumés, blancs et constants. Aucun badge, aucun logo, aucune marque, aucune plaque d'immatriculation : les emplacements sont lisses et vides. Les proportions du véhicule sont rigoureusement constantes pendant tout le plan — même longueur, même hauteur, même dessin de jantes, même teinte. Pendant qu'elle roule, les roues tournent lentement et régulièrement dans le sens de la marche, avec un léger filé radial sur les rayons uniquement, puis s'arrêtent avec elle. L'intérieur : sièges en tissu gris foncé à surpiqûres, volant à trois branches gainé de cuir noir, tableau de bord en plastique moulé gris anthracite mat, écran central affichant un aplat sombre uni sans texte ni icône, aérateurs ronds cerclés de satiné. Habitacle vide et propre : aucun objet, aucune personne, aucune main.
+
+CAMÉRA. Objectif 35 mm, f/5.6, ISO 100, sur rail motorisé parfaitement stabilisé, axe strictement horizontal à un mètre vingt du sol, verticales redressées. Aucun zoom, aucune rotation, aucun tremblement, aucun mouvement latéral. La voiture est entièrement visible dans le cadre pendant toute la première phase, avec une marge d'air nette sur les quatre côtés. Nette de bout en bout. Obturateur très rapide, 1/1000 s : chaque image du plan doit être parfaitement nette, sans le moindre flou de bougé, y compris sur la carrosserie en mouvement.
+
+LUMIÈRE. Ciel couvert, lumière du jour douce et diffuse, aucun soleil direct, aucune ombre dure, aucun reflet ponctuel qui se déplace sur la carrosserie. 5500 K. Exposition et balance des blancs VERROUILLÉES du début à la fin : aucune variation de luminosité, de contraste ou de teinte, y compris au passage de l'extérieur clair vers l'habitacle sombre — l'intérieur reste ouvert et lisible sans que l'image ne s'assombrisse.
+
+DÉCOR. Un sol lisse et uniforme, béton gris clair sans marquage, sans texture marquée. L'arrière-plan est TOTALEMENT FLOU, réduit à un dégradé continu de gris clair, sans aucun détail identifiable : ni arbre, ni bâtiment, ni panneau, ni poteau, ni ligne d'horizon marquée, ni autre véhicule. Le décor ne contient aucun texte, aucune enseigne, aucun logo.
+
+RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre et fidèle, contraste doux, noirs profonds mais lisibles. Grain photographique très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution maximale disponible.
+
+INTERDIT. Coupe, changement de plan, fondu, transition, saut, retour en arrière, rotation de caméra, panoramique, zoom, tremblement, accélération ou ralentissement, flou de mouvement, flou de bougé, arrière-plan net ou détaillé, tangage, suspension qui s'enfonce, portière qui s'ouvre, variation d'exposition, assombrissement à l'entrée dans l'habitacle, effet de vitesse, traînée lumineuse, personne, main, silhouette, reflet d'équipe dans le pare-brise, texte, sous-titre, chiffre, logo, badge, marque, enseigne, plaque d'immatriculation, filigrane, signature, carton de fin, écran noir, fumée, poussière, gerbe d'eau, étincelle, particules, rendu 3D, image de synthèse, aspect jeu vidéo, couleurs saturées, HDR excessif.
+```
+
+## À réception
+
+```
+python3 film_video.py ta-video.mp4 180 1440 large
+python3 build_film.py 72 1280
+```
+
+8 s à 24 i/s font 192 images ; on en prend 180, soit environ **8,3 Mo**
+livrés. Le lecteur lit désormais le compte dans ce que la construction injecte
+— il n'y a plus rien à régler à la main.
+
+Je recale ensuite les positions des textes sur la vidéo réelle : elles disent
+à quel moment du plan chaque acte se pose, et ça ne se devine pas avant de
+l'avoir vue.
 
 ---
 
