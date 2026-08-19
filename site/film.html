@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kilomètre — la voiture est prête</title>
+<style>
+:root{
+  --ground:#F0EFEC; --ink:#111214; --ink-soft:#75757B;
+  --line:rgba(17,18,20,.14); --accent:#1F5FD8;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --gut:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+
+/* La toile est fixe et couvre l'écran. Le défilement ne la déplace pas : il
+   change l'image qu'elle affiche. C'est toute l'idée. */
+#toile{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:block;background:var(--ground)}
+
+.bar{position:fixed;top:0;left:0;right:0;z-index:6;display:flex;justify-content:space-between;
+  align-items:center;padding:20px var(--gut);font-family:var(--mono);font-size:10px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);pointer-events:none}
+.bar b{font-weight:500;letter-spacing:.34em;color:var(--ink)}
+.rail{position:fixed;z-index:6;left:50%;transform:translateX(-50%);bottom:20px;
+  width:min(220px,42vw);height:2px;background:var(--line);border-radius:2px}
+.rail span{display:block;height:100%;width:0;background:var(--accent);border-radius:2px}
+
+main{position:relative;z-index:4}
+section{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:0 var(--gut) clamp(88px,14vh,170px);pointer-events:none}
+.mot{position:relative;max-width:min(34ch,42vw);pointer-events:auto}
+.mot::before{content:"";position:absolute;z-index:-1;pointer-events:none;
+  left:calc(-1 * var(--gut));right:-7vw;top:-10vh;bottom:-14vh;
+  background:radial-gradient(116% 104% at 0% 62%,
+    color-mix(in srgb, var(--ground) 90%, transparent) 0%,
+    color-mix(in srgb, var(--ground) 44%, transparent) 44%, transparent 78%)}
+h1,h2{font-weight:800;text-transform:uppercase;margin:0;line-height:.92;letter-spacing:-.035em;
+  text-wrap:balance}
+h1{font-size:clamp(2.4rem,7.6vw,5rem)}
+h2{font-size:clamp(1.9rem,5.4vw,3.4rem)}
+.lede{margin:14px 0 0;max-width:34ch;font-size:clamp(14px,1.6vw,17px);color:var(--ink-soft);line-height:1.55}
+.eyebrow{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 20px}
+.reveal{opacity:0;transform:translateY(16px);
+  transition:opacity .4s ease,transform .4s cubic-bezier(.22,1,.36,1)}
+.posed .reveal{opacity:1;transform:none}
+.posed h2.reveal{transition-delay:.12s}
+.posed .lede.reveal{transition-delay:.22s}
+
+/* Thème sombre pour les plans d'habitacle, comme sur la version temps réel. */
+html.dedans{--ground:#0C0D0F;--ink:#F3F2EF;--ink-soft:#9A999E;
+  --line:rgba(243,242,239,.16);--accent:#5B93FF}
+html.dedans body,html.dedans #toile{background:#0C0D0F}
+body,.bar,h1,h2,.lede,.eyebrow{transition:color .5s ease,background-color .5s ease}
+
+.charge{position:fixed;inset:0;z-index:9;display:grid;place-content:center;gap:18px;
+  justify-items:center;background:var(--ground);transition:opacity .7s ease}
+.charge.parti{opacity:0;pointer-events:none}
+.charge i{display:block;width:120px;height:2px;background:var(--line);overflow:hidden}
+.charge i b{display:block;height:100%;width:0;background:var(--accent);transition:width .25s ease}
+.charge em{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-soft)}
+@media (prefers-reduced-motion:reduce){*,*::before{transition-duration:.001ms!important}
+  .reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<canvas id="toile"></canvas>
+<div class="bar"><b>Kilomètre</b><span>Location · Bordeaux</span></div>
+<div class="rail"><span id="jauge-scroll"></span></div>
+<main id="scene"></main>
+<div class="charge" id="charge"><i><b id="jauge"></b></i><em id="etape">Chargement</em></div>
+
+<script>
+/* ============================================================================
+   Un film déroulé par le défilement.
+
+   Aucune 3D ici. Pas de three.js, pas de WebGL, pas de modèle : une toile en
+   deux dimensions sur laquelle on dessine une image, et le défilement décide
+   laquelle. C'est la technique des pages produit d'Apple, et celle de
+   velaarmon.com — dont le démontage a inspiré ce fichier : huit cents images,
+   cent quarante-neuf kilo-octets de code, et aucun moteur 3D.
+
+   Les images, elles, viennent de notre propre scène temps réel, calculée hors
+   ligne par film_rendu.mjs. On échange donc le calcul chez le visiteur contre
+   du transfert — et on gagne une qualité que le temps réel ne donnera jamais,
+   puisque rien n'oblige plus le rendu à tenir en seize millisecondes.
+
+   Les deux difficultés, et leurs réponses :
+
+   1. Une séquence complète pèse trop lourd pour être chargée d'un bloc. D'où
+      la FENÊTRE GLISSANTE : on ne garde en mémoire que les images proches de
+      celle qu'on regarde, on précharge devant, et on jette derrière.
+
+   2. Décoder un JPEG bloque le fil principal et fait saccader le défilement.
+      D'où createImageBitmap, qui décode ailleurs et rend un objet que la
+      toile dessine sans travail supplémentaire.
+   ============================================================================ */
+
+const canvas = document.getElementById('toile');
+/* alpha:false — la toile est opaque, le navigateur n'a donc pas à la composer
+   avec ce qu'il y a dessous. desynchronized:true — on renonce à la
+   synchronisation stricte avec le reste de la page, ce qui réduit la latence
+   entre le geste et l'image. Les deux réglages viennent de velaarmon.com. */
+const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+const charge = document.getElementById('charge');
+const jauge = document.getElementById('jauge');
+const etape = document.getElementById('etape');
+const { min, max, round, floor, abs } = Math;
+const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
+
+/* ------------------------------------------------------------------ la page */
+const ACTES = [
+  { at: 0.00, eyebrow: 'Location · à partir de 39 € la journée',
+    titre: 'La voiture<br>est prête.',
+    lede: 'Pas d’agence, pas de comptoir, pas de file. On vous remet les clés là où vous êtes, et vous partez.' },
+  { at: 0.13, eyebrow: 'Ce que vous louez',
+    titre: 'Cinq places,<br>et rien à discuter.',
+    lede: '250 km inclus par jour, boîte automatique, climatisation, régulateur. Le plein est fait, l’habitacle nettoyé entre chaque location.' },
+  { at: 0.26, eyebrow: 'L’état du véhicule',
+    titre: 'On vous montre<br>la vraie voiture.',
+    lede: 'Celle que vous aurez, sous tous les angles. Révision à jour, pneus contrôlés, contrôle technique dans le dossier.' },
+  { at: 0.39, eyebrow: 'Le détail',
+    titre: 'Jusqu’aux jantes<br>et aux pneus.',
+    lede: 'Chaque image de cette séquence a été calculée sans contrainte de temps. Aucune n’a eu à tenir en seize millisecondes.' },
+  { at: 0.52, eyebrow: 'Le poste de conduite',
+    titre: 'Et maintenant,<br>on entre.',
+    lede: 'La caméra passe le pare-brise et va s’asseoir à la place du conducteur.' },
+  { at: 0.63, eyebrow: 'Au volant', dedans: true,
+    titre: 'Volant en main,<br>pédales aux pieds.',
+    lede: 'Position de conduite réelle, à un mètre du sol. Les creux sont sombres parce qu’ils voient moins de ciel — c’est un calcul, pas un réglage de lampe.' },
+  { at: 0.73, eyebrow: 'La planche de bord', dedans: true,
+    titre: 'Jusqu’à<br>la pédale.',
+    lede: 'Compteurs, colonne de direction, accélérateur et frein avec leurs biellettes.' },
+  { at: 0.86, eyebrow: 'Le coffre',
+    titre: 'De quoi partir<br>à quatre.',
+    lede: '391 litres, banquette rabattable, seuil bas. Deux grandes valises et deux cabines.' },
+  { at: 1.00, eyebrow: 'Réserver',
+    titre: 'Dites-nous<br>quand.',
+    lede: 'Deux dates, un message, et c’est réservé. Réponse en moins d’une heure aux horaires d’ouverture.' },
+];
+
+/* ---------------------------------------------------------------- la séquence
+   Deux montages, comme chez velaarmon.com : un large pour les écrans en
+   paysage, un étroit recadré en portrait pour les téléphones. Ce n'est pas la
+   même image rétrécie — c'est un cadrage refait, parce qu'une composition
+   pensée en 16:9 ne tient pas debout en 9:16. */
+const SEQUENCES = {
+  large:  { images: 150, chemin: 'assets/film/large/f',  avant: 26, arriere: 8, oubli: 40 },
+  etroit: { images: 100, chemin: 'assets/film/etroit/f', avant: 14, arriere: 5, oubli: 22 },
+};
+/* D'où viennent les octets. En développement, du disque. Dans le fichier
+   replié, d'un tableau embarqué que la construction dépose ici. Le lecteur
+   n'a pas à savoir lequel des deux — d'où cette indirection. */
+const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || {};
+
+const portrait = matchMedia('(max-aspect-ratio: 4/5)').matches;
+const aEtroit = !!SOURCES.etroit || !SOURCES.large;   // sur disque, on suppose le dossier présent
+const SEQ = (portrait && aEtroit) ? SEQUENCES.etroit : SEQUENCES.large;
+
+function source(i){
+  const t = SOURCES[SEQ === SEQUENCES.etroit ? 'etroit' : 'large'];
+  if (t) {                                   // replié : base64 embarqué
+    const b = atob(t[i]), u = new Uint8Array(b.length);
+    for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
+    return Promise.resolve(new Blob([u], { type: 'image/jpeg' }));
+  }
+  return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`).then((r) => r.blob());
+}
+
+/* ============================================================================
+   LE LECTEUR
+   ============================================================================ */
+const cache = new Map();      // index -> ImageBitmap
+const encours = new Set();    // index en cours de décodage
+let dessinee = -1;
+
+async function charger(i){
+  if (i < 0 || i >= SEQ.images || cache.has(i) || encours.has(i)) return;
+  encours.add(i);
+  try {
+    /* createImageBitmap décode hors du fil principal et rend un objet que la
+       toile affiche sans retravail. Passer par <img> ferait décoder le JPEG
+       pendant le défilement, et ça se voit. */
+    cache.set(i, await createImageBitmap(await source(i)));
+  } catch (e) { /* une image manquante ne doit pas arrêter la séquence */ }
+  encours.delete(i);
+}
+
+/* La fenêtre glissante. On ne garde jamais toute la séquence : on demande ce
+   qui vient, on tolère un peu de ce qui précède — pour le défilement vers le
+   haut — et on libère le reste. C'est ce qui permet à velaarmon.com de servir
+   cent neuf mégaoctets d'images sans jamais en tenir plus de vingt. */
+function fenetre(centre){
+  for (let d = 0; d <= SEQ.avant; d++) {
+    charger(centre + d);
+    if (d <= SEQ.arriere) charger(centre - d);
+  }
+  if (cache.size > SEQ.oubli * 2) {
+    for (const i of cache.keys()) {
+      if (abs(i - centre) > SEQ.oubli) { cache.get(i).close?.(); cache.delete(i); }
+    }
+  }
+}
+
+/* Dessin en « couvrir » : l'image remplit la toile sans se déformer, quitte à
+   déborder. Recalculé à chaque dessin parce que la fenêtre peut changer. */
+function dessiner(i){
+  const im = cache.get(i);
+  if (!im) return false;
+  const cw = canvas.width, ch = canvas.height;
+  const k = max(cw / im.width, ch / im.height);
+  const w = im.width * k, h = im.height * k;
+  ctx.drawImage(im, (cw - w) / 2, (ch - h) / 2, w, h);
+  dessinee = i;
+  return true;
+}
+
+function redimensionner(){
+  const dpr = min(devicePixelRatio || 1, 2);
+  canvas.width = round(innerWidth * dpr);
+  canvas.height = round(innerHeight * dpr);
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  if (dessinee >= 0) dessiner(dessinee);
+}
+addEventListener('resize', redimensionner, { passive: true });
+
+/* ---------------------------------------------------------------- la page */
+const main = document.getElementById('scene');
+ACTES.forEach((a, i) => {
+  const s = document.createElement('section');
+  s.innerHTML = `<div class="mot">
+    <p class="eyebrow reveal">${a.eyebrow}</p>
+    ${i === 0 ? '<h1' : '<h2'} class="reveal">${a.titre}${i === 0 ? '</h1>' : '</h2>'}
+    <p class="lede reveal">${a.lede}</p></div>`;
+  main.append(s);
+});
+document.querySelectorAll('main > section').forEach((s) => {
+  new IntersectionObserver(([e]) => e.target.classList.toggle('posed', e.isIntersecting),
+    { rootMargin: '-25% 0px -25% 0px' }).observe(s);
+});
+
+const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let vise = 0, courant = 0, dernier = performance.now();
+
+function progression(){
+  const course = max(document.body.scrollHeight - innerHeight, 1);
+  return borne(scrollY / course, 0, 1);
+}
+
+function boucle(now){
+  const dt = min((now - dernier) / 1000, 0.05); dernier = now;
+  const p = progression();
+  document.getElementById('jauge-scroll').style.width = (p * 100) + '%';
+  vise = p * (SEQ.images - 1);
+
+  /* Le rattrapage. Sauter directement à l'image visée donne un défilement
+     nerveux ; la rattraper à taux constant donne l'inertie d'une caméra. Le
+     même principe que la chorégraphie de la version 3D — et ce que GSAP
+     appelle « scrub ». */
+  courant = lent ? vise : courant + (vise - courant) * (1 - Math.exp(-9 * dt));
+  const i = borne(round(courant), 0, SEQ.images - 1);
+
+  fenetre(i);
+  /* Si l'image exacte n'est pas encore décodée, on garde la précédente
+     plutôt que de montrer du vide : mieux vaut un léger retard qu'un trou. */
+  if (i !== dessinee) dessiner(i);
+
+  /* Le thème suit l'acte, comme sur la version temps réel : un habitacle est
+     sombre, et le texte doit y passer en clair. */
+  let dedans = false;
+  for (const a of ACTES) if (p >= a.at - 0.05) dedans = !!a.dedans;
+  document.documentElement.classList.toggle('dedans', dedans);
+
+  requestAnimationFrame(boucle);
+}
+
+/* ------------------------------------------------------------- le démarrage
+   On ne montre la page qu'une fois les premières images prêtes. Une séquence
+   qui démarre sur du vide donne l'impression d'un site cassé, même si tout
+   arrive une seconde plus tard. */
+(async function demarrer(){
+  redimensionner();
+  const amorce = min(14, SEQ.images);
+  let faites = 0;
+  await Promise.all(Array.from({ length: amorce }, (v, i) =>
+    charger(i).then(() => { jauge.style.width = (++faites / amorce * 100) + '%'; })));
+  etape.textContent = 'Prêt';
+  dessiner(0);
+  requestAnimationFrame(boucle);
+  charge.classList.add('parti');
+})();
+</script>
+</body>
+</html>

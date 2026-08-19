@@ -735,7 +735,19 @@ async function demarrer(){
   lireScroll();
 
   const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const INSTANT = location.hash === '#instant';
+  const INSTANT = location.hash.startsWith('#instant');
+
+  /* Mode film. Sert à calculer la séquence d'images hors ligne — la technique
+     d'Apple, et celle de velaarmon.com.
+
+     La lecture se fait ICI, juste après le rendu, et non par une capture
+     d'écran du navigateur : sans « preserveDrawingBuffer », le tampon de
+     dessin est vidé dès qu'il a été composé, et toute lecture ultérieure
+     renvoie du noir. Depuis l'intérieur de la boucle, il est encore là.
+
+     Au passage, c'est dix fois plus rapide qu'une capture d'écran, qui force
+     une recomposition complète de la page. */
+  const FILM = location.hash.startsWith('#film');
   const vise = new THREE.Vector3();
   let dernier = performance.now();
 
@@ -774,6 +786,11 @@ async function demarrer(){
     else camera.clearViewOffset();
 
     renderer.render(scene, camera);
+
+    if (FILM && window.__demande) {
+      window.__image = canvas.toDataURL('image/jpeg', 0.94);
+      window.__demande = false;
+    }
   });
 
   avance(1, 'Prêt');
