@@ -16,7 +16,6 @@ import base64
 import io
 import json
 import os
-import re
 import sys
 from glob import glob
 
@@ -76,15 +75,21 @@ def main():
     charge = ("<script>window.__FILM = " + json.dumps(film, separators=(",", ":"))
               + ";</script>\n")
 
-    head = src.split("<head>", 1)[1].split("</head>", 1)[0]
-    body = src.split("<body>", 1)[1].rsplit("</body>", 1)[0]
-    # On garde le charset. Il avait été retiré parce que l'enveloppe d'artefact
-    # fournit le sien ; mais le même fichier est aussi servi tel quel chez le
-    # client, et sans lui le navigateur retombe en latin-1 : « Kilomètre »
-    # s'affichait « KilomÃ¨tre ». Une balise en double est sans effet, une
-    # balise manquante casse tous les accents.
-    head = re.sub(r'<meta name="viewport"[^>]*>\s*', "", head)
-    page = head.strip() + "\n" + charge + body.strip() + "\n"
+    # On garde le document ENTIER et on se contente d'injecter les images à la
+    # fin de l'en-tête.
+    #
+    # La version précédente ne recopiait que le contenu de <head> et de <body>
+    # et jetait le reste, parce qu'une enveloppe d'artefact fournit ses propres
+    # <!DOCTYPE>, <html> et <body>. Mais ce fichier est aussi — et surtout —
+    # servi tel quel chez le client, et là il lui manquait tout : sans DOCTYPE
+    # le navigateur passe en mode « quirks », et sans <meta viewport> un
+    # téléphone rend la page sur 980 px de large. La page ne s'affichait pas.
+    #
+    # Injecter avant </head> garantit aussi que window.__FILM existe quand le
+    # script du lecteur s'exécute, plus bas dans le corps.
+    if "</head>" not in src:
+        sys.exit("film.html : </head> introuvable, injection impossible")
+    page = src.replace("</head>", charge + "</head>", 1)
 
     # Les chemins disque ne servent plus, mais on les laisse : ils documentent
     # d'où viennent les images, et le repli sur fetch reste un filet.

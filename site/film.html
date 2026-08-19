@@ -234,12 +234,24 @@ const SEQ = (portrait && aEtroit) ? SEQUENCES.etroit : SEQUENCES.large;
 for (const [nom, seq] of Object.entries(SEQUENCES))
   if (SOURCES[nom]) seq.images = SOURCES[nom].length;
 
+/* Le type déclaré doit être le vrai. Il était écrit « image/jpeg » en dur
+   alors que la construction produit du WebP : la plupart des navigateurs
+   reniflent les octets et s'en accommodent, mais rien ne les y oblige, et un
+   navigateur strict rejette le lot entier — donc une page noire. On lit donc
+   la signature plutôt que de la supposer. */
+function typeDe(u){
+  if (u[0] === 0xFF && u[1] === 0xD8) return 'image/jpeg';
+  if (u[8] === 0x57 && u[9] === 0x45 && u[10] === 0x42 && u[11] === 0x50) return 'image/webp';
+  if (u[0] === 0x89 && u[1] === 0x50) return 'image/png';
+  return 'application/octet-stream';
+}
+
 function source(i){
   const t = SOURCES[SEQ === SEQUENCES.etroit ? 'etroit' : 'large'];
   if (t) {                                   // replié : base64 embarqué
     const b = atob(t[i]), u = new Uint8Array(b.length);
     for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
-    return Promise.resolve(new Blob([u], { type: 'image/jpeg' }));
+    return Promise.resolve(new Blob([u], { type: typeDe(u) }));
   }
   return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`).then((r) => r.blob());
 }
@@ -251,15 +263,30 @@ const cache = new Map();      // index -> ImageBitmap
 const encours = new Set();    // index en cours de décodage
 let dessinee = -1;
 
+/* Repli pour les navigateurs sans createImageBitmap — Safari ne l'a eu qu'en
+   version 15. Sans lui, TOUTES les images échouaient : la page se révélait sur
+   une toile vide, donc noire. Un <img> décode sur le fil principal et se voit
+   au défilement, mais un site lent vaut mieux qu'un site noir. */
+function decoder(blob){
+  if (typeof createImageBitmap === 'function') return createImageBitmap(blob);
+  return new Promise((ok, non) => {
+    const im = new Image(), url = URL.createObjectURL(blob);
+    im.onload = () => { URL.revokeObjectURL(url); ok(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); non(new Error('décodage')); };
+    im.src = url;
+  });
+}
+
+let echecs = 0;
 async function charger(i){
   if (i < 0 || i >= SEQ.images || cache.has(i) || encours.has(i)) return;
   encours.add(i);
   try {
     /* createImageBitmap décode hors du fil principal et rend un objet que la
-       toile affiche sans retravail. Passer par <img> ferait décoder le JPEG
+       toile affiche sans retravail. Passer par <img> ferait décoder l'image
        pendant le défilement, et ça se voit. */
-    cache.set(i, await createImageBitmap(await source(i)));
-  } catch (e) { /* une image manquante ne doit pas arrêter la séquence */ }
+    cache.set(i, await decoder(await source(i)));
+  } catch (e) { echecs++; /* une image manquante n'arrête pas la séquence */ }
   encours.delete(i);
 }
 
@@ -369,6 +396,18 @@ function boucle(now){
   let faites = 0;
   await Promise.all(Array.from({ length: amorce }, (v, i) =>
     charger(i).then(() => { jauge.style.width = (++faites / amorce * 100) + '%'; })));
+
+  /* Si rien n'a pu être décodé, on le DIT. Auparavant la page se révélait
+     quand même, sur une toile vide : le visiteur voyait un écran noir sans
+     savoir si ça chargeait encore, si c'était cassé, ou si c'était voulu.
+     Un écran noir muet est le pire des états. */
+  if (!cache.size) {
+    etape.textContent = 'Images illisibles sur ce navigateur';
+    etape.style.color = 'var(--ink)';
+    return;
+  }
+  if (echecs) console.warn(`${echecs} image(s) non décodée(s)`);
+
   etape.textContent = 'Prêt';
   dessiner(0);
   requestAnimationFrame(boucle);
