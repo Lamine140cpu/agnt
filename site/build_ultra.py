@@ -66,10 +66,19 @@ def en_webp(im, largeur, qualite):
     return tampon.getvalue()
 
 
-def sequence(nom, dossier, largeur):
+def sequence(nom, dossier, largeur, plafond):
     fichiers = sorted(glob(os.path.join(SITE, dossier, "*.jpg")))
     if not fichiers:
         return None, 0
+    # Le dossier contient toutes les images extraites — neuf cent soixante, de
+    # quoi alimenter la version en flux. Un fichier unique ne peut pas les
+    # porter : on en prélève un sous-ensemble RÉGULIER, pour que la vitesse
+    # reste constante. Prendre les N premières donnerait une séquence qui
+    # s'arrête au quart du parcours.
+    if len(fichiers) > plafond:
+        import numpy as _np
+        idx = _np.linspace(0, len(fichiers) - 1, plafond).round().astype(int)
+        fichiers = [fichiers[i] for i in idx]
     sorties, avant, apres = [], 0, 0
     for f in fichiers:
         avant += os.path.getsize(f)
@@ -132,8 +141,13 @@ def main():
         # soit 585 px de large sur un écran de 390. Servir plus large serait
         # payer une définition que personne ne voit — et ces octets sont mieux
         # dépensés en NOMBRE d'images, qui décide de la fluidité.
-        largeur = LARGEUR if nom == "accueil" else min(LARGEUR, 660)
-        images, poids = sequence(nom, dossier, largeur)
+        # On échange de la définition contre de la densité : c'est la fluidité
+        # qui manquait, pas la netteté. Sur un écran de bureau la toile fait
+        # 2880 px de large — 1120 ou 1280 en source y sont tous deux agrandis,
+        # l'écart est ténu ; entre 170 et 270 images, il ne l'est pas.
+        largeur = 1060 if nom == "accueil" else 560
+        plafond = 240 if nom == "accueil" else 150
+        images, poids = sequence(nom, dossier, largeur, plafond)
         if images is None:
             print(f"  {nom:15s} absente — ignorée")
             continue

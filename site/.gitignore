@@ -1,1 +1,7 @@
 dist/
+
+# La version en flux : 68 Mo d'images WebP, reproductibles par
+#   python3 film_video.py <les 4 plans> 960 1280 accueil
+#   python3 build_flux.py 80 1280
+# Le dépôt garde la recette, pas le résultat.
+site/dist/flux/
