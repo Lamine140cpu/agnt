@@ -482,9 +482,9 @@ const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
    étroite est donc un vrai montage, plus courte parce qu'elle pèse en plus
    du reste, mais à sa définition d'origine. */
 const SEQUENCES = {
-  accueil:          { chemin: 'assets/film/accueil/f',        images: 200,
+  accueil:          { chemin: 'assets/film/accueil/f',        images: 170,
                       avant: 24, arriere: 8, oubli: 38 },
-  'accueil-etroit': { chemin: 'assets/film/accueil-etroit/f',  images: 88,
+  'accueil-etroit': { chemin: 'assets/film/accueil-etroit/f',  images: 132,
                       avant: 16, arriere: 6, oubli: 26 },
 };
 /* La construction dépose les images ici ; sans elle on va les lire sur le
@@ -629,16 +629,34 @@ function dessiner(i){
 
    `dessinee` passe à -1 : la position varie en continu, on ne peut plus se
    contenter de comparer un numéro d'image pour savoir s'il faut redessiner. */
+/* À défaut de l'image demandée, la plus proche déjà décodée.
+
+   Sans ce repli, une image pas encore prête ne dessinait rien : la toile
+   gardait l'image précédente, et le défilement semblait se bloquer alors qu'il
+   avançait. On préfère montrer une voisine — décalée d'une ou deux images,
+   invisible en mouvement — que de figer l'écran. C'est ce que fait
+   velaarmon.com, et c'est ce qui fait qu'on ne les voit jamais buter. */
+function auPlusProche(i){
+  const im = cache.get(i);
+  if (im) return im;
+  for (let d = 1; d < SEQ.images; d++) {
+    const a = cache.get(i - d); if (a) return a;
+    const b = cache.get(i + d); if (b) return b;
+  }
+  return null;
+}
+
 let posee = -1;
 function fondu(pos){
   const bas = borne(Math.floor(pos), 0, SEQ.images - 1);
   const haut = borne(bas + 1, 0, SEQ.images - 1);
   const t = pos - bas;
-  const a = cache.get(bas), b = cache.get(haut);
-  if (!a && !b) return;
+  const a = auPlusProche(bas);
+  if (!a) return;
   ctx.globalAlpha = 1;
-  if (a) poser(a); else poser(b);
-  if (a && b && t > 0.01) { ctx.globalAlpha = t; poser(b); ctx.globalAlpha = 1; }
+  poser(a);
+  const b = cache.get(haut);
+  if (b && cache.has(bas) && t > 0.01) { ctx.globalAlpha = t; poser(b); ctx.globalAlpha = 1; }
   posee = pos;
   dessinee = -1;
 }
@@ -693,8 +711,48 @@ function progression(){
 const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let vise = 0, courant = 0, dernier = performance.now();
 
+/* ------------------------------------------------- le défilement lissé
+   La différence la plus visible avec les sites qu'on prend pour référence, et
+   ce n'est pas leur séquence d'images : c'est qu'ils lissent LA POSITION DE
+   DÉFILEMENT elle-même.
+
+   Un cran de molette déplace la page d'une centaine de pixels d'un coup. Si
+   l'on ne rattrape que le numéro d'image, la toile glisse doucement pendant
+   que le TEXTE, lui, saute — et c'est ce décalage qu'on lit comme « moins
+   fluide ». On déplace donc une cible, et la position réelle la rejoint à taux
+   constant : tout bouge ensemble.
+
+   Uniquement à la molette. Le tactile garde le défilement natif, avec son
+   inertie propre que le système gère mieux que nous — c'est aussi le réglage
+   par défaut de Lenis, la bibliothèque qu'ils emploient. Et rien du tout si le
+   visiteur a demandé moins de mouvement : on ne s'interpose pas dans le
+   défilement de quelqu'un qui a explicitement dit non. */
+const molette = !lent && matchMedia('(hover: hover) and (pointer: fine)').matches;
+let cibleY = scrollY, lisseY = scrollY;
+
+if (molette) {
+  addEventListener('wheel', (e) => {
+    if (e.ctrlKey) return;                    // le zoom du navigateur reste au navigateur
+    e.preventDefault();
+    const bas = max(document.body.scrollHeight - innerHeight, 0);
+    cibleY = borne(cibleY + e.deltaY * (e.deltaMode === 1 ? 18 : 1), 0, bas);
+  }, { passive: false });
+  /* Clavier, barre de défilement, ancres : tout ce qui déplace la page sans
+     passer par la molette doit ramener la cible, sinon elle tirerait la page
+     en arrière à la molette suivante. */
+  addEventListener('scroll', () => {
+    if (abs(scrollY - lisseY) > 2) { cibleY = scrollY; lisseY = scrollY; }
+  }, { passive: true });
+}
+
 function boucle(now){
   const dt = min((now - dernier) / 1000, 0.05); dernier = now;
+
+  if (molette && abs(cibleY - lisseY) > 0.4) {
+    lisseY += (cibleY - lisseY) * (1 - exp(-9 * dt));
+    scrollTo(0, lisseY);
+  }
+
   vise = progression() * (SEQ.images - 1);
   /* Le rattrapage. Sauter à l'image visée donne un défilement nerveux ; la
      rattraper à taux constant donne l'inertie d'une caméra. */

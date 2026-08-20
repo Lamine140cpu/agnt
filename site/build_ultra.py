@@ -128,7 +128,11 @@ def main():
     for nom, dossier in SERIES.items():
         # Le portrait est servi moins large : il occupe l'écran d'un téléphone,
         # pas celui d'un bureau, et il s'ajoute au poids du paysage.
-        largeur = LARGEUR if nom == "accueil" else min(LARGEUR, 720)
+        # 660 px : la toile d'un téléphone est plafonnée à 1,5 pixel physique,
+        # soit 585 px de large sur un écran de 390. Servir plus large serait
+        # payer une définition que personne ne voit — et ces octets sont mieux
+        # dépensés en NOMBRE d'images, qui décide de la fluidité.
+        largeur = LARGEUR if nom == "accueil" else min(LARGEUR, 660)
         images, poids = sequence(nom, dossier, largeur)
         if images is None:
             print(f"  {nom:15s} absente — ignorée")
