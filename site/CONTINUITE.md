@@ -125,6 +125,68 @@ la hauteur constante est ce qui rend la séquence lisible d'un bout à l'autre.
 
 ---
 
+## Sur Google Flow
+
+Flow tourne sur **Gemini Omni**, décrit par Google comme capable de « créer et
+éditer des vidéos à partir de n'importe quelle référence, réelle ou générée ».
+Une vidéo de référence y est donc un usage prévu. Ce qui change, et ce qui ne
+change pas :
+
+### Ce qui ne change pas
+
+Les trois lois, les deux partis pris, les passages, et les prompts eux-mêmes.
+Ils ne décrivent pas un outil, ils décrivent ce que le défilement peut
+consommer — un flou de bougé reste une traînée figée quel que soit le modèle
+qui l'a produit.
+
+### Une vidéo de référence vaut mieux que trois photos
+
+Pour la Golf, filmez-la. Dix secondes suffisent. Une vidéo donne au modèle la
+voiture sous une infinité d'angles intermédiaires, avec un éclairage cohérent
+et de vrais reflets qui glissent — trois photos ne donnent que trois instants
+sans lien entre eux, et c'est au modèle d'inventer ce qu'il y a entre.
+
+**Le piège de la vidéo de référence : le mouvement de caméra déteint.** Si vous
+filmez en tournant autour de la voiture, le modèle a de bonnes chances de
+reproduire cette orbite au lieu de notre travelling latéral verrouillé. Deux
+précautions :
+
+1. **Filmez la voiture depuis un point fixe**, ou en marchant le long du flanc
+   — c'est-à-dire déjà le mouvement qu'on veut.
+2. **Dites-le dans le prompt** : la référence donne le véhicule, pas la caméra.
+   La ligne est déjà prévue dans le plan 3, il suffit de remplacer
+   « photographies » par « vidéo ».
+
+### Le raccord d'un plan à l'autre
+
+Si Flow propose de prolonger un plan existant plutôt que de repartir d'une
+image — cherchez une commande de continuation ou d'extension —, **prenez-la**.
+Elle reprend l'état réel du plan, mouvement compris, là où une image fixe ne
+transmet qu'un instant. Le passage de `film_raccord.py` devient alors inutile,
+et les jointures cessent d'être un risque.
+
+Attention cependant : une continuation a tendance à **prolonger l'action en
+cours**. Or nos plans changent délibérément de programme à chaque fois. C'est
+précisément ce que les passages résolvent : frôler un cyprès donne à la
+continuation une raison motivée de changer de monde.
+
+Si la continuation n'existe pas ou ne convainc pas, la méthode d'image de
+raccord reste valable telle quelle.
+
+### Deux détails à ne pas rater
+
+**L'audio.** Veo 3.1 génère du son nativement. On n'en a aucun usage — le
+prologue est une suite d'images muettes — et `film_video.py` l'ignore. S'il
+existe une option pour ne pas en produire, elle fait gagner du temps.
+
+**Le format portrait.** Flow propose un outil de redimensionnement vers
+n'importe quel rapport. Ça mérite d'être essayé pour la série `etroit` : un
+recadrage intelligent vaut mieux qu'un rognage centré, qui ne garde que 32 %
+de la largeur et fait sortir le sujet du cadre. Sans garantie — une
+composition pensée en 16:9 reste une composition pensée en 16:9.
+
+---
+
 ## Le budget
 
 **51 Ko l'image dans la page finale**, mesuré sur la construction : 160 images
@@ -246,7 +308,7 @@ IMAGES JOINTES — deux rôles distincts, à ne pas confondre.
 
 La première image jointe est L'IMAGE DE DÉPART de ce plan : elle donne le lieu, le cadrage, la hauteur de caméra et la lumière. Le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
 
-Les autres images jointes sont des PHOTOGRAPHIES DE RÉFÉRENCE DU VÉHICULE. Elles ne sont pas le décor et ne donnent ni le cadrage ni la lumière : elles servent uniquement à reproduire fidèlement cette voiture précise — sa forme, ses proportions, sa couleur, ses jantes, ses optiques, ses détails. Reproduis-la exactement telle qu'elle apparaît sur ces photos, sans rien inventer ni styliser.
+Les autres références jointes — photographies ou vidéo — sont des RÉFÉRENCES DU VÉHICULE. Elles ne sont pas le décor et ne donnent ni le cadrage, ni le mouvement de caméra, ni la lumière : elles servent uniquement à reproduire fidèlement cette voiture précise — sa forme, ses proportions, sa couleur, ses jantes, ses optiques, ses détails. Reproduis-la exactement telle qu'elle apparaît sur ces photos, sans rien inventer ni styliser.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui quitte la piscine et longe une voiture garée sur l'allée.
 
