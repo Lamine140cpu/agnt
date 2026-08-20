@@ -38,9 +38,15 @@ seulement sont des quasi-doublons — donc 1 440 images distinctes pour six
 plans de huit secondes, soit trente par seconde. Les écrire en 24 étirerait
 le mouvement d'un quart.
 
-CRF 14 : l'agrandisseur amplifie ce qu'on lui donne, y compris les défauts de
-compression. On encode donc bien au-dessus du nécessaire pour un visionnage —
-la vidéo est un intermédiaire, pas une livraison.
+CRF 18 : l'agrandisseur amplifie ce qu'on lui donne, y compris les défauts
+de compression, donc on encode bien au-dessus du nécessaire pour un simple
+visionnage — la vidéo est un intermédiaire, pas une livraison. Mais serrer
+davantage ne sert à rien, et c'est mesuré : contre les JPEG sources, CRF 14
+donne 41,9 dB et CRF 21 en donne 40,1. Un virgule huit décibel pour trois
+fois le poids. La raison est que la source est DÉJÀ du JPEG : l'encodeur
+reproduit surtout les défauts qu'elle porte, et l'erreur bute sur ce
+plancher-là bien avant d'être limitée par le débit. 18 tient sous les trente
+mébioctets d'un envoi sans rien céder de visible.
 """
 import os
 import subprocess
@@ -56,7 +62,7 @@ SERIES = {"accueil": "assets/film/accueil",
           "accueil-etroit": "assets/film/accueil-etroit"}
 
 QUOI = sys.argv[1] if len(sys.argv) > 1 else "tout"
-CRF = int(sys.argv[2]) if len(sys.argv) > 2 else 14
+CRF = int(sys.argv[2]) if len(sys.argv) > 2 else 18
 FPS = int(sys.argv[3]) if len(sys.argv) > 3 else 30
 
 
