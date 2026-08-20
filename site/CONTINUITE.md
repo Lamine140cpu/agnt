@@ -322,6 +322,13 @@ capture est rognée par l'interface et rééchantillonnée ; le script lit la
 dernière image lisible du fichier, à sa définition d'origine. Sur un raccord,
 cet écart de définition se voit.
 
+**Ce qui doit être absent se décrit dans `SUJET`, pas dans `INTERDIT`.** Leçon
+payée deux fois : le badge d'abord, la plaque ensuite. Une négation en fin de
+liste pèse peu ; la même consigne formulée positivement dans la description du
+sujet — « les emplacements de plaque sont lisses, vides et unis » — tient
+beaucoup mieux. Un modèle rend ce qu'on lui décrit, il n'efface pas ce qu'on
+lui refuse.
+
 **Ne décrivez pas la voiture en détail dans le prompt.** C'est le réflexe
 naturel et c'est l'erreur : un paragraphe de description entre en concurrence
 avec les photos, et le modèle arbitre au hasard. Le prompt nomme le modèle,
@@ -338,7 +345,7 @@ Un seul plan continu de huit secondes, sans aucune coupe, qui quitte la piscine 
 
 MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent, sur le même axe et à la même hauteur : elle quitte le bord du bassin, franchit la terrasse dallée, et traverse la cour en gravier. Une voiture y est garée de profil DEPUIS LE DÉBUT, sur la droite de la cour : elle est déjà en place à la première image, simplement lointaine et partiellement masquée par la jardinière en pierre. Rien n'apparaît, rien ne surgit, rien n'entre dans le champ : c'est la caméra qui s'approche, et la voiture qui grandit dans le cadre à mesure. La caméra la rejoint, la longe du capot jusqu'à l'arrière, et la dépasse. À la dernière image, la voiture est derrière nous et la caméra approche du fond de la cour, où un haut cyprès sombre se dresse tout près de l'objectif, sur la gauche du cadre. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
 
-SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Portières fermées. AUCUNE plaque d'immatriculation : les emplacements sont lisses et vides. Elle est garée de profil sur la droite d'une cour en gravier clair.
+SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Portières fermées. Les emplacements de plaque d'immatriculation, devant comme derrière, sont LISSES, VIDES ET UNIS : pas de plaque, pas de support, pas de cadre, aucun caractère, aucun chiffre, aucune lettre, aucun symbole. C'est un véhicule de présentation non immatriculé. Elle est garée de profil sur la droite d'une cour en gravier clair.
 
 DÉCOR — celui de l'image de départ, à conserver strictement. Une terrasse dallée en pierre claire au premier plan, prolongée par une cour en gravier beige ratissé. Deux jardinières basses en pierre sèche encadrent la cour, chacune plantée d'un cyprès étroit. Massifs de lavande argentée sur les côtés. Une murette basse en pierre ferme la cour au fond, et au-delà s'étend une oliveraie aux troncs noueux et aux feuillages gris-vert, puis des collines boisées à l'horizon. Aucun autre bâtiment, aucun mobilier, aucune clôture qui n'y soit déjà. AUCUNE PERSONNE.
 
@@ -366,36 +373,45 @@ le long du flanc, et le même pipeline tourne sans changer une ligne.
 
 # Plan 4 — Le restaurant
 
-Le premier passage. La caméra frôle le cyprès du fond de cour, il remplit le
+Le premier passage. La caméra longe le mur de pierre du mas, il remplit le
 cadre une demi-seconde, et de l'autre côté c'est le restaurant.
 
 *Écrit pour la prolongation. Si vous repartez d'une image de raccord, voir
 [Les en-têtes, selon votre mode](#les-en-têtes-selon-votre-mode).*
 
-```
-CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même lieu, même hauteur de caméra, même axe, même vitesse, même lumière. Reprends le mouvement exactement là où il s'arrête, sans à-coup, sans repartir, sans réinitialiser le cadrage, sans revenir en arrière.
+> **Adapté au raccord réel.** Le plan 3 devait finir sur un cyprès proche : il
+> a fini sur une cour ensoleillée face à un mas en pierre, avec la Golf sortant
+> du champ à gauche. Deux conséquences. La masse du passage devient le **mur du
+> mas**, qui est là et qui est bien meilleur — une façade en pierre est large,
+> mate et uniforme, exactement ce qu'il faut. Et la lumière de départ est celle
+> du plein jour, pas d'un crépuscule : le déclin se fait donc **entièrement
+> pendant le passage**, ce qui est le seul moment où l'exposition a le droit de
+> bouger.
 
-Un seul plan continu de huit secondes, sans aucune coupe, qui passe derrière un cyprès et débouche sur une terrasse de restaurant dressée.
+```
+CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même lieu, même hauteur de caméra, même axe, même vitesse. Reprends le mouvement exactement là où il s'arrête, sans à-coup, sans repartir, sans réinitialiser le cadrage, sans revenir en arrière.
+
+Un seul plan continu de huit secondes, sans aucune coupe, qui longe le mur d'un mas en pierre et débouche sur une terrasse de restaurant dressée.
 
 MOUVEMENT. Le plan se déroule en trois temps enchaînés, à vitesse rigoureusement constante du début à la fin, sans jamais s'arrêter ni ralentir.
 
-Premier temps, environ une seconde et demie : la caméra poursuit son avance en ligne droite et frôle le tronc du haut cyprès sombre, à quelques centimètres de l'objectif. Le feuillage sombre et dense envahit progressivement le cadre par la gauche.
+Premier temps, environ deux secondes : la caméra poursuit son avance en ligne droite à travers la cour de gravier, vers le mas en pierre. Elle s'approche de son mur et le longe de très près, à quelques centimètres de l'objectif. La pierre chaude occupe progressivement le cadre par la gauche.
 
-Deuxième temps, environ une demi-seconde : le cyprès occupe TOUT le cadre. L'image est entièrement remplie par ce feuillage sombre, dense et uni, sans détail net, sans ciel, sans trouée. Elle n'est pas noire, elle est vert très sombre et texturée.
+Deuxième temps, environ une demi-seconde : le mur occupe TOUT le cadre. L'image est entièrement remplie par cette pierre sèche beige, mate, dont on voit le grain et les joints, sans détail net, sans ciel, sans trouée. Elle n'est pas noire : elle est claire, chaude et texturée.
 
-Troisième temps, le reste du plan : le cyprès se dégage par la droite et découvre une terrasse de restaurant couverte, où la caméra pénètre et qu'elle traverse en glissant dans l'allée centrale, entre deux rangées de tables dressées. À la dernière image elle atteint le fond de la salle, où se dresse tout près de l'objectif un large pilier de pierre sombre, sur la gauche du cadre.
+Troisième temps, le reste du plan : le mur se dégage par la droite et découvre une terrasse de restaurant couverte, où la caméra pénètre et qu'elle traverse en glissant dans l'allée centrale, entre deux rangées de tables dressées. À la dernière image elle atteint le fond de la salle, où se dresse tout près de l'objectif un large pilier de pierre sombre, sur la gauche du cadre.
 
-Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement, aucun changement de hauteur. Le passage derrière le cyprès n'est ni un fondu, ni une coupe, ni une transition ajoutée : c'est un objet réel que la caméra longe. Rien d'autre ne bouge : ni nappe, ni bougie, ni feuillage agité, ni rideau.
+Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement, aucun changement de hauteur. Le passage le long du mur n'est ni un fondu, ni une coupe, ni une transition ajoutée : c'est un mur réel que la caméra longe. Rien d'autre ne bouge : ni nappe, ni bougie, ni feuillage, ni store.
 
-SUJET. Terrasse de restaurant couverte, charpente en bois clair, sol en tomettes. Deux rangées de tables carrées en chêne massif, entièrement dressées et parfaitement alignées : nappes en lin écru, assiettes en grès mat, verres à pied, couverts alignés, une petite bougie éteinte au centre de chaque table. Chaises en bois cintré et cannage. Guirlande d'ampoules à filament allumées le long de la charpente, lumière chaude et constante. Un bar en zinc sur la gauche, bouteilles alignées sans étiquette lisible. AUCUNE PERSONNE, aucune silhouette, aucun serveur, aucune main. Aucune enseigne, aucun menu lisible, aucune marque, aucun texte.
+SUJET. Terrasse de restaurant couverte, charpente en bois clair, sol en tomettes. Deux rangées de tables carrées en chêne massif, entièrement dressées et parfaitement alignées : nappes en lin écru, assiettes en grès mat, verres à pied, couverts alignés, une petite bougie éteinte au centre de chaque table. Chaises en bois cintré et cannage. Guirlande d'ampoules à filament allumées le long de la charpente, lumière chaude et constante. Un bar en zinc sur la gauche, bouteilles alignées sans étiquette lisible. AUCUNE PERSONNE, aucune silhouette, aucun serveur, aucune main. Aucune enseigne, aucun menu lisible, aucune marque, aucun texte, aucune ardoise, aucun chiffre.
 
-CAMÉRA. Objectif 24 mm, f/4, ISO 200, sur rail motorisé stabilisé, axe strictement horizontal, verticales parfaitement redressées. Nette de bout en bout, y compris le feuillage du cyprès au moment où il frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette.
+CAMÉRA. Objectif 24 mm, f/4, ISO 200, sur rail motorisé stabilisé, axe strictement horizontal, verticales parfaitement redressées. Nette de bout en bout, y compris le grain de la pierre au moment où elle frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette.
 
-LUMIÈRE. Tombée de la nuit. La lumière décline pendant le passage derrière le cyprès et non avant : à l'entrée du feuillage on est encore en fin de journée, à la sortie le ciel est bleu profond au-delà de la terrasse et la guirlande d'ampoules chaudes éclaire l'intérieur, déjà allumée et rigoureusement constante. Une fois la terrasse atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus. Aucune flamme, aucune bougie allumée, aucune source qui vacille.
+LUMIÈRE. Le jour tombe PENDANT le passage le long du mur, et à aucun autre moment. Avant le mur : plein jour lumineux, ciel bleu franc, pierre chaude, exactement la lumière du plan précédent, inchangée. Après le mur : la nuit est tombée, le ciel est bleu profond au-delà de la terrasse, et la guirlande d'ampoules chaudes éclaire l'intérieur, déjà allumée et rigoureusement constante. Une fois la terrasse atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus. Aucune flamme, aucune bougie allumée, aucune source qui vacille.
 
 RENDU. Prise de vue réelle, film de restaurant haut de gamme, qualité commerciale. Colorimétrie chaude mais fidèle, contraste doux, hautes lumières des ampoules contrôlées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé.
 
-INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, changement de vitesse, arrêt, flou de mouvement, retour dans la cour, voiture visible ou ramenée dans le champ, cyprès qui s'écarte tout seul, feuillage agité par le vent, image entièrement noire, personne, silhouette, serveur, main, animal, oiseau, flamme, bougie allumée, ampoule qui vacille, nappe qui bouge, rideau agité, texte, menu, chiffre, prix, enseigne, logo, marque, étiquette lisible, filigrane, fumée, vapeur de plat, particules, rendu 3D, image de synthèse.
+INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, changement de vitesse, arrêt, flou de mouvement, retour dans la cour, voiture visible ou ramenée dans le champ, mur qui s'écarte tout seul, image entièrement noire, variation de lumière avant ou après le mur, personne, silhouette, serveur, main, animal, oiseau, flamme, bougie allumée, ampoule qui vacille, nappe qui bouge, store agité, texte, menu, chiffre, prix, enseigne, logo, marque, étiquette lisible, plaque d'immatriculation, filigrane, fumée, vapeur de plat, particules, rendu 3D, image de synthèse.
 ```
 
 ---
