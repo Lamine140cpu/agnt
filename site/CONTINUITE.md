@@ -121,9 +121,9 @@ L'image jointe est la première image de ce plan. Reprends exactement la même v
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui franchit la baie vitrée et glisse au-dessus d'une piscine.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent : elle franchit l'ouverture, traverse la terrasse en pierre, et continue au-dessus de la piscine en gardant exactement la même hauteur. À la dernière image elle est parvenue au bord opposé du bassin, et l'on découvre au-delà une allée en gravier clair. Aucune rotation, aucune plongée, aucun zoom, aucun tremblement. La surface de l'eau est parfaitement lisse et immobile, comme un miroir : aucune vague, aucune ride, aucun clapot.
+MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent : elle franchit l'ouverture, traverse la terrasse en pierre, et continue au-dessus de la piscine en gardant exactement la même hauteur. À la dernière image elle est parvenue au bord opposé du bassin, et l'on découvre au-delà une cour en gravier clair. Aucune rotation, aucune plongée, aucun zoom, aucun tremblement. La surface de l'eau est parfaitement lisse et immobile, comme un miroir : aucune vague, aucune ride, aucun clapot.
 
-SUJET. Terrasse en pierre claire prolongeant la villa, puis une piscine à débordement rectangulaire, eau turquoise très calme, margelles en pierre. Deux transats en teck et toile écrue, alignés, vides. Un parasol fermé. Massifs de lavande et d'oliviers taillés en bordure. Au fond, une allée en gravier clair bordée de cyprès. AUCUNE PERSONNE, aucune silhouette, aucun animal, aucun objet flottant. Aucune marque, aucun texte lisible.
+SUJET. Terrasse en pierre claire prolongeant la villa, puis une piscine à débordement rectangulaire, eau turquoise très calme, margelles en pierre. Deux transats en teck et toile écrue, alignés, vides. Un parasol fermé. Massifs de lavande et d'oliviers taillés en bordure. Au fond, une cour en gravier clair fermée par une murette basse, avec deux jardinières en pierre plantées de cyprès étroits, et au-delà une oliveraie. AUCUNE PERSONNE, aucune silhouette, aucun animal, aucun objet flottant. Aucune marque, aucun texte lisible.
 
 CAMÉRA. Objectif 24 mm, f/5.6, ISO 100, sur rail motorisé stabilisé, axe strictement horizontal à un mètre soixante du sol, verticales redressées. Nette de bout en bout. Obturateur 1/1000 s, chaque image parfaitement nette, y compris les reflets sur l'eau.
 
@@ -136,6 +136,22 @@ INTERDIT. Coupe, fondu, transition, rotation de caméra, plongée, zoom, tremble
 
 ---
 # Plan 3 — La voiture
+
+**La voiture doit être déjà là, et il faut le dire.**
+
+C'est le piège de ce plan, et il ne vient pas de la formulation. L'image de
+raccord montre une cour vide : demander à la caméra d'« atteindre une voiture »
+revient à demander au modèle de faire apparaître un objet absent, alors qu'on
+lui interdit par ailleurs toute apparition. Il ne peut que patiner.
+
+La formulation qui marche : **la voiture est garée dans la cour depuis le
+début, hors du champ initial ou trop loin pour se distinguer, et c'est la
+caméra qui s'en approche.** Rien n'apparaît, on avance.
+
+**Décrivez ce que l'image contient vraiment.** Le modèle a le raccord sous les
+yeux, mais le nommer verrouille ce qu'il doit conserver. Une cour en gravier
+avec deux jardinières en pierre n'est pas une allée bordée de cyprès, et
+l'écart suffit à lui faire redessiner le décor.
 
 **Ce plan prend deux sortes d'images jointes, et il faut le lui dire.**
 
@@ -159,7 +175,12 @@ la placer — il détient les vitres, ou il fait dériver la caméra vers
 l'habitacle en plein milieu du travelling, ce qui casse la continuité.
 
 Prises par temps couvert si possible : une photo en plein soleil impose ses
-ombres au plan, et elles ne coïncideront pas avec le crépuscule demandé.
+ombres au plan, et elles ne coïncideront pas avec la lumière du raccord.
+
+**Le raccord se prend avec `film_raccord.py`, pas en capture d'écran.** Une
+capture est rognée par l'interface et rééchantillonnée ; le script lit la
+dernière image lisible du fichier, à sa définition d'origine. Sur un raccord,
+cet écart de définition se voit.
 
 **Ne décrivez pas la voiture en détail dans le prompt.** C'est le réflexe
 naturel et c'est l'erreur : un paragraphe de description entre en concurrence
@@ -175,17 +196,19 @@ Les autres images jointes sont des PHOTOGRAPHIES DE RÉFÉRENCE DU VÉHICULE. El
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui quitte la piscine et longe une voiture garée sur l'allée.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent : elle quitte le bassin, traverse l'allée de gravier, atteint la voiture garée de profil et la longe du capot jusqu'à l'arrière, sans jamais tourner ni s'arrêter. À la dernière image elle a dépassé la voiture, et l'on découvre au-delà une terrasse de restaurant couverte. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
+MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent, sur le même axe et à la même hauteur : elle quitte le bord du bassin, franchit la terrasse dallée, et traverse la cour en gravier. Une voiture y est garée de profil DEPUIS LE DÉBUT, sur la droite de la cour : elle est déjà en place à la première image, simplement lointaine et partiellement masquée par la jardinière en pierre. Rien n'apparaît, rien ne surgit, rien n'entre dans le champ : c'est la caméra qui s'approche, et la voiture qui grandit dans le cadre à mesure. La caméra la rejoint, la longe du capot jusqu'à l'arrière, et la dépasse. À la dernière image, la voiture est derrière nous et l'on découvre au-delà de la cour une construction basse en pierre avec une terrasse couverte. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
 
-SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Portières fermées. AUCUNE plaque d'immatriculation : les emplacements sont lisses et vides. Elle est garée de profil sur une allée de gravier clair bordée de cyprès. AUCUNE PERSONNE.
+SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Portières fermées. AUCUNE plaque d'immatriculation : les emplacements sont lisses et vides. Elle est garée de profil sur la droite d'une cour en gravier clair.
+
+DÉCOR — celui de l'image de départ, à conserver strictement. Une terrasse dallée en pierre claire au premier plan, prolongée par une cour en gravier beige ratissé. Deux jardinières basses en pierre sèche encadrent la cour, chacune plantée d'un cyprès étroit. Massifs de lavande argentée sur les côtés. Une murette basse en pierre ferme la cour au fond, et au-delà s'étend une oliveraie aux troncs noueux et aux feuillages gris-vert, puis des collines boisées à l'horizon. Aucun autre bâtiment, aucun mobilier, aucune clôture qui n'y soit déjà. AUCUNE PERSONNE.
 
 CAMÉRA. Objectif 35 mm, f/5.6, ISO 100, sur rail motorisé stabilisé, axe strictement horizontal à un mètre soixante du sol, verticales redressées. La voiture reste entièrement visible dans le cadre pendant tout le passage, avec une marge d'air nette au-dessus et en dessous. Nette de bout en bout. Obturateur 1/1000 s : carrosserie parfaitement nette sur chaque image, sans le moindre flou de bougé.
 
-LUMIÈRE. Crépuscule commençant, celle de l'image de départ et non celle des photographies de référence. Ciel orangé bas à droite, lumière rasante et douce qui court le long du flanc en un long reflet étiré. Le rouge de la carrosserie reste franc et lisible, ni orangé par le couchant ni assombri. Aucune ombre dure, aucun reflet ponctuel qui saute. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+LUMIÈRE. Exactement celle de l'image de départ, sans la modifier, et non celle des photographies de référence : fin de journée, soleil bas et chaud, longues ombres portées en travers de la pierre et du gravier, feuillages dorés. Même direction de lumière, mêmes ombres, même température. Sur la carrosserie, cette lumière rasante court le long du flanc en un long reflet étiré. Le rouge reste franc et lisible, ni orangé par le couchant ni assombri. Aucune ombre dure, aucun reflet ponctuel qui saute. Exposition et balance des blancs VERROUILLÉES du début à la fin.
 
 RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre, contraste doux, noirs profonds mais lisibles. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : rayons de jantes, nid d'abeille de la calandre, grain du gravier.
 
-INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, flou de bougé, véhicule différent de celui des photographies, proportions modifiées, teinte modifiée, jantes inventées, carrosserie trois portes, break, berline, plaque d'immatriculation, roue qui tourne, portière qui s'ouvre, suspension qui travaille, variation d'exposition, personne, silhouette, animal, texte, chiffre, enseigne, filigrane, fumée, poussière soulevée, gerbe, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
+INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, flou de bougé, voiture qui apparaît, surgit ou entre dans le champ, voiture qui roule ou se gare, décor redessiné ou différent de l'image de départ, cyprès ou jardinières déplacés, véhicule différent de celui des photographies, proportions modifiées, teinte modifiée, jantes inventées, carrosserie trois portes, break, berline, plaque d'immatriculation, roue qui tourne, portière qui s'ouvre, suspension qui travaille, variation d'exposition, personne, silhouette, animal, texte, chiffre, enseigne, filigrane, fumée, poussière soulevée, gerbe, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
 ```
 
 **Si votre outil n'accepte qu'une seule image jointe** — c'est le cas de
