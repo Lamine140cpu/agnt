@@ -188,24 +188,6 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .chapitre.centre .corps{margin-left:auto;margin-right:auto}
 @media (min-width:900px){.chapitre.centre{grid-template-columns:1fr}}
 
-/* Les pièces : les travaux réels, chacun avec son image. */
-.pieces{display:grid;gap:clamp(20px,2.6vw,34px);margin-top:clamp(40px,6vh,72px)}
-@media (min-width:760px){.pieces{grid-template-columns:1fr 1fr}}
-.piece{position:relative;display:flex;flex-direction:column;background:var(--nuit);
-  border:1px solid var(--ligne);overflow:hidden}
-.piece figure{margin:0;aspect-ratio:16/10;background:#000;overflow:hidden}
-.piece img{display:block;width:100%;height:100%;object-fit:cover;
-  transition:transform .9s cubic-bezier(.22,1,.36,1)}
-.piece:hover img,.piece:focus-within img{transform:scale(1.035)}
-.piece .dedans{padding:clamp(20px,2.4vw,32px);display:flex;flex-direction:column;gap:10px;
-  border-top:1px solid var(--ligne)}
-.piece h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.5rem,2.6vw,2.1rem);
-  line-height:1;margin:0}
-.piece .corps{font-size:.95em}
-.piece .fiche{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;
-  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--sourd)}
-.piece .fiche b{color:var(--gris);font-weight:400}
 
 /* Le procédé : trois étapes, séparées par des filets et non par des cartes.
    Une carte suggère qu'on peut prendre les étapes dans le désordre. */
@@ -344,55 +326,11 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 
 <div id="suite">
 
-  <!-- =============================================================== LES PIÈCES -->
-  <section class="bloc bande" id="pieces">
-    <div class="chapitre">
-      <div>
-        <p class="eti pose"><b>V</b> · Les pièces</p>
-        <p class="titre t-xl pose" style="margin-top:18px">Deux pages,<br>
-          deux <span class="ital">métiers.</span></p>
-      </div>
-      <div>
-        <p class="corps pose">Les deux existent. Ce ne sont pas des maquettes : ce
-          sont des pages qui tournent, dont les images ci-dessous sont
-          extraites. L’une est calculée en direct dans le navigateur, l’autre
-          est un film déroulé au défilement — les deux voies du même atelier,
-          et c’est la matière qui décide de laquelle on prend.</p>
-      </div>
-    </div>
-
-    <div class="pieces">
-
-
-      <article class="piece pose">
-        <figure><img src="assets/pieces/canette.jpg" alt="Canettes de boisson alignées sur un plateau métallique" loading="lazy" width="1600" height="1000"></figure>
-        <div class="dedans">
-          <h3>La canette</h3>
-          <p class="corps">Aluminium brossé, impression pleine, condensation. Le
-            métal n’a pas de couleur propre : il ne montre que ce qui l’entoure,
-            ce qui fait de l’environnement le vrai sujet.</p>
-          <p class="fiche"><b>Boisson</b> · <b>Aluminium</b> · <b>2,9 Mo</b></p>
-        </div>
-      </article>
-
-      <article class="piece pose">
-        <figure><img src="assets/pieces/voiture.jpg" alt="Habitacle de voiture vu depuis la place du conducteur" loading="lazy" width="1600" height="1000"></figure>
-        <div class="dedans">
-          <h3>La voiture</h3>
-          <p class="corps">Un plan unique de huit secondes, découpé en cent
-            soixante-dix images. La caméra avance, passe le pare-brise et va
-            s’asseoir au volant — sans coupe, et dans les deux sens.</p>
-          <p class="fiche"><b>Location</b> · <b>Film</b> · <b>6,2 Mo</b></p>
-        </div>
-      </article>
-    </div>
-  </section>
-
   <!-- ============================================================== LE PROCÉDÉ -->
-  <section class="bloc bande regle" id="procede">
+  <section class="bloc bande" id="procede">
     <div class="chapitre inverse">
       <div>
-        <p class="eti pose"><b>VI</b> · Le procédé</p>
+        <p class="eti pose"><b>V</b> · Le procédé</p>
         <p class="titre t-xl pose" style="margin-top:18px">Trois temps,<br>
           dans cet <span class="ital">ordre.</span></p>
       </div>
@@ -435,7 +373,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="bloc bande regle" id="chiffres">
     <div class="chapitre centre">
       <div>
-        <p class="eti pose"><b>VII</b> · Les chiffres</p>
+        <p class="eti pose"><b>VI</b> · Les chiffres</p>
         <p class="titre t-xl pose" style="margin-top:18px">Mesurés,<br>
           pas <span class="ital">estimés.</span></p>
       </div>
@@ -474,7 +412,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="bloc bande regle" id="parler">
     <div class="chapitre centre">
       <div>
-        <p class="eti pose"><b>VIII</b> · Parler</p>
+        <p class="eti pose"><b>VII</b> · Parler</p>
         <p class="titre t-xl pose" style="margin-top:20px">Montrez-nous<br>
           votre <span class="ital">objet.</span></p>
       </div>
@@ -685,7 +623,7 @@ const oeil = new IntersectionObserver((entrees) => {
     oeil.unobserve(e.target);
   }
 }, { rootMargin: '-12% 0px -12% 0px' });
-document.querySelectorAll('#suite section, #suite .piece, #suite .etape, #suite .chiffre')
+document.querySelectorAll('#suite section, #suite .etape, #suite .chiffre')
   .forEach((n) => oeil.observe(n));
 
 /* L'acte en scène : le plus proche du centre de l'écran, et LUI SEUL.
