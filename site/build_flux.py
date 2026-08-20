@@ -91,10 +91,23 @@ def _drapeau(nom, defaut):
     return next((int(a[len(nom):]) for a in sys.argv[1:] if a.startswith(nom)), defaut)
 
 
-# q=45 et non 32 comme dans le fichier unique : là-bas chaque kilo-octet
-# économisé achetait une image, ici il n'achète rien du tout. Le seul coût
-# d'un octet supplémentaire est un octet supplémentaire sur un disque.
-QUALITE = _drapeau("q=", 45)
+# q=55 et non 32 comme dans le fichier unique : là-bas chaque kilo-octet
+# économisé achetait une image, ici il n'achète rien du tout.
+#
+# Et c'est le bout du chemin, pas un compromis. Fidélité à la source, mesurée
+# sur huit images réparties sur la série, en 1920 px :
+#
+#     q45   26,5 Ko   42,5 dB
+#     q55   36,5 Ko   43,5 dB
+#     q65   47,8 Ko   44,3 dB
+#     q80   86,2 Ko   45,6 dB
+#
+# Au-delà de quarante décibels on est dans le visuellement sans perte, et q45
+# y était déjà. Monter à q80 coûterait 3,3 fois les octets pour trois
+# décibels — pour rien de visible, et pour un décodage plus lent, qui lui se
+# voit. On prend 55 comme marge et on s'arrête là : la compression n'est plus
+# le maillon faible, la source l'est.
+QUALITE = _drapeau("q=", 55)
 # Réécrit seulement index.html, sans toucher aux images déjà encodées.
 PAGE_SEULE = "page" in sys.argv[1:]
 # Ne réencoder qu'une série, en gardant l'autre telle quelle. Vingt minutes
