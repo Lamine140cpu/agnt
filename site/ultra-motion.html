@@ -775,13 +775,28 @@ async function lire(i){
 /* La fenêtre glissante. On demande ce qui vient, on tolère un peu de ce qui
    précède — le défilement se remonte — et on libère le reste.
 
-   Le nombre de décodages lancés par image est PLAFONNÉ. Sans plafond, un
-   changement de position en demandait une vingtaine d'un seul coup, et la
-   rafale tenait le fil principal occupé bien au-delà des seize millisecondes
-   d'une image. Deux par image suffisent largement : à soixante images par
-   seconde, c'est cent vingt décodages lancés par seconde pour une séquence qui
-   en compte quatre-vingt-huit. */
-const PAR_IMAGE = 2;
+   LE CHARGEMENT NE DOIT PAS DÉPENDRE DU RYTHME D'AFFICHAGE. C'était le cas :
+   deux décodages lancés par image RENDUE. Tant que la page tourne à soixante
+   images par seconde, cela fait cent vingt lancements par seconde et personne
+   ne le remarque. Mais dès que le rendu ralentit — une grande toile, une
+   machine chargée, un téléphone — le chargement ralentit avec lui, donc les
+   images manquent, donc le lecteur repose la voisine, et l'on croit que c'est
+   le décodeur qui sature alors que c'est l'affichage qui l'affame. Une boucle
+   qui s'auto-entretient, et qui punit exactement les machines déjà lentes.
+
+   On plafonne donc le nombre de décodages EN VOL, pas le nombre de lancements
+   par trame. Le chargeur reste saturé quel que soit le rythme d'affichage, et
+   le fil principal reste protégé — c'était le but du plafond d'origine.
+
+   VINGT-QUATRE ET NON HUIT, et le chiffre est mesuré. Le débit du chargeur
+   vaut le nombre en vol divisé par la latence d'une image : à 300 ms l'image,
+   huit en vol ne donnent que vingt-sept chargements par seconde. Or un
+   défilement de mille pixels par seconde en consomme trente. Un déficit de dix
+   pour cent seulement — mais il ne coûte pas dix pour cent d'absences, il en
+   coûte quatre-vingt-quinze : le retard s'accumule sans jamais se résorber, et
+   le chargeur finit par toujours réclamer l'image qu'on vient de dépasser. Il
+   faut donc de la MARGE, pas l'équilibre. */
+const EN_VOL = 24;
 
 /* ----------------------------------------- la fenêtre se mesure en PIXELS
 
@@ -810,9 +825,12 @@ const AVANCE = 700, RECUL = 240, MEMOIRE = 1100;
    Quatre-vingt-seize mégaoctets partout était un réglage fait pour des images
    de neuf cents kilo-octets, et il est devenu absurde en montant en
    définition : il ne laissait plus tenir que treize images de part et d'autre.
-   Un téléphone doit rester à ce niveau — il ferme l'onglet sans prévenir —
-   mais un ordinateur de bureau encaisse sans peine trois cent vingt. */
-const MEMOIRE_MAX = (innerWidth < 820 ? 96 : 320) * 1048576;
+   Un téléphone doit rester prudent — il ferme l'onglet sans prévenir — mais
+   quatre-vingt-seize mégaoctets étaient trop stricts même pour lui : à 8 Mo
+   l'image il n'en gardait que SIX, soit deux cents pixels d'avance. Cent
+   quarante-quatre, avec une série servie à sa vraie taille, en gardent
+   dix-neuf. Un ordinateur de bureau encaisse sans peine trois cent vingt. */
+const MEMOIRE_MAX = (innerWidth < 820 ? 144 : 320) * 1048576;
 let octetsImage = 0;
 
 function reglerFenetre(){
@@ -831,10 +849,9 @@ function reglerFenetre(){
 }
 
 function fenetre(centre){
-  let lances = 0;
-  for (let d = 0; d <= SEQ.avant && lances < PAR_IMAGE; d++) {
-    if (charger(centre + d)) lances++;
-    if (d <= SEQ.arriere && lances < PAR_IMAGE && charger(centre - d)) lances++;
+  for (let d = 0; d <= SEQ.avant && encours.size < EN_VOL; d++) {
+    charger(centre + d);
+    if (d <= SEQ.arriere && encours.size < EN_VOL) charger(centre - d);
   }
   if (cache.size > SEQ.oubli * 2) {
     for (const i of cache.keys())

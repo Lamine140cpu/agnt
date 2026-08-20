@@ -20,7 +20,8 @@ Le lecteur n'a rien à changer. Il possède déjà les deux voies : si la page n
 trouve pas de tableau embarqué, il va chercher les fichiers sur le disque. Ici
 on se contente de NE PAS embarquer.
 
-    usage : python3 build_flux.py [q=N] [large=N] [etroit=N] [parimage=N] [page]
+    usage : python3 build_flux.py [q=N] [large=N] [etroit=N] [parimage=N]
+                                 [serie=NOM] [page]
 
 « page » réécrit index.html sans réencoder les images. L'encodage prend
 quarante minutes ; une correction du lecteur n'a pas à les payer.
@@ -96,12 +97,15 @@ def _drapeau(nom, defaut):
 QUALITE = _drapeau("q=", 45)
 # Réécrit seulement index.html, sans toucher aux images déjà encodées.
 PAGE_SEULE = "page" in sys.argv[1:]
+# Ne réencoder qu'une série, en gardant l'autre telle quelle. Vingt minutes
+# d'encodeur ne se redépensent pas pour un réglage qui ne touche qu'un côté.
+SEULE = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("serie=")), None)
 # Densité voulue, en pixels de défilement par image. C'est ELLE qu'on choisit ;
 # le nombre d'images en découle.
 PAR_IMAGE = _drapeau("parimage=", 33)
 SERIES = {
     "accueil":        dict(dossier="assets/film/accueil",        largeur=_drapeau("large=", 1920)),
-    "accueil-etroit": dict(dossier="assets/film/accueil-etroit", largeur=_drapeau("etroit=", 1080)),
+    "accueil-etroit": dict(dossier="assets/film/accueil-etroit", largeur=_drapeau("etroit=", 720)),
 }
 # Les courses mesurées dans un navigateur. Ce sont elles qui, divisées par la
 # densité voulue, donnent le nombre d'images à livrer.
@@ -128,9 +132,11 @@ def _un(travail):
 
 def main():
     src = open(SOURCE, encoding="utf-8").read()
-    if not PAGE_SEULE:
+    if not PAGE_SEULE and not SEULE:
         shutil.rmtree(OUT, ignore_errors=True)
         os.makedirs(OUT)
+    elif SEULE:
+        shutil.rmtree(os.path.join(OUT, "assets", "film", SEULE), ignore_errors=True)
     elif not os.path.isdir(OUT):
         sys.exit(f"« page » suppose une construction existante : {OUT} est absent")
 
@@ -148,7 +154,7 @@ def main():
             idx = np.linspace(0, len(fichiers) - 1, voulu).round().astype(int)
             fichiers = [fichiers[i] for i in idx]
         cible = os.path.join(OUT, "assets", "film", nom)
-        if PAGE_SEULE:
+        if PAGE_SEULE or (SEULE and nom != SEULE):
             comptes[nom] = len(os.listdir(cible))
             print(f"  {nom:15s} {comptes[nom]:4d} images déjà encodées")
             continue
