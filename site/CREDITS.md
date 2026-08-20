@@ -33,6 +33,21 @@ Aucune ne représente un produit ni une marque existante.
 vendu.**
 
 Montrer une voiture générée à la place de celle qu'on loue est une publicité
-trompeuse, en plus du problème d'image de marque. La séquence de démonstration
-actuelle porte encore un badge de constructeur produit par le modèle : elle
-vaut comme démonstration de mise en scène, pas comme annonce.
+trompeuse, en plus du problème d'image de marque.
+
+### Les véhicules de marque dans la vitrine du studio
+
+Le plan 3 de la continuité met en scène une **Volkswagen Golf 8 GTI**, à
+partir de photographies fournies par le commanditaire. C'est licite dans ce
+cadre et cela ne l'est pas dans tous :
+
+- **ici**, la page démontre une mise en scène. La voiture y joue le même rôle
+  qu'un véhicule dans un film : elle est montrée, pas proposée. Partir de
+  photographies réelles plutôt que d'une description écrite renforce ce
+  statut — on met en scène une voiture qui existe, on n'en fabrique pas une ;
+- **chez un loueur**, la même image redeviendrait une annonce. Elle ne peut
+  alors représenter que le véhicule effectivement proposé, et il faut le
+  filmer, pas le générer.
+
+Dans les deux cas : aucune plaque d'immatriculation, et rien qui suggère un
+lien commercial, un partenariat ou une approbation du constructeur.

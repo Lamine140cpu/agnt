@@ -125,28 +125,65 @@ INTERDIT. Coupe, fondu, transition, rotation de caméra, plongée, zoom, tremble
 ```
 
 ---
-
 # Plan 3 — La voiture
 
+**Ce plan prend deux sortes d'images jointes, et il faut le lui dire.**
+
+Le raccord (la dernière image du plan 2) donne le *lieu et la lumière*. Les
+photos de la Golf donnent le *véhicule*. Un modèle qui reçoit trois images
+sans consigne les mélange : il peut prendre la Golf comme décor de départ, ou
+repeindre la villa en rouge. La première ligne du prompt sépare les rôles.
+
+**Quelles photos joindre.** Trois suffisent, et leur cadrage compte plus que
+leur nombre :
+
+1. **le profil strict**, voiture entière, c'est le plan qu'on va filmer ;
+2. **le trois-quarts avant**, qui donne la calandre, le bandeau lumineux et
+   le liseré rouge ;
+3. **un détail de flanc** — jante, bas de caisse, poignée — pour la matière.
+
+Prises par temps couvert si possible : une photo en plein soleil impose ses
+ombres au plan, et elles ne coïncideront pas avec le crépuscule demandé.
+
+**Ne décrivez pas la voiture en détail dans le prompt.** C'est le réflexe
+naturel et c'est l'erreur : un paragraphe de description entre en concurrence
+avec les photos, et le modèle arbitre au hasard. Le prompt nomme le modèle,
+pose deux ou trois repères vérifiables, et laisse les images faire le reste.
+
 ```
-L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
+IMAGES JOINTES — deux rôles distincts, à ne pas confondre.
+
+La première image jointe est L'IMAGE DE DÉPART de ce plan : elle donne le lieu, le cadrage, la hauteur de caméra et la lumière. Le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
+
+Les autres images jointes sont des PHOTOGRAPHIES DE RÉFÉRENCE DU VÉHICULE. Elles ne sont pas le décor et ne donnent ni le cadrage ni la lumière : elles servent uniquement à reproduire fidèlement cette voiture précise — sa forme, ses proportions, sa couleur, ses jantes, ses optiques, ses détails. Reproduis-la exactement telle qu'elle apparaît sur ces photos, sans rien inventer ni styliser.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui quitte la piscine et longe une voiture garée sur l'allée.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante : elle quitte le bassin, traverse l'allée de gravier, atteint une voiture garée de profil et la longe du capot jusqu'à l'arrière, sans jamais tourner ni s'arrêter. À la dernière image elle a dépassé la voiture, et l'on découvre au-delà une terrasse de restaurant couverte. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
+MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent : elle quitte le bassin, traverse l'allée de gravier, atteint la voiture garée de profil et la longe du capot jusqu'à l'arrière, sans jamais tourner ni s'arrêter. À la dernière image elle a dépassé la voiture, et l'on découvre au-delà une terrasse de restaurant couverte. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
 
-SUJET. Une voiture citadine cinq portes moderne, carrosserie gris anthracite métallisé propre et polie, jantes en alliage à cinq branches, pneus noirs mats, vitres teintées, phares à diodes allumés, blancs et constants. AUCUN badge, AUCUN logo, AUCUNE marque, AUCUNE plaque d'immatriculation : la calandre est lisse et vide, les emplacements sont plans. Véhicule de conception générique, ne correspondant à aucun constructeur existant. Elle est garée sur une allée de gravier clair bordée de cyprès. AUCUNE PERSONNE.
+SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. AUCUNE plaque d'immatriculation : les emplacements sont lisses et vides. Elle est garée de profil sur une allée de gravier clair bordée de cyprès. AUCUNE PERSONNE.
 
 CAMÉRA. Objectif 35 mm, f/5.6, ISO 100, sur rail motorisé stabilisé, axe strictement horizontal à un mètre soixante du sol, verticales redressées. La voiture reste entièrement visible dans le cadre pendant tout le passage, avec une marge d'air nette au-dessus et en dessous. Nette de bout en bout. Obturateur 1/1000 s : carrosserie parfaitement nette sur chaque image, sans le moindre flou de bougé.
 
-LUMIÈRE. Crépuscule commençant. Ciel orangé bas à droite, lumière rasante et douce qui court le long du flanc en un long reflet étiré. Aucune ombre dure, aucun reflet ponctuel qui saute. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+LUMIÈRE. Crépuscule commençant, celle de l'image de départ et non celle des photographies de référence. Ciel orangé bas à droite, lumière rasante et douce qui court le long du flanc en un long reflet étiré. Le rouge de la carrosserie reste franc et lisible, ni orangé par le couchant ni assombri. Aucune ombre dure, aucun reflet ponctuel qui saute. Exposition et balance des blancs VERROUILLÉES du début à la fin.
 
-RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre, contraste doux, noirs profonds mais lisibles. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : rayons de jantes, grain du gravier.
+RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre, contraste doux, noirs profonds mais lisibles. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : rayons de jantes, nid d'abeille de la calandre, grain du gravier.
 
-INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, flou de bougé, badge, logo, emblème, marque, plaque d'immatriculation, voiture identifiable comme un modèle existant, roue qui tourne, portière qui s'ouvre, suspension qui travaille, variation d'exposition, personne, silhouette, animal, texte, chiffre, enseigne, filigrane, fumée, poussière soulevée, gerbe, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
+INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, flou de bougé, véhicule différent de celui des photographies, proportions modifiées, teinte modifiée, jantes inventées, carrosserie trois portes, break, berline, plaque d'immatriculation, roue qui tourne, portière qui s'ouvre, suspension qui travaille, variation d'exposition, personne, silhouette, animal, texte, chiffre, enseigne, filigrane, fumée, poussière soulevée, gerbe, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
 ```
 
----
+**Si votre outil n'accepte qu'une seule image jointe** — c'est le cas de
+plusieurs interfaces — il faut choisir, et le bon choix n'est pas évident :
+
+- **garder le raccord** préserve la continuité, mais la Golf ne sera qu'une
+  approximation décrite en mots ;
+- **garder la photo de la Golf** donne la bonne voiture, mais le plan 3 ne
+  raccorde plus au plan 2 et la jointure sautera.
+
+Prenez le raccord. Une jointure qui saute se voit à chaque descente ; une
+jante approximative, presque jamais. Et si la voiture doit absolument être
+exacte, la solution propre est de la **filmer** : huit secondes de travelling
+le long du flanc, et le même pipeline tourne sans changer une ligne.
 
 # Plan 4 — Le restaurant
 
