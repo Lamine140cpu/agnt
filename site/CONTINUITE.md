@@ -2,7 +2,7 @@
 
 Le prologue du site n'est pas une suite d'exemples. C'est **un seul travelling
 avant qui ne s'arrête jamais** et qui traverse cinq métiers : une villa, une
-piscine, une voiture — dehors puis dedans —, un restaurant, un terrain de foot.
+piscine, une voiture, un restaurant, un terrain de foot.
 
 C'est ça, la démonstration. Pas « voici cinq sites », mais « voici cinq
 commerces sur le même rail, et vous ne voyez pas la jointure ».
@@ -49,7 +49,7 @@ les images.
 
 ## Le chaînage
 
-Un plan généré fait 8 secondes ; la continuité en fait quarante-huit. On les
+Un plan généré fait 8 secondes ; la continuité en fait quarante. On les
 enchaîne, et la technique tient en une phrase :
 
 > **La dernière image d'un plan devient l'image de départ du suivant.**
@@ -63,7 +63,7 @@ d'un décor *presque* identique et la jointure saute aux yeux.
 2. python3 film_raccord.py plan1.mp4        → plan1-fin.png
 3. joindre plan1-fin.png au prompt du plan 2, générer
 4. python3 film_raccord.py plan2.mp4        → plan2-fin.png
-5. ... et ainsi de suite jusqu'au plan 6
+5. ... et ainsi de suite jusqu'au plan 5
 ```
 
 Chaque prompt ci-dessous commence par une ligne de raccord, **à garder telle
@@ -88,7 +88,7 @@ servir les images depuis le disque — ce que le lecteur sait faire, mais qui
 n'est plus une démonstration autonome.
 
 **Le budget porte sur le nombre total d'images, pas sur le nombre de plans.**
-Six plans de 37 images coûtent exactement ce que coûtaient cinq plans de 44.
+Cinq plans de 44 images et six plans de 37 coûtent exactement la même chose.
 Ajouter un beat ne coûte donc rien en poids : seulement une génération de plus
 et une jointure de plus à réussir.
 
@@ -135,7 +135,7 @@ INTERDIT. Coupe, fondu, transition, rotation de caméra, plongée, zoom, tremble
 ```
 
 ---
-# Plan 3 — La voiture, dehors
+# Plan 3 — La voiture
 
 **Ce plan prend deux sortes d'images jointes, et il faut le lui dire.**
 
@@ -152,12 +152,11 @@ leur nombre :
    le liseré rouge ;
 3. **un détail de flanc** — jante, bas de caisse, poignée — pour la matière.
 
-**Pas de photo d'intérieur dans ce plan-ci.** L'habitacle n'y apparaît jamais :
-la caméra est dehors et les vitres sont teintées. Une référence que le modèle
-ne peut satisfaire nulle part, il essaie quand même de la placer — il détient
-les vitres, ou il fait dériver la caméra vers l'intérieur en plein milieu, ce
-qui casse la continuité. Les photos d'habitacle vont au plan 4, qui est fait
-pour elles.
+**Extérieur seulement — pas de photo d'habitacle.** La caméra reste dehors et
+les vitres sont teintées : l'intérieur n'apparaît à aucun moment. Une
+référence que le modèle ne peut satisfaire nulle part, il essaie quand même de
+la placer — il détient les vitres, ou il fait dériver la caméra vers
+l'habitacle en plein milieu du travelling, ce qui casse la continuité.
 
 Prises par temps couvert si possible : une photo en plein soleil impose ses
 ombres au plan, et elles ne coïncideront pas avec le crépuscule demandé.
@@ -176,9 +175,9 @@ Les autres images jointes sont des PHOTOGRAPHIES DE RÉFÉRENCE DU VÉHICULE. El
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui quitte la piscine et longe une voiture garée sur l'allée.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent : elle quitte le bassin, traverse l'allée de gravier, atteint la voiture garée de profil et la longe du capot jusqu'à la portière conducteur, sans jamais tourner ni s'arrêter. Les portières avant sont grandes ouvertes et parfaitement immobiles : à la dernière image, la caméra est arrivée devant l'ouverture de la portière conducteur, qui occupe une grande partie du cadre, et l'on aperçoit l'habitacle au-delà. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, aucune roue qui tourne, aucune suspension qui travaille, et les portières ouvertes ne bougent pas.
+MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent : elle quitte le bassin, traverse l'allée de gravier, atteint la voiture garée de profil et la longe du capot jusqu'à l'arrière, sans jamais tourner ni s'arrêter. À la dernière image elle a dépassé la voiture, et l'on découvre au-delà une terrasse de restaurant couverte. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
 
-SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Les deux portières avant sont grandes ouvertes, immobiles, et ne bougent pas d'un degré pendant tout le plan. AUCUNE plaque d'immatriculation : les emplacements sont lisses et vides. Elle est garée de profil sur une allée de gravier clair bordée de cyprès. AUCUNE PERSONNE.
+SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Portières fermées. AUCUNE plaque d'immatriculation : les emplacements sont lisses et vides. Elle est garée de profil sur une allée de gravier clair bordée de cyprès. AUCUNE PERSONNE.
 
 CAMÉRA. Objectif 35 mm, f/5.6, ISO 100, sur rail motorisé stabilisé, axe strictement horizontal à un mètre soixante du sol, verticales redressées. La voiture reste entièrement visible dans le cadre pendant tout le passage, avec une marge d'air nette au-dessus et en dessous. Nette de bout en bout. Obturateur 1/1000 s : carrosserie parfaitement nette sur chaque image, sans le moindre flou de bougé.
 
@@ -186,7 +185,7 @@ LUMIÈRE. Crépuscule commençant, celle de l'image de départ et non celle des 
 
 RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre, contraste doux, noirs profonds mais lisibles. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : rayons de jantes, nid d'abeille de la calandre, grain du gravier.
 
-INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, flou de bougé, véhicule différent de celui des photographies, proportions modifiées, teinte modifiée, jantes inventées, carrosserie trois portes, break, berline, plaque d'immatriculation, roue qui tourne, portière qui s'ouvre ou se referme pendant le plan, suspension qui travaille, variation d'exposition, personne, silhouette, animal, texte, chiffre, enseigne, filigrane, fumée, poussière soulevée, gerbe, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
+INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, flou de bougé, véhicule différent de celui des photographies, proportions modifiées, teinte modifiée, jantes inventées, carrosserie trois portes, break, berline, plaque d'immatriculation, roue qui tourne, portière qui s'ouvre, suspension qui travaille, variation d'exposition, personne, silhouette, animal, texte, chiffre, enseigne, filigrane, fumée, poussière soulevée, gerbe, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
 ```
 
 **Si votre outil n'accepte qu'une seule image jointe** — c'est le cas de
@@ -202,54 +201,14 @@ jante approximative, presque jamais. Et si la voiture doit absolument être
 exacte, la solution propre est de la **filmer** : huit secondes de travelling
 le long du flanc, et le même pipeline tourne sans changer une ligne.
 
-# Plan 4 — La voiture, dedans
-
-C'est ici que vont vos photos d'habitacle.
-
-**La caméra traverse la voiture, elle n'y entre pas pour en ressortir.** C'est
-tout le problème résolu : la continuité est un travelling avant qui ne recule
-jamais. Faire entrer la caméra puis la faire sortir par où elle est venue
-imposerait une marche arrière, qui se lit comme une erreur au défilement. Elle
-entre donc par la portière conducteur, traverse l'habitacle, et sort par la
-portière passager — toujours vers l'avant, sans jamais tourner.
-
-Joignez trois photos d'intérieur : **le poste de conduite de face**, **la vue
-depuis la place conducteur vers la portière passager** (c'est l'axe qu'on va
-filmer), et **un détail de matière** — surpiqûre, cuir du volant, tissu du
-siège.
-
-```
-IMAGES JOINTES — deux rôles distincts, à ne pas confondre.
-
-La première image jointe est L'IMAGE DE DÉPART de ce plan : elle donne le lieu, le cadrage, la hauteur de caméra et la lumière. Le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
-
-Les autres images jointes sont des PHOTOGRAPHIES DE RÉFÉRENCE DE L'HABITACLE. Elles ne donnent ni le cadrage ni la lumière : elles servent uniquement à reproduire fidèlement cet intérieur précis — sa planche de bord, son volant, ses sièges, ses matières, ses couleurs. Reproduis-le exactement tel qu'il apparaît sur ces photos, sans rien inventer ni styliser.
-
-Un seul plan continu de huit secondes, sans aucune coupe, qui traverse l'habitacle d'une voiture d'une portière à l'autre.
-
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent, et sur le même axe : elle franchit l'ouverture de la portière conducteur, passe devant le volant à hauteur des yeux d'un conducteur assis, traverse l'habitacle au-dessus de la console centrale, et ressort par l'ouverture de la portière passager. À la dernière image elle est de nouveau dehors, et l'on découvre au-delà une terrasse de restaurant couverte. Elle ne recule jamais, ne tourne jamais, ne pivote jamais, ne ralentit jamais. Aucun zoom, aucun tremblement. Rien ne bouge dans l'habitacle : ni volant, ni levier, ni aiguille, ni ceinture, ni portière.
-
-SUJET. L'habitacle d'une Volkswagen Golf 8 GTI, exactement celui des photographies de référence jointes : même planche de bord, même volant, mêmes sièges, mêmes matières, mêmes couleurs, mêmes surpiqûres. C'est le même véhicule que le plan précédent, vu de l'intérieur. Habitacle propre et vide : aucun objet personnel, aucun bagage, aucune boisson, AUCUNE PERSONNE, aucune main. Les écrans sont allumés et affichent un aplat sombre uni, sans texte, sans icône, sans chiffre. Aucun logo lisible sur le volant ni ailleurs.
-
-CAMÉRA. Objectif 24 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strictement horizontal, verticales redressées, aucune rotation. Nette de bout en bout. Obturateur 1/1000 s : chaque image parfaitement nette, sans le moindre flou de bougé.
-
-LUMIÈRE. Crépuscule, celle du plan précédent et non celle des photographies de référence. Lumière douce et déclinante entrant par les deux ouvertures et par le pare-brise. Exposition et balance des blancs VERROUILLÉES du début à la fin : aucune variation de luminosité au passage du dehors clair vers l'habitacle sombre puis vers le dehors — l'intérieur reste ouvert et lisible, l'image ne clignote pas.
-
-RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre, contraste doux, ombres de l'habitacle ouvertes et lisibles. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : grain du plastique, trame du tissu, surpiqûres.
-
-INTERDIT. Coupe, fondu, transition, rotation de caméra, panoramique, zoom, marche arrière, tremblement, changement de vitesse, flou de mouvement, habitacle différent de celui des photographies, volant qui tourne, aiguille qui bouge, écran qui change, voyant qui s'allume ou clignote, ceinture qui pend et se balance, portière qui bouge, assombrissement à l'entrée dans l'habitacle, variation d'exposition, personne, main, silhouette, reflet d'équipe dans le pare-brise, texte, chiffre, logo, marque, filigrane, poussière, particules, rendu 3D, image de synthèse.
-```
-
----
-
-# Plan 5 — Le restaurant
+# Plan 4 — Le restaurant
 
 ```
 L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui entre sur une terrasse de restaurant dressée et la traverse.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante : elle quitte la voiture, franchit les derniers mètres de gravier, pénètre sous la terrasse couverte et glisse dans l'allée centrale, entre deux rangées de tables dressées. À la dernière image elle atteint le fond de la salle, où une large ouverture donne sur un terrain de sport éclairé. Aucune rotation, aucun zoom, aucun tremblement. Rien ne bouge : ni nappe, ni bougie, ni feuillage, ni rideau.
+MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante : elle pénètre sous la terrasse couverte et glisse dans l'allée centrale, entre deux rangées de tables dressées. À la dernière image elle atteint le fond de la salle, où une large ouverture donne sur un terrain de sport éclairé. Aucune rotation, aucun zoom, aucun tremblement. Rien ne bouge : ni nappe, ni bougie, ni feuillage, ni rideau.
 
 SUJET. Terrasse de restaurant couverte, charpente en bois clair, sol en tomettes. Deux rangées de tables carrées en chêne massif, entièrement dressées et parfaitement alignées : nappes en lin écru, assiettes en grès mat, verres à pied, couverts alignés, une petite bougie éteinte au centre de chaque table. Chaises en bois cintré et cannage. Guirlande d'ampoules à filament allumées le long de la charpente, lumière chaude et constante. Un bar en zinc sur la gauche, bouteilles alignées sans étiquette lisible. AUCUNE PERSONNE, aucune silhouette, aucun serveur, aucune main. Aucune enseigne, aucun menu lisible, aucune marque, aucun texte.
 
@@ -264,7 +223,7 @@ INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, chan
 
 ---
 
-# Plan 6 — Le terrain
+# Plan 5 — Le terrain
 
 ```
 L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
@@ -316,7 +275,7 @@ sont réparties au prorata de la durée de chaque plan, donc la vitesse reste
 constante d'un bout à l'autre :
 
 ```
-python3 film_video.py villa.mp4 piscine.mp4 voiture.mp4 habitacle.mp4 restaurant.mp4 terrain.mp4 220 1440 accueil
+python3 film_video.py villa.mp4 piscine.mp4 voiture.mp4 restaurant.mp4 terrain.mp4 220 1440 accueil
 python3 build_ultra.py 78 1280 artefact
 ```
 
