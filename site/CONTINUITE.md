@@ -465,46 +465,51 @@ INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de 
 # Plan 5 — La cuisine
 
 Le troisième passage, et le premier qui serve un produit plutôt qu'un décor :
-la caméra quitte la salle, franchit un menu fermé posé debout, et se retrouve
-sur le plan de travail d'une cuisine.
+la caméra quitte la salle, longe le pilier de pierre, et se retrouve sur le
+plan de travail d'une cuisine.
 
 *Écrit pour la prolongation, comme le plan 4.*
 
-> **Le menu est un passage, pas une page.** Poser une carte lisible devant
-> l'objectif produirait du faux texte — c'est la faiblesse la mieux connue des
-> modèles. Fermé, en cuir sombre et sans un mot, il devient exactement ce qu'un
-> passage demande : une masse opaque, mate, sans détail fin à ré-inventer.
+> **Le passage se fait sur le pilier, pas sur un menu.** L'idée de départ était
+> de traverser une carte fermée. Vérification faite sur l'image de raccord
+> réelle : **il n'y a aucun menu sur les tables.** Le demander reviendrait à
+> faire apparaître un objet absent — exactement l'erreur qui bloquait le plan 3.
+>
+> L'image contient mieux. Un large pilier de pierre se dresse à gauche, tout
+> près de l'objectif, déjà là dès la première image. Il est mat, texturé, sans
+> détail fin à ré-inventer : c'est la surface de passage idéale, et elle existe.
 >
 > **Et il n'y a pas de « zoom rapide ».** Pas par principe : par arithmétique.
 > À dix-sept pixels de défilement par image, un mouvement rapide écarte tant
 > deux images consécutives que ni le fondu ni le flot optique ne savent les
-> relier — mesuré, la limite est un écart de 18. L'impression de vitesse doit
-> venir du sujet qui grossit, jamais de la caméra qui accélère.
+> relier — mesuré, la limite est un écart de 18, et le passage le long de la
+> Golf était déjà à 23. L'impression de vitesse doit venir du sujet qui
+> grossit, jamais de la caméra qui accélère.
 
 ```
 CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même lieu, même hauteur de caméra, même axe, même vitesse. Reprends le mouvement exactement là où il s'arrête, sans à-coup, sans repartir, sans réinitialiser le cadrage, sans revenir en arrière.
 
-Un seul plan continu de huit secondes, sans aucune coupe, qui traverse un menu fermé et débouche sur un plan de travail de cuisine.
+Un seul plan continu de huit secondes, sans aucune coupe, qui longe un pilier de pierre et débouche sur un plan de travail de cuisine.
 
 MOUVEMENT. Le plan se déroule en trois temps enchaînés, à vitesse rigoureusement constante du début à la fin, sans jamais accélérer, ralentir ni s'arrêter.
 
-Premier temps, environ deux secondes : la caméra poursuit son avance en ligne droite entre les tables dressées et s'approche d'une table du premier plan, sur laquelle un menu fermé est posé debout, adossé à un verre. Le menu grandit dans le cadre à mesure qu'on l'atteint.
+Premier temps, environ deux secondes : la caméra poursuit son avance en ligne droite dans l'allée centrale, entre le comptoir à gauche et les tables dressées à droite, et s'approche du large pilier de pierre qui se dresse sur la gauche du cadre. Elle le frôle à quelques centimètres. La pierre envahit progressivement le cadre par la gauche.
 
-Deuxième temps, environ une demi-seconde : le menu occupe TOUT le cadre. L'image est entièrement remplie par son cuir brun sombre, mat, dont on voit le grain, sans un seul caractère, sans titre, sans gravure, sans logo. Elle n'est pas noire : elle est brune, chaude et texturée.
+Deuxième temps, environ une demi-seconde : le pilier occupe TOUT le cadre. L'image est entièrement remplie par cette pierre chaude et mate, dont on voit le grain et les joints, sans détail net, sans trouée. Elle n'est pas noire : elle est beige, chaude et texturée.
 
-Troisième temps, le reste du plan : le menu se dégage par la droite et découvre un plan de travail de cuisine professionnelle, vu à hauteur du plan. La caméra avance encore et s'immobilise en douceur devant une planche en chêne huilé, au centre du cadre, sur laquelle est posé un burger entier. À la dernière image le cadre est stable, centré sur le burger, qui occupe environ la moitié de la hauteur.
+Troisième temps, le reste du plan : le pilier se dégage par la droite et découvre un plan de travail de cuisine professionnelle, vu à hauteur du plan. La caméra avance encore et s'immobilise en douceur devant une planche en chêne huilé, au centre du cadre, sur laquelle est posé un burger entier. À la dernière image le cadre est stable, centré sur le burger, qui occupe environ la moitié de la hauteur.
 
-Aucune rotation, aucun panoramique, aucun zoom, aucun changement de hauteur, aucun tremblement. Le passage devant le menu n'est ni un fondu, ni une coupe, ni une transition ajoutée : c'est un objet réel que la caméra frôle.
+Aucune rotation, aucun panoramique, aucun zoom, aucun changement de hauteur, aucun tremblement. Le passage le long du pilier n'est ni un fondu, ni une coupe, ni une transition ajoutée : c'est un objet réel, déjà présent dans l'image de départ, que la caméra frôle.
 
 SUJET. Un burger de restaurant, entier, posé sur une planche en chêne huilé. Pain brioché doré parsemé de graines de sésame, légèrement écrasé sur le dessus comme un vrai pain qu'on vient d'assembler. On devine sur la tranche, de haut en bas : la sauce, une tranche de cheddar fondue qui déborde, un steak haché épais aux bords irréguliers et à la croûte grillée, une feuille de sucrine, deux rondelles de tomate. Autour : un plan de travail en inox brossé, propre et vide, quelques ustensiles alignés au fond, une crédence en carrelage blanc. AUCUNE PERSONNE, aucune main, aucun cuisinier. Aucune étiquette, aucune marque, aucun texte, aucune ardoise.
 
 CAMÉRA. Objectif 50 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strictement horizontal, verticales redressées. Nette de bout en bout, y compris le grain du cuir au moment où il frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette.
 
-LUMIÈRE. La lumière change PENDANT le passage devant le menu, et à aucun autre moment. Avant : la lumière chaude et tamisée de la salle, exactement celle du plan précédent, inchangée. Après : l'éclairage d'une cuisine, blanc neutre, franc et régulier, venant du haut, sans ombre dure. Une fois la cuisine atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus.
+LUMIÈRE. La lumière change PENDANT le passage le long du pilier, et à aucun autre moment. Avant : la lumière chaude et tamisée de la salle, exactement celle du plan précédent, inchangée. Après : l'éclairage d'une cuisine, blanc neutre, franc et régulier, venant du haut, sans ombre dure. Une fois la cuisine atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus.
 
 RENDU. Prise de vue réelle, film culinaire haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : graines de sésame, croûte du steak, grain du pain.
 
-INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, accélération, ralentissement, flou de mouvement, menu ouvert, texte sur le menu, carte lisible, caractère, chiffre, prix, retour dans la salle, image entièrement noire, personne, main, cuisinier, animal, flamme, vapeur, fumée, buée, gouttes qui coulent, particules, plastique, couleurs fluorescentes, enseigne, logo, marque, filigrane, rendu 3D, image de synthèse.
+INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, accélération, ralentissement, flou de mouvement, pilier qui s'écarte tout seul, retour dans la salle, table ou chaise ramenée dans le champ, texte, carte, menu lisible, caractère, chiffre, prix, image entièrement noire, personne, main, cuisinier, animal, flamme, vapeur, fumée, buée, gouttes qui coulent, particules, plastique, couleurs fluorescentes, enseigne, logo, marque, filigrane, rendu 3D, image de synthèse.
 ```
 
 ---
