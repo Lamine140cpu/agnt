@@ -173,6 +173,30 @@ continuation une raison motivée de changer de monde.
 Si la continuation n'existe pas ou ne convainc pas, la méthode d'image de
 raccord reste valable telle quelle.
 
+### Les en-têtes, selon votre mode
+
+Les plans 4 et 5 ci-dessous sont écrits pour la **prolongation** : Flow tient
+déjà le plan précédent, il n'y a plus d'image à joindre. Leur premier
+paragraphe s'appelle `CONTINUITÉ`.
+
+Si vous repartez d'une image de raccord au lieu de prolonger, remplacez ce
+paragraphe par la ligne habituelle :
+
+```
+L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
+```
+
+Et si vous joignez un plan déjà généré comme **référence de registre** — pour
+que l'étalonnage et le grain restent les mêmes d'un bout à l'autre — ajoutez ce
+paragraphe juste après `CONTINUITÉ`, et **seulement dans ce cas** :
+
+```
+RÉFÉRENCE DE REGISTRE. La vidéo jointe est un plan antérieur de la même séquence. Elle ne donne ni le décor, ni le sujet, ni le mouvement de caméra : uniquement le rendu — étalonnage, contraste, densité des noirs, grain, netteté, comportement de l'objectif. Le décor et l'action de ce plan-ci sont ceux décrits ci-dessous, et eux seuls.
+```
+
+Sans cette précision, un modèle à qui l'on donne une vidéo de voiture pour un
+plan de restaurant essaiera d'y remettre la voiture.
+
 ### Deux détails à ne pas rater
 
 **L'audio.** Veo 3.1 génère du son nativement. On n'en a aucun usage — le
@@ -345,8 +369,11 @@ le long du flanc, et le même pipeline tourne sans changer une ligne.
 Le premier passage. La caméra frôle le cyprès du fond de cour, il remplit le
 cadre une demi-seconde, et de l'autre côté c'est le restaurant.
 
+*Écrit pour la prolongation. Si vous repartez d'une image de raccord, voir
+[Les en-têtes, selon votre mode](#les-en-têtes-selon-votre-mode).*
+
 ```
-L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
+CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même lieu, même hauteur de caméra, même axe, même vitesse, même lumière. Reprends le mouvement exactement là où il s'arrête, sans à-coup, sans repartir, sans réinitialiser le cadrage, sans revenir en arrière.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui passe derrière un cyprès et débouche sur une terrasse de restaurant dressée.
 
@@ -368,7 +395,7 @@ LUMIÈRE. Tombée de la nuit. La lumière décline pendant le passage derrière 
 
 RENDU. Prise de vue réelle, film de restaurant haut de gamme, qualité commerciale. Colorimétrie chaude mais fidèle, contraste doux, hautes lumières des ampoules contrôlées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé.
 
-INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, changement de vitesse, arrêt, flou de mouvement, cyprès qui s'écarte tout seul, feuillage agité par le vent, image entièrement noire, personne, silhouette, serveur, main, animal, oiseau, flamme, bougie allumée, ampoule qui vacille, nappe qui bouge, rideau agité, texte, menu, chiffre, prix, enseigne, logo, marque, étiquette lisible, filigrane, fumée, vapeur de plat, particules, rendu 3D, image de synthèse.
+INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, changement de vitesse, arrêt, flou de mouvement, retour dans la cour, voiture visible ou ramenée dans le champ, cyprès qui s'écarte tout seul, feuillage agité par le vent, image entièrement noire, personne, silhouette, serveur, main, animal, oiseau, flamme, bougie allumée, ampoule qui vacille, nappe qui bouge, rideau agité, texte, menu, chiffre, prix, enseigne, logo, marque, étiquette lisible, filigrane, fumée, vapeur de plat, particules, rendu 3D, image de synthèse.
 ```
 
 ---
@@ -378,8 +405,10 @@ INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de 
 Le second passage, sur le même principe : le pilier de pierre du fond de salle
 remplit le cadre, et de l'autre côté c'est le stade.
 
+*Écrit pour la prolongation, comme le plan 4.*
+
 ```
-L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
+CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même lieu, même hauteur de caméra, même axe, même vitesse, même lumière. Reprends le mouvement exactement là où il s'arrête, sans à-coup, sans repartir, sans réinitialiser le cadrage, sans revenir en arrière.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui passe derrière un pilier de pierre et débouche sur un terrain de football éclairé.
 
@@ -401,7 +430,7 @@ LUMIÈRE. La nuit tombe pendant le passage derrière le pilier et non avant : à
 
 RENDU. Prise de vue réelle, film sportif, qualité commerciale. Colorimétrie neutre, verts justes et non saturés, blancs des lignes contrôlés, noirs profonds dans les gradins. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans la texture de la pelouse.
 
-INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, flou de mouvement, pilier qui s'écarte tout seul, image entièrement noire, projecteur qui clignote, ballon qui roule ou bouge, filet agité, personne, joueur, silhouette, arbitre, animal, oiseau, maillot, numéro, texte, chiffre, score, panneau publicitaire, enseigne, logo, marque, filigrane, fumée, fumigène, poussière, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
+INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, flou de mouvement, retour dans le restaurant, table ou voiture ramenée dans le champ, pilier qui s'écarte tout seul, image entièrement noire, projecteur qui clignote, ballon qui roule ou bouge, filet agité, personne, joueur, silhouette, arbitre, animal, oiseau, maillot, numéro, texte, chiffre, score, panneau publicitaire, enseigne, logo, marque, filigrane, fumée, fumigène, poussière, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
 ```
 
 ---
