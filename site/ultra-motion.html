@@ -507,6 +507,7 @@ if (SOURCES && SOURCES[NOM]) SEQ.images = SOURCES[NOM].length;
 function typeDe(u){
   if (u[0] === 0xFF && u[1] === 0xD8) return 'image/jpeg';
   if (u[8] === 0x57 && u[9] === 0x45 && u[10] === 0x42 && u[11] === 0x50) return 'image/webp';
+  if (u[4] === 0x66 && u[5] === 0x74 && u[6] === 0x79 && u[7] === 0x70) return 'image/avif';
   if (u[0] === 0x89 && u[1] === 0x50) return 'image/png';
   return 'application/octet-stream';
 }
@@ -521,6 +522,15 @@ function typeDe(u){
    code natif et hors du fil principal. On garde l'ancienne voie en repli : une
    politique de sécurité stricte peut refuser `fetch` sur `data:`, et mieux vaut
    une page lente qu'une page vide. */
+/* Les douze premiers octets suffisent à reconnaître un format : on ne décode
+   pas les quarante mille autres pour ça. */
+function entete(str){
+  const b = atob(str.slice(0, 24));
+  const u = new Uint8Array(12);
+  for (let k = 0; k < 12 && k < b.length; k++) u[k] = b.charCodeAt(k);
+  return u;
+}
+
 function depuisBase64(str){
   const b = atob(str), u = new Uint8Array(b.length);
   for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
@@ -532,7 +542,10 @@ function source(i){
   if (SOURCES && SOURCES[NOM]) {
     const str = SOURCES[NOM][i];
     if (fetchData) {
-      return fetch('data:image/webp;base64,' + str)
+      /* Le type se lit dans les octets, il ne se suppose pas : la
+         construction peut produire du WebP comme de l'AVIF, et un navigateur
+         strict rejette un lot mal étiqueté. */
+      return fetch('data:' + typeDe(entete(str)) + ';base64,' + str)
         .then((r) => r.blob())
         .catch(() => { fetchData = false; return depuisBase64(str); });
     }

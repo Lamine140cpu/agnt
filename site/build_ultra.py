@@ -53,17 +53,31 @@ QUALITE = int(_libres[0]) if len(_libres) > 0 else 78
 LARGEUR = int(_libres[1]) if len(_libres) > 1 else 1280
 
 
-def en_webp(im, largeur, qualite):
+# AVIF plutôt que WebP, sur mesure et non sur réputation. À qualité visuelle
+# équivalente il pèse un tiers de moins, ce qui achète des images
+# supplémentaires — et, contre toute attente, il se décode PLUS VITE ici :
+# 7,06 ms contre 10,40 ms par image dans un navigateur. Son codec est plus
+# lourd, mais comme il permet de descendre en définition à qualité égale, il y
+# a moins de pixels à produire, et c'est ce terme-là qui l'emporte.
+FORMAT = "AVIF"
+
+
+def encoder_image(im, largeur, qualite):
     """Réduit, affûte, encode. Rend les octets."""
     if im.width > largeur:
         im = im.resize((largeur, round(largeur * im.height / im.width)), Image.LANCZOS)
     if NETTETE:
         im = im.filter(ImageFilter.UnsharpMask(radius=1.1, percent=NETTETE, threshold=3))
     tampon = io.BytesIO()
-    # method=6 : l'encodeur cherche plus longtemps. On construit une fois, la
-    # page est servie des milliers de fois — le calcul est du bon côté.
-    im.save(tampon, "WEBP", quality=qualite, method=6)
+    # L'encodeur cherche longtemps : on construit une fois, la page est servie
+    # des milliers de fois — le calcul est du bon côté.
+    reglages = {"speed": 4} if FORMAT == "AVIF" else {"method": 6}
+    im.save(tampon, FORMAT, quality=qualite, **reglages)
     return tampon.getvalue()
+
+
+def en_webp(im, largeur, qualite):        # nom conservé : appelé pour les fontes
+    return encoder_image(im, largeur, qualite)
 
 
 def sequence(nom, dossier, largeur, plafond):
@@ -145,8 +159,13 @@ def main():
         # qui manquait, pas la netteté. Sur un écran de bureau la toile fait
         # 2880 px de large — 1120 ou 1280 en source y sont tous deux agrandis,
         # l'écart est ténu ; entre 170 et 270 images, il ne l'est pas.
-        largeur = 1060 if nom == "accueil" else 560
-        plafond = 240 if nom == "accueil" else 150
+        # 6 px de défilement par image est le seuil sous lequel plus personne
+        # ne distingue de palier. 580 images en paysage donnent 4,7 px, 360 en
+        # portrait 7,0 px : on y est ou presque. Monter à 960 coûterait soit la
+        # définition, soit la série portrait, et n'achèterait rien de visible —
+        # les 960 vraies sont dans la version en flux, qui n'a pas de plafond.
+        largeur = 760 if nom == "accueil" else 520
+        plafond = 580 if nom == "accueil" else 360
         images, poids = sequence(nom, dossier, largeur, plafond)
         if images is None:
             print(f"  {nom:15s} absente — ignorée")
