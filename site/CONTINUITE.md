@@ -1,13 +1,14 @@
 # La continuité — cinq mondes, un seul mouvement
 
 Le prologue du site n'est pas une suite d'exemples. C'est **un seul travelling
-avant qui ne s'arrête jamais** et qui traverse quatre métiers : une villa, une
-piscine, une voiture, un restaurant.
+avant qui ne s'arrête jamais** et qui traverse cinq métiers : une villa, une
+piscine, une voiture, un restaurant, et le plat qu'on y sert.
 
-> **Le terrain de foot n'a pas été tourné** — le plan 5 reste écrit plus bas
-> pour le jour où on le voudra, mais le montage en cours s'arrête au
-> restaurant, sur la terrasse allumée à la tombée de la nuit. Quatre plans
-> suffisent à démontrer ce qu'il y avait à démontrer.
+> **Le terrain de foot n'a pas été tourné.** Son prompt reste écrit plus bas
+> pour le jour où on le voudra. La suite prend une autre direction : au lieu de
+> quitter le restaurant pour un stade, on y entre — la cuisine, puis le burger
+> qui se démonte. C'est plus juste, d'ailleurs : on finit sur le PRODUIT d'un
+> des métiers, pas sur un sixième décor.
 
 C'est ça, la démonstration. Pas « voici cinq sites », mais « voici cinq
 commerces sur le même rail, et vous ne voyez pas la jointure ».
@@ -421,12 +422,15 @@ INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de 
 
 ---
 
-# Plan 5 — Le terrain
+# Annexe — Le terrain de foot, non tourné
 
-Le second passage, sur le même principe : le pilier de pierre du fond de salle
-remplit le cadre, et de l'autre côté c'est le stade.
+Écrit avant que la suite ne prenne une autre direction, et gardé tel quel : le
+dispositif y est valable, seul le décor change. Le pilier de pierre du fond de
+salle remplit le cadre, et de l'autre côté c'est le stade.
 
-*Écrit pour la prolongation, comme le plan 4.*
+**Il ne s'enchaîne plus après le restaurant** — c'est la cuisine qui prend
+cette place. Pour l'employer, il faudrait le mettre après le burger, ou refaire
+le plan 4 pour qu'il finisse sur un pilier.
 
 ```
 CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même lieu, même hauteur de caméra, même axe, même vitesse, même lumière. Reprends le mouvement exactement là où il s'arrête, sans à-coup, sans repartir, sans réinitialiser le cadrage, sans revenir en arrière.
@@ -452,6 +456,93 @@ LUMIÈRE. La nuit tombe pendant le passage derrière le pilier et non avant : à
 RENDU. Prise de vue réelle, film sportif, qualité commerciale. Colorimétrie neutre, verts justes et non saturés, blancs des lignes contrôlés, noirs profonds dans les gradins. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans la texture de la pelouse.
 
 INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, flou de mouvement, retour dans le restaurant, table ou voiture ramenée dans le champ, pilier qui s'écarte tout seul, image entièrement noire, projecteur qui clignote, ballon qui roule ou bouge, filet agité, personne, joueur, silhouette, arbitre, animal, oiseau, maillot, numéro, texte, chiffre, score, panneau publicitaire, enseigne, logo, marque, filigrane, fumée, fumigène, poussière, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
+```
+
+---
+
+---
+
+# Plan 5 — La cuisine
+
+Le troisième passage, et le premier qui serve un produit plutôt qu'un décor :
+la caméra quitte la salle, franchit un menu fermé posé debout, et se retrouve
+sur le plan de travail d'une cuisine.
+
+*Écrit pour la prolongation, comme le plan 4.*
+
+> **Le menu est un passage, pas une page.** Poser une carte lisible devant
+> l'objectif produirait du faux texte — c'est la faiblesse la mieux connue des
+> modèles. Fermé, en cuir sombre et sans un mot, il devient exactement ce qu'un
+> passage demande : une masse opaque, mate, sans détail fin à ré-inventer.
+>
+> **Et il n'y a pas de « zoom rapide ».** Pas par principe : par arithmétique.
+> À dix-sept pixels de défilement par image, un mouvement rapide écarte tant
+> deux images consécutives que ni le fondu ni le flot optique ne savent les
+> relier — mesuré, la limite est un écart de 18. L'impression de vitesse doit
+> venir du sujet qui grossit, jamais de la caméra qui accélère.
+
+```
+CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même lieu, même hauteur de caméra, même axe, même vitesse. Reprends le mouvement exactement là où il s'arrête, sans à-coup, sans repartir, sans réinitialiser le cadrage, sans revenir en arrière.
+
+Un seul plan continu de huit secondes, sans aucune coupe, qui traverse un menu fermé et débouche sur un plan de travail de cuisine.
+
+MOUVEMENT. Le plan se déroule en trois temps enchaînés, à vitesse rigoureusement constante du début à la fin, sans jamais accélérer, ralentir ni s'arrêter.
+
+Premier temps, environ deux secondes : la caméra poursuit son avance en ligne droite entre les tables dressées et s'approche d'une table du premier plan, sur laquelle un menu fermé est posé debout, adossé à un verre. Le menu grandit dans le cadre à mesure qu'on l'atteint.
+
+Deuxième temps, environ une demi-seconde : le menu occupe TOUT le cadre. L'image est entièrement remplie par son cuir brun sombre, mat, dont on voit le grain, sans un seul caractère, sans titre, sans gravure, sans logo. Elle n'est pas noire : elle est brune, chaude et texturée.
+
+Troisième temps, le reste du plan : le menu se dégage par la droite et découvre un plan de travail de cuisine professionnelle, vu à hauteur du plan. La caméra avance encore et s'immobilise en douceur devant une planche en chêne huilé, au centre du cadre, sur laquelle est posé un burger entier. À la dernière image le cadre est stable, centré sur le burger, qui occupe environ la moitié de la hauteur.
+
+Aucune rotation, aucun panoramique, aucun zoom, aucun changement de hauteur, aucun tremblement. Le passage devant le menu n'est ni un fondu, ni une coupe, ni une transition ajoutée : c'est un objet réel que la caméra frôle.
+
+SUJET. Un burger de restaurant, entier, posé sur une planche en chêne huilé. Pain brioché doré parsemé de graines de sésame, légèrement écrasé sur le dessus comme un vrai pain qu'on vient d'assembler. On devine sur la tranche, de haut en bas : la sauce, une tranche de cheddar fondue qui déborde, un steak haché épais aux bords irréguliers et à la croûte grillée, une feuille de sucrine, deux rondelles de tomate. Autour : un plan de travail en inox brossé, propre et vide, quelques ustensiles alignés au fond, une crédence en carrelage blanc. AUCUNE PERSONNE, aucune main, aucun cuisinier. Aucune étiquette, aucune marque, aucun texte, aucune ardoise.
+
+CAMÉRA. Objectif 50 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strictement horizontal, verticales redressées. Nette de bout en bout, y compris le grain du cuir au moment où il frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette.
+
+LUMIÈRE. La lumière change PENDANT le passage devant le menu, et à aucun autre moment. Avant : la lumière chaude et tamisée de la salle, exactement celle du plan précédent, inchangée. Après : l'éclairage d'une cuisine, blanc neutre, franc et régulier, venant du haut, sans ombre dure. Une fois la cuisine atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus.
+
+RENDU. Prise de vue réelle, film culinaire haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : graines de sésame, croûte du steak, grain du pain.
+
+INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, accélération, ralentissement, flou de mouvement, menu ouvert, texte sur le menu, carte lisible, caractère, chiffre, prix, retour dans la salle, image entièrement noire, personne, main, cuisinier, animal, flamme, vapeur, fumée, buée, gouttes qui coulent, particules, plastique, couleurs fluorescentes, enseigne, logo, marque, filigrane, rendu 3D, image de synthèse.
+```
+
+---
+
+# Plan 6 — Le burger
+
+Le mécanisme. La caméra ne bouge plus : c'est le sujet qui se démonte.
+
+*Écrit pour la prolongation.*
+
+> **Un éclaté est parfaitement réversible** — il se remonte comme il s'est
+> défait, exactement comme les portières du beat qu'on avait écrit pour la
+> voiture. C'est un mécanisme, pas une entropie. Ce qui reste interdit, c'est
+> ce qui accompagne d'ordinaire une image de burger : vapeur, fumée, sauce qui
+> coule, gouttes qui tombent. Tout ça ne se remonte pas.
+>
+> Le mouvement **n'est pas terminé à la dernière image** : les couches
+> s'écartent encore. Un mouvement qui s'achève invite à s'arrêter ; un
+> mouvement en cours invite à continuer.
+
+```
+CONTINUITÉ. Ce plan prolonge le plan précédent sans aucune coupe et sans aucun raccord visible : même burger, même planche, même cuisine, même lumière, même cadrage. Reprends exactement là où il s'arrête.
+
+Un seul plan continu de huit secondes, sans aucune coupe, où un burger se démonte en l'air, couche par couche.
+
+MOUVEMENT. La caméra est RIGOUREUSEMENT FIXE du début à la fin : aucune avance, aucun recul, aucune rotation, aucun panoramique, aucun zoom, aucun tremblement. C'est le sujet seul qui bouge.
+
+Depuis le burger entier, les couches se séparent et s'écartent verticalement, EN MÊME TEMPS, à vitesse rigoureusement constante et linéaire du début à la fin : le pain du haut monte, la sauce reste posée sur sa face intérieure, la tranche de cheddar suit, puis le steak, puis la feuille de sucrine, puis les rondelles de tomate, le pain du bas restant seul sur la planche. Chaque élément monte en ligne droite, garde son orientation exacte, ne tourne pas sur lui-même, ne se déforme pas, ne rétrécit pas. Ils flottent, suspendus, sans support ni fil. Un léger décalage latéral entre les étages permet de les voir tous. Le mouvement n'est pas terminé à la dernière image : les couches s'écartent encore.
+
+SUJET. Le même burger que le plan précédent, sur la même planche en chêne huilé. Pain brioché doré aux graines de sésame, sauce beige mouchetée d'herbes et de cornichon étalée sur la face intérieure grillée du pain du haut, tranche de cheddar orangé entièrement fondue et figée en pleine coulée, steak haché épais aux bords irréguliers et à la croûte brun foncé marquée par la plancha, feuille de sucrine croquante aux bords ondulés, deux rondelles de tomate cœur de bœuf épaisses dont on voit les graines et la chair. AUCUNE PERSONNE, aucune main. Aucune étiquette, aucune marque, aucun texte.
+
+CAMÉRA. Objectif 50 mm, f/8, ISO 400, sur pied, rigoureusement fixe. Tout est net, de la couche la plus proche à la plus lointaine. Obturateur 1/1000 s, chaque image parfaitement nette, sans le moindre flou de bougé.
+
+LUMIÈRE. Exactement celle du plan précédent, inchangée : éclairage de cuisine blanc neutre venant du haut, franc et régulier, sans ombre dure. Chaque couche détachée porte sa propre ombre douce, cohérente avec cette source. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+
+RENDU. Prise de vue réelle, photographie culinaire professionnelle en lévitation, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : graines de sésame, mie du pain, croûte du steak, graines de la tomate.
+
+INTERDIT. Coupe, fondu, transition ajoutée, mouvement de caméra, rotation, panoramique, zoom, tremblement, flou de mouvement, couche qui tourne sur elle-même, couche qui se déforme ou change de taille, couche qui sort du cadre, explosion, projection, éclat, écartement saccadé ou à vitesse variable, support, fil, socle, vapeur, fumée, buée, sauce qui coule ou goutte, jus qui tombe, miette qui vole, particules, variation d'exposition, personne, main, animal, texte, chiffre, étiquette, logo, marque, filigrane, plastique, couleurs fluorescentes, rendu 3D, image de synthèse.
 ```
 
 ---
@@ -486,7 +577,7 @@ sont réparties au prorata de la durée de chaque plan, donc la vitesse reste
 constante d'un bout à l'autre :
 
 ```
-python3 film_video.py villa.mp4 piscine.mp4 voiture.mp4 restaurant.mp4 terrain.mp4 220 1440 accueil
+python3 film_video.py villa.mp4 piscine.mp4 voiture.mp4 restaurant.mp4 cuisine.mp4 burger.mp4 960 1280 accueil
 python3 build_ultra.py 78 1280 artefact
 ```
 
