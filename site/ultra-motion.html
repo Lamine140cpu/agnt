@@ -829,8 +829,20 @@ const AVANCE = 700, RECUL = 240, MEMOIRE = 1100;
    quatre-vingt-seize mégaoctets étaient trop stricts même pour lui : à 8 Mo
    l'image il n'en gardait que SIX, soit deux cents pixels d'avance. Cent
    quarante-quatre, avec une série servie à sa vraie taille, en gardent
-   dix-neuf. Un ordinateur de bureau encaisse sans peine trois cent vingt. */
-const MEMOIRE_MAX = (innerWidth < 820 ? 144 : 320) * 1048576;
+   dix-neuf.
+
+   SUR ORDINATEUR, LE BUDGET SUIT LA MACHINE. Une constante ne peut pas être
+   juste à la fois pour un portable d'entrée de gamme et pour une tour : trop
+   basse elle gâche la fluidité, trop haute elle fait tuer l'onglet. En 2560 px
+   une image décodée pèse 14,1 Mo et il en faut une vingtaine d'avance, soit
+   cinq cent soixante mégaoctets — ce qu'une machine de huit gigaoctets porte
+   sans broncher, et qu'une machine de deux ne doit surtout pas tenter.
+   `deviceMemory` rend la mémoire vive en gigaoctets, arrondie et plafonnée à
+   huit par la norme ; on en prend soixante-dix mégaoctets par gigaoctet. Le
+   navigateur qui ne connaît pas cette propriété — Safari, Firefox — est
+   supposé être sur un ordinateur de bureau ordinaire, donc huit. */
+const MEMOIRE_MAX = (innerWidth < 820 ? 144
+  : min(560, round((navigator.deviceMemory || 8) * 70))) * 1048576;
 let octetsImage = 0;
 
 function reglerFenetre(){

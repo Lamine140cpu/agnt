@@ -61,8 +61,16 @@ SEGMENTS = [
 
 # Sorties : bien au-dessus de ce que la page sert jamais (1280 px en flux,
 # 640 dans le fichier unique), et toujours en dessous de la source.
+# 2560 en paysage : le format que sert le site de référence, et le plafond que
+# la MÉMOIRE autorise — une image 2560x1440 décodée occupe 14,1 Mo, une 4K en
+# occupe 31,6. Il en faut une vingtaine en réserve pour tenir un défilement :
+# 560 Mo dans un cas, 1,2 Go dans l'autre. Le second ferait tuer l'onglet.
+#
+# Le portrait reste à 1080 : la toile d'un téléphone fait 585 px, et c'est
+# l'appareil où la mémoire se ferme sans prévenir. La construction en flux le
+# réduit encore à 720, ce qui est déjà au-dessus du un pour un.
 SORTIES = {
-    "accueil":        dict(rapport=16 / 9, largeur=1920),
+    "accueil":        dict(rapport=16 / 9, largeur=2560),
     "accueil-etroit": dict(rapport=9 / 16, largeur=1080),
 }
 QUALITE_JPEG = 92
