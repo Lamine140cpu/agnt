@@ -132,6 +132,47 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .a-c::before{background:linear-gradient(180deg,transparent 18%,rgba(10,12,14,.3) 42%,
   rgba(10,12,14,.78) 68%,rgba(10,12,14,.94) 100%)}
 
+/* ------------------------------------------------- la hiérarchie d'un acte
+
+   Le métier était en onze pixels gris pendant que la phrase d'accroche
+   occupait quatre-vingts pixels. Visuellement, la poésie dominait et le
+   commerce concerné passait pour une note de bas de page — l'inverse de ce
+   qu'une vitrine doit faire.
+
+   L'ordre de lecture est désormais : le numéro d'acte, le MÉTIER en très
+   grand, à qui il s'adresse, puis seulement l'argument. Un agent immobilier
+   sait en une seconde que la page lui parle. */
+.acte-num{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--ambre);margin:0 0 14px;
+  display:flex;align-items:center;gap:14px}
+.acte-num::after{content:"";flex:0 0 clamp(28px,5vw,64px);height:1px;background:var(--ligne)}
+.a-d .acte-num{flex-direction:row-reverse}
+.a-c .acte-num{justify-content:center}
+.a-c .acte-num::after{display:none}
+
+/* Le corps est calé sur le mot le PLUS LONG, pas sur le plus court :
+   « RESTAURATION » compte douze signes et touchait le bord de la colonne à
+   6,2 rem. On descend à 5,4 et on élargit la colonne du prologue — un métier
+   qui déborde du cadre se lit moins bien qu'un métier un peu plus petit. */
+.metier-titre{font-family:var(--serif);font-weight:400;text-transform:uppercase;
+  font-size:clamp(2.4rem,6.2vw,5.4rem);line-height:.94;letter-spacing:-.01em;
+  margin:0;text-wrap:balance}
+#prologue .mot{max-width:min(52ch,46vw)}
+@media (max-width:820px){#prologue .mot{max-width:none}}
+
+/* À qui, nommément. En capitales étroites et espacées : ça se lit comme une
+   liste de destinataires, pas comme une phrase. */
+.cibles{font-family:var(--mono);font-size:clamp(10px,1.05vw,12px);font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--os);
+  margin:16px 0 0;line-height:1.9}
+.cibles em{font-style:normal;color:var(--sourd)}
+
+/* L'offre, en bas du bloc, précédée d'un filet : c'est la seule ligne de
+   l'acte qui promette quelque chose, elle a droit à son propre rang. */
+.offre{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ambre);margin:22px 0 0;
+  padding-top:16px;border-top:1px solid var(--ligne);display:inline-block}
+
 /* La colonne de texte se range du côté que le voile a éteint. */
 /* Le texte s'efface avec son acte, sinon deux actes se lisent en même temps
    au moment de la charnière. */
@@ -302,21 +343,27 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 <main>
 <div id="prologue">
 
-  <!-- Six actes, et chacun nomme À QUI il s'adresse.
+  <!-- Un acte, un métier, une fois.
 
-       La version précédente parlait de moteur 3D et de millisecondes ; celle
-       d'avant décrivait joliment ce qu'on voyait. Aucune des deux ne disait au
-       visiteur si c'était pour lui. Un agent immobilier qui traverse une villa
-       doit lire « immobilier » et savoir en trois lignes ce qu'on lui vend. -->
+       L'ordre de lecture est : numéro d'acte, MÉTIER en très grand, à qui il
+       s'adresse, l'argument, puis l'offre. Le métier n'est plus une étiquette
+       de onze pixels au-dessus d'une phrase de quatre-vingts : c'est lui la
+       phrase de quatre-vingts.
+
+       La marque n'a plus besoin d'un acte à elle : elle est fixée en haut à
+       gauche sur tous les écrans. Les six actes servent donc six arguments. -->
 
   <section class="a-g" data-voile="g">
     <div class="tenir">
       <div class="mot">
-        <p class="eti"><b>I</b> · Immobilier</p>
-        <h1 class="marque">Ultra&nbsp;Motion</h1>
-        <p class="corps">Ce séjour est une page d’accueil. Si vous vendez ou
-          louez des biens, c’est la vôtre : le visiteur entre par la porte,
-          traverse les pièces, ressort sur la terrasse. Sans un seul clic.</p>
+        <p class="acte-num">Acte I</p>
+        <h1 class="metier-titre">Immobilier</h1>
+        <p class="cibles">Agences · Promoteurs · Conciergeries<br>
+          <em>Location saisonnière · Chambres d’hôtes</em></p>
+        <p class="corps">Ce séjour est une page d’accueil. Le visiteur entre par
+          la porte, traverse les pièces, ressort sur la terrasse — sans un seul
+          clic, et sans jamais quitter la page.</p>
+        <p class="offre">Un parcours par bien · Tourné en une visite</p>
         <p class="defiler"><i></i> Défiler</p>
       </div>
     </div>
@@ -325,13 +372,14 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="a-d" data-voile="d">
     <div class="tenir">
       <div class="mot">
-        <p class="eti"><b>II</b> · Immobilier</p>
-        <p class="titre t-xl">Un bien ne se vend pas<br>sur un <span class="ital">plan.</span></p>
-        <p class="corps">Il se vend sur ce que l’acheteur s’imagine y faire. Une
-          galerie de photos ne raconte pas ça ; un parcours, oui.</p>
-        <p class="corps">Agences, promoteurs, conciergeries, location
-          saisonnière : le dispositif est le même pour un T3 que pour cette
-          villa.</p>
+        <p class="acte-num">Acte II</p>
+        <h2 class="metier-titre">Piscine<br>&amp; paysage</h2>
+        <p class="cibles">Pisciniste · Paysagiste · Terrassement<br>
+          <em>Pierre · Bois · Aménagement extérieur</em></p>
+        <p class="corps">Un bassin fini ne se photographie pas, il se parcourt :
+          la margelle, le débordement, ce qu’on voit depuis l’eau. C’est un
+          métier où le devis suit toujours une image.</p>
+        <p class="offre">Un chantier livré par page · Avant et après</p>
       </div>
     </div>
   </section>
@@ -339,12 +387,14 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="a-g" data-voile="g">
     <div class="tenir">
       <div class="mot">
-        <p class="eti"><b>III</b> · Automobile</p>
-        <p class="titre t-xl">Et voilà<br>la <span class="ital">Golf.</span></p>
-        <p class="corps">Loueurs, concessions, préparateurs. Votre client veut
-          faire le tour du véhicule avant de vous appeler. Ici il le fait à son
-          rythme, et il s’arrête où il veut — sur la jante, sur le flanc, sur ce
-          qu’il regarde vraiment.</p>
+        <p class="acte-num">Acte III</p>
+        <h2 class="metier-titre">Automobile</h2>
+        <p class="cibles">Location · Concession · Préparation<br>
+          <em>Négoce · Carrosserie · Véhicules de collection</em></p>
+        <p class="corps">Votre client veut faire le tour du véhicule avant de
+          vous appeler. Ici il le fait à son rythme et s’arrête où il veut — sur
+          la jante, sur le flanc, sur ce qu’il regarde vraiment.</p>
+        <p class="offre">Un tour par véhicule · Le vôtre, filmé</p>
       </div>
     </div>
   </section>
@@ -352,12 +402,14 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="a-d" data-voile="d">
     <div class="tenir">
       <div class="mot">
-        <p class="eti"><b>IV</b> · Restauration</p>
-        <p class="titre t-xl">La nuit est tombée<br>derrière un <span class="ital">mur.</span></p>
+        <p class="acte-num">Acte IV</p>
+        <h2 class="metier-titre">Restauration</h2>
+        <p class="cibles">Restaurant · Hôtel · Salle de réception<br>
+          <em>Traiteur · Bar · Table d’hôtes</em></p>
         <p class="corps">Une salle vide à la tombée du jour vend mieux qu’une
-          carte en ligne : on réserve pour la soirée qu’on imagine, pas pour le
+          carte en ligne. On réserve pour la soirée qu’on imagine, pas pour le
           plat.</p>
-        <p class="corps">Restaurants, hôtels, salles de réception.</p>
+        <p class="offre">La salle avant le service · Une prise, dix secondes</p>
       </div>
     </div>
   </section>
@@ -365,10 +417,11 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="a-g" data-voile="g">
     <div class="tenir">
       <div class="mot">
-        <p class="eti"><b>V</b> · Restauration</p>
-        <p class="titre t-xl">Puis on entre<br>en <span class="ital">cuisine.</span></p>
-        <p class="corps">Le même mouvement continue, sans coupe, jusqu’à ce que
-          vous vendez vraiment. Pas le décor : le plat.</p>
+        <p class="acte-num">Acte V</p>
+        <h2 class="metier-titre">Et jusqu’au<br>produit</h2>
+        <p class="corps">Le même mouvement continue, sans coupe, du parking
+          jusqu’au plan de travail. Ce que vous vendez n’est pas le décor : il
+          faut donc aller le chercher.</p>
       </div>
     </div>
   </section>
@@ -376,11 +429,14 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="a-c" data-voile="c">
     <div class="tenir">
       <div class="mot">
-        <p class="eti"><b>VI</b> · Restauration</p>
-        <p class="titre t-xl">Et il se <span class="ital">démonte.</span></p>
-        <p class="corps">Pain brioché, sauce, cheddar, steak, sucrine, tomate.
-          Chaque ingrédient est un argument, et le visiteur les voit un par un.
-          C’est votre carte — sauf qu’on la regarde.</p>
+        <p class="acte-num">Acte VI</p>
+        <h2 class="metier-titre">Votre produit,<br>démonté</h2>
+        <p class="cibles">Agroalimentaire · Cosmétique · Mobilier<br>
+          <em>Horlogerie · Matériel · Tout ce qui a des pièces</em></p>
+        <p class="corps">Pain, sauce, cheddar, steak, sucrine, tomate. Chaque
+          élément est un argument, et le visiteur les voit un par un. Ce qui
+          vaut pour un burger vaut pour une montre ou une chaise.</p>
+        <p class="offre">Un éclaté par référence · Remonté aussi bien</p>
       </div>
     </div>
   </section>
@@ -395,46 +451,44 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
       <div>
         <p class="eti pose"><b>VII</b> · Ce qu’on livre</p>
         <p class="titre t-xl pose" style="margin-top:18px">Une page,<br>
-          pas une <span class="ital">maquette.</span></p>
+          pas un <span class="ital">abonnement.</span></p>
       </div>
       <div>
-        <p class="corps pose">Vous venez de traverser quatre métiers. Voici ce
-          qu’on livre à chacun — pas une intention, un fichier qui se met en
-          ligne.</p>
+        <p class="corps pose">Ce qui se passe entre le moment où vous appelez et
+          celui où la page est en ligne. Quatre points, et le dernier n’est pas
+          négociable.</p>
       </div>
     </div>
 
     <div class="metiers">
       <div class="metier pose">
         <p class="num">01</p>
-        <h3>Immobilier</h3>
-        <p class="corps">Un parcours par bien : on entre, on traverse, on
-          ressort. Le tournage tient en une visite — un plan continu de dix
-          secondes par pièce suffit. Vous fournissez les clés et l’heure de la
-          journée ; on rend la page.</p>
+        <h3>Ce que vous fournissez</h3>
+        <p class="corps">L’accès au lieu, une demi-journée, et l’heure à laquelle
+          il est le plus beau. Pour un véhicule ou un produit : l’objet lui-même.
+          Rien d’autre — ni charte, ni textes, ni photos préparées.</p>
       </div>
       <div class="metier pose">
         <p class="num">02</p>
-        <h3>Automobile</h3>
-        <p class="corps">Un tour du véhicule et une entrée dans l’habitacle,
-          par référence. Une seule règle, non négociable : c’est votre voiture
-          qu’on filme, jamais une voiture générée. Le reste — le décor, la
-          lumière, l’heure — se fabrique.</p>
+        <h3>Ce que vous recevez</h3>
+        <p class="corps">Un fichier. Il s’ouvre d’un double-clic, se dépose chez
+          n’importe quel hébergeur, et fonctionne hors ligne. Pas de serveur, pas
+          de base de données, pas d’abonnement à un éditeur.</p>
       </div>
       <div class="metier pose">
         <p class="num">03</p>
-        <h3>Restauration</h3>
-        <p class="corps">La salle avant le service, puis un plat qui se démonte.
-          Deux plans, deux arguments : celui qui fait réserver et celui qui fait
-          choisir. La carte reste en texte, lisible et modifiable en trente
-          secondes.</p>
+        <h3>Ce qui se modifie ensuite</h3>
+        <p class="corps">Tous les textes, en trente secondes : ils sont écrits en
+          clair dans la page, jamais peints dans l’image. Les tarifs, les
+          horaires, la carte changent sans qu’on retourne filmer.</p>
       </div>
       <div class="metier pose">
         <p class="num">04</p>
-        <h3>Ce qui ne change jamais</h3>
-        <p class="corps">Un fichier. Pas de serveur, pas de base de données,
-          pas d’abonnement à un éditeur. Il se dépose chez n’importe quel
-          hébergeur, il s’ouvre hors ligne, et il vous appartient.</p>
+        <h3>La règle qu’on ne négocie pas</h3>
+        <p class="corps">Le décor, la lumière et l’ambiance peuvent être
+          fabriqués. Jamais le produit que vous vendez. On filme votre voiture,
+          votre salle, votre bien — sinon c’est une publicité trompeuse, et ce
+          n’est pas un service qu’on rend.</p>
       </div>
     </div>
   </section>
