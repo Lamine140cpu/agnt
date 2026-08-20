@@ -7,6 +7,10 @@ piscine, une voiture, un restaurant, un terrain de foot.
 C'est ça, la démonstration. Pas « voici cinq sites », mais « voici cinq
 commerces sur le même rail, et vous ne voyez pas la jointure ».
 
+Deux fois, pourtant, il faut changer de monde pour de bon : le restaurant et
+le stade ne sont pas chez la villa. Ces deux sauts ne se cachent pas, ils se
+mettent en scène — voir **[Les passages](#les-passages)**.
+
 ---
 
 ## Les deux partis pris
@@ -68,6 +72,56 @@ d'un décor *presque* identique et la jointure saute aux yeux.
 
 Chaque prompt ci-dessous commence par une ligne de raccord, **à garder telle
 quelle sauf pour le plan 1**.
+
+---
+
+## Les passages
+
+Les trois premiers plans forment un lieu réel : une villa, sa piscine, sa cour,
+sa voiture. Le restaurant et le terrain, eux, n'y sont pas — et les y coller
+bord à bord ne tiendrait pas debout. Une terrasse de restaurant qui jouxte la
+cour d'une villa privée, puis un stade éclairé derrière le restaurant : le
+visiteur ne le croira pas une seconde.
+
+Plutôt que de mentir sur la géographie, on **assume le saut et on lui donne une
+forme**. C'est le vieux truc du plan-séquence, celui de *1917* et de
+*Birdman* : la caméra frôle une masse opaque — un tronc, un pilier, une haie —
+qui remplit le cadre pendant une demi-seconde, et de l'autre côté on est
+ailleurs.
+
+Pourquoi ça marche particulièrement bien ici :
+
+- **Rien ne peut trembler.** Une masse sombre et unie n'a pas de détail fin à
+  ré-inventer. C'est même la seule chose qu'un modèle vidéo ne peut pas rater.
+- **C'est réversible.** Remonté, le passage se lit exactement pareil.
+- **Ça reste un travelling avant.** Aucune montée, aucune descente, aucune
+  rotation : la hauteur constante qui tient toute la séquence n'est pas
+  touchée.
+- **Ça libère la géographie.** Le passage dit au visiteur « on change de
+  monde ». Il n'a plus besoin que les lieux soient voisins, et c'est
+  exactement ce qu'on veut démontrer.
+
+### Où le placer : au DÉBUT du plan qui reçoit, jamais à la fin de celui qui donne
+
+Contre-intuitif, et c'est le point technique qui décide de tout. Le chaînage
+repose sur la dernière image d'un plan : si elle est noire, elle ne transmet
+rien, et le plan suivant repart de zéro.
+
+Le passage vit donc dans la **première seconde du plan d'arrivée** : il part du
+raccord — une image pleine et lisible —, traverse la masse sombre, et débouche
+sur le nouveau monde. Sa dernière image, elle, est de nouveau une vraie image
+de décor, prête pour le raccord suivant.
+
+### Ce qu'il ne faut pas faire
+
+**Pas d'aigle, pas d'oiseau, pas d'animal.** Des ailes qui battent sont du
+mouvement articulé rapide : à 1/1000 s chaque image fige une position
+différente, et au défilement ça ne fait pas un vol, ça fait un stroboscope. Un
+modèle qui redessine une silhouette d'oiseau d'une image à l'autre produit
+exactement le frémissement qu'on passe le reste du document à éviter.
+
+**Pas de montée ni de plongée.** Un envol impose une trajectoire verticale, et
+la hauteur constante est ce qui rend la séquence lisible d'un bout à l'autre.
 
 ---
 
@@ -196,7 +250,7 @@ Les autres images jointes sont des PHOTOGRAPHIES DE RÉFÉRENCE DU VÉHICULE. El
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui quitte la piscine et longe une voiture garée sur l'allée.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent, sur le même axe et à la même hauteur : elle quitte le bord du bassin, franchit la terrasse dallée, et traverse la cour en gravier. Une voiture y est garée de profil DEPUIS LE DÉBUT, sur la droite de la cour : elle est déjà en place à la première image, simplement lointaine et partiellement masquée par la jardinière en pierre. Rien n'apparaît, rien ne surgit, rien n'entre dans le champ : c'est la caméra qui s'approche, et la voiture qui grandit dans le cadre à mesure. La caméra la rejoint, la longe du capot jusqu'à l'arrière, et la dépasse. À la dernière image, la voiture est derrière nous et l'on découvre au-delà de la cour une construction basse en pierre avec une terrasse couverte. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
+MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent, sur le même axe et à la même hauteur : elle quitte le bord du bassin, franchit la terrasse dallée, et traverse la cour en gravier. Une voiture y est garée de profil DEPUIS LE DÉBUT, sur la droite de la cour : elle est déjà en place à la première image, simplement lointaine et partiellement masquée par la jardinière en pierre. Rien n'apparaît, rien ne surgit, rien n'entre dans le champ : c'est la caméra qui s'approche, et la voiture qui grandit dans le cadre à mesure. La caméra la rejoint, la longe du capot jusqu'à l'arrière, et la dépasse. À la dernière image, la voiture est derrière nous et la caméra approche du fond de la cour, où un haut cyprès sombre se dresse tout près de l'objectif, sur la gauche du cadre. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
 
 SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Portières fermées. AUCUNE plaque d'immatriculation : les emplacements sont lisses et vides. Elle est garée de profil sur la droite d'une cour en gravier clair.
 
@@ -226,44 +280,66 @@ le long du flanc, et le même pipeline tourne sans changer une ligne.
 
 # Plan 4 — Le restaurant
 
+Le premier passage. La caméra frôle le cyprès du fond de cour, il remplit le
+cadre une demi-seconde, et de l'autre côté c'est le restaurant.
+
 ```
 L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
 
-Un seul plan continu de huit secondes, sans aucune coupe, qui entre sur une terrasse de restaurant dressée et la traverse.
+Un seul plan continu de huit secondes, sans aucune coupe, qui passe derrière un cyprès et débouche sur une terrasse de restaurant dressée.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante : elle pénètre sous la terrasse couverte et glisse dans l'allée centrale, entre deux rangées de tables dressées. À la dernière image elle atteint le fond de la salle, où une large ouverture donne sur un terrain de sport éclairé. Aucune rotation, aucun zoom, aucun tremblement. Rien ne bouge : ni nappe, ni bougie, ni feuillage, ni rideau.
+MOUVEMENT. Le plan se déroule en trois temps enchaînés, à vitesse rigoureusement constante du début à la fin, sans jamais s'arrêter ni ralentir.
+
+Premier temps, environ une seconde et demie : la caméra poursuit son avance en ligne droite et frôle le tronc du haut cyprès sombre, à quelques centimètres de l'objectif. Le feuillage sombre et dense envahit progressivement le cadre par la gauche.
+
+Deuxième temps, environ une demi-seconde : le cyprès occupe TOUT le cadre. L'image est entièrement remplie par ce feuillage sombre, dense et uni, sans détail net, sans ciel, sans trouée. Elle n'est pas noire, elle est vert très sombre et texturée.
+
+Troisième temps, le reste du plan : le cyprès se dégage par la droite et découvre une terrasse de restaurant couverte, où la caméra pénètre et qu'elle traverse en glissant dans l'allée centrale, entre deux rangées de tables dressées. À la dernière image elle atteint le fond de la salle, où se dresse tout près de l'objectif un large pilier de pierre sombre, sur la gauche du cadre.
+
+Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement, aucun changement de hauteur. Le passage derrière le cyprès n'est ni un fondu, ni une coupe, ni une transition ajoutée : c'est un objet réel que la caméra longe. Rien d'autre ne bouge : ni nappe, ni bougie, ni feuillage agité, ni rideau.
 
 SUJET. Terrasse de restaurant couverte, charpente en bois clair, sol en tomettes. Deux rangées de tables carrées en chêne massif, entièrement dressées et parfaitement alignées : nappes en lin écru, assiettes en grès mat, verres à pied, couverts alignés, une petite bougie éteinte au centre de chaque table. Chaises en bois cintré et cannage. Guirlande d'ampoules à filament allumées le long de la charpente, lumière chaude et constante. Un bar en zinc sur la gauche, bouteilles alignées sans étiquette lisible. AUCUNE PERSONNE, aucune silhouette, aucun serveur, aucune main. Aucune enseigne, aucun menu lisible, aucune marque, aucun texte.
 
-CAMÉRA. Objectif 24 mm, f/4, ISO 200, sur rail motorisé stabilisé, axe strictement horizontal à un mètre soixante du sol, verticales parfaitement redressées. Nette de bout en bout. Obturateur 1/1000 s, chaque image parfaitement nette.
+CAMÉRA. Objectif 24 mm, f/4, ISO 200, sur rail motorisé stabilisé, axe strictement horizontal, verticales parfaitement redressées. Nette de bout en bout, y compris le feuillage du cyprès au moment où il frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette.
 
-LUMIÈRE. Tombée de la nuit. Ciel bleu profond au-delà de la terrasse, guirlande d'ampoules chaudes à l'intérieur, déjà allumées et rigoureusement constantes. Aucune flamme, aucune bougie allumée, aucune source qui vacille ou varie. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+LUMIÈRE. Tombée de la nuit. La lumière décline pendant le passage derrière le cyprès et non avant : à l'entrée du feuillage on est encore en fin de journée, à la sortie le ciel est bleu profond au-delà de la terrasse et la guirlande d'ampoules chaudes éclaire l'intérieur, déjà allumée et rigoureusement constante. Une fois la terrasse atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus. Aucune flamme, aucune bougie allumée, aucune source qui vacille.
 
 RENDU. Prise de vue réelle, film de restaurant haut de gamme, qualité commerciale. Colorimétrie chaude mais fidèle, contraste doux, hautes lumières des ampoules contrôlées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé.
 
-INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, variation d'exposition, personne, silhouette, serveur, main, animal, flamme, bougie allumée, ampoule qui vacille, nappe qui bouge, rideau agité, texte, menu, chiffre, prix, enseigne, logo, marque, étiquette lisible, filigrane, fumée, vapeur de plat, particules, rendu 3D, image de synthèse.
+INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, changement de vitesse, arrêt, flou de mouvement, cyprès qui s'écarte tout seul, feuillage agité par le vent, image entièrement noire, personne, silhouette, serveur, main, animal, oiseau, flamme, bougie allumée, ampoule qui vacille, nappe qui bouge, rideau agité, texte, menu, chiffre, prix, enseigne, logo, marque, étiquette lisible, filigrane, fumée, vapeur de plat, particules, rendu 3D, image de synthèse.
 ```
 
 ---
 
 # Plan 5 — Le terrain
 
+Le second passage, sur le même principe : le pilier de pierre du fond de salle
+remplit le cadre, et de l'autre côté c'est le stade.
+
 ```
 L'image jointe est la première image de ce plan. Reprends exactement le même lieu, la même lumière, la même hauteur de caméra, et poursuis le mouvement sans le moindre à-coup.
 
-Un seul plan continu de huit secondes, sans aucune coupe, qui sort du restaurant et glisse au-dessus d'un terrain de football éclairé.
+Un seul plan continu de huit secondes, sans aucune coupe, qui passe derrière un pilier de pierre et débouche sur un terrain de football éclairé.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante : elle franchit l'ouverture, quitte la terrasse et glisse au-dessus de la pelouse, en gardant exactement la même hauteur, jusqu'au rond central. Sur la dernière seconde, elle ralentit régulièrement et s'immobilise. À la dernière image le cadre est calme et stable, centré sur le rond central, avec une large zone de pelouse unie et sans détail au centre de l'image. Aucune rotation, aucun zoom, aucun tremblement.
+MOUVEMENT. Le plan se déroule en trois temps enchaînés, à vitesse rigoureusement constante, sans jamais s'arrêter ni ralentir — sauf sur la toute dernière seconde, précisée plus bas.
+
+Premier temps, environ une seconde et demie : la caméra poursuit son avance en ligne droite et frôle le large pilier de pierre sombre, à quelques centimètres de l'objectif. La pierre envahit progressivement le cadre par la gauche.
+
+Deuxième temps, environ une demi-seconde : le pilier occupe TOUT le cadre. L'image est entièrement remplie par cette pierre sombre et mate, dont on voit le grain, sans détail net, sans trouée. Elle n'est pas noire, elle est gris-brun très sombre et texturée.
+
+Troisième temps : le pilier se dégage par la droite et découvre un terrain de football éclairé, où la caméra glisse au-dessus de la pelouse en gardant exactement la même hauteur, jusqu'au rond central. Sur la dernière seconde elle ralentit régulièrement et s'immobilise. À la dernière image le cadre est calme et stable, centré sur le rond central, avec une large zone de pelouse unie et sans détail au centre de l'image.
+
+Aucune rotation, aucun panoramique, aucun zoom, aucun changement de hauteur, aucun tremblement. Le passage derrière le pilier n'est ni un fondu, ni une coupe, ni une transition ajoutée : c'est un objet réel que la caméra longe.
 
 SUJET. Un terrain de football en herbe, fraîchement tondu, avec ses bandes de tonte alternées bien nettes et son marquage blanc impeccable. Le rond central, le point de penalty, les lignes de touche. Un but avec ses filets blancs tendus au fond. Un ballon blanc posé, immobile, sur le point central. Gradins vides et sombres au-delà. AUCUNE PERSONNE, aucun joueur, aucune silhouette, aucun animal. Aucun panneau publicitaire, aucune enseigne, aucun logo, aucun texte, aucun maillot, aucun numéro.
 
-CAMÉRA. Objectif 24 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strictement horizontal à un mètre soixante du sol, verticales redressées. Nette de bout en bout. Obturateur 1/1000 s, chaque image parfaitement nette, y compris les brins d'herbe et les mailles du filet.
+CAMÉRA. Objectif 24 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strictement horizontal, verticales redressées. Nette de bout en bout, y compris le grain de la pierre au moment où elle frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette, y compris les brins d'herbe et les mailles du filet.
 
-LUMIÈRE. Nuit. Quatre mâts de projecteurs allumés, lumière blanche franche et rigoureusement constante, qui pose de larges nappes claires sur la pelouse et dessine les bandes de tonte. Ciel noir. Aucun projecteur qui s'allume, s'éteint ou clignote. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+LUMIÈRE. La nuit tombe pendant le passage derrière le pilier et non avant : à l'entrée on est encore dans la lumière chaude du restaurant, à la sortie il fait nuit noire et quatre mâts de projecteurs éclairent le terrain d'une lumière blanche franche et rigoureusement constante, qui pose de larges nappes claires sur la pelouse et dessine les bandes de tonte. Ciel noir. Une fois le terrain atteint, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus. Aucun projecteur qui s'allume, s'éteint ou clignote.
 
 RENDU. Prise de vue réelle, film sportif, qualité commerciale. Colorimétrie neutre, verts justes et non saturés, blancs des lignes contrôlés, noirs profonds dans les gradins. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans la texture de la pelouse.
 
-INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, flou de mouvement, variation d'exposition, projecteur qui clignote, ballon qui roule ou bouge, filet agité, personne, joueur, silhouette, arbitre, animal, maillot, numéro, texte, chiffre, score, panneau publicitaire, enseigne, logo, marque, filigrane, fumée, fumigène, poussière, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
+INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, flou de mouvement, pilier qui s'écarte tout seul, image entièrement noire, projecteur qui clignote, ballon qui roule ou bouge, filet agité, personne, joueur, silhouette, arbitre, animal, oiseau, maillot, numéro, texte, chiffre, score, panneau publicitaire, enseigne, logo, marque, filigrane, fumée, fumigène, poussière, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
 ```
 
 ---
