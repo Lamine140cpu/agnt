@@ -37,7 +37,11 @@ SITE = os.path.dirname(os.path.abspath(__file__))
 SOURCE = os.path.join(SITE, "ultra-motion.html")
 OUT = os.path.join(SITE, "dist", "ultra-motion.html")
 OUT_ARTEFACT = os.path.join(SITE, "dist", "ultra-motion-artefact.html")
-SEQUENCE = "assets/film/accueil"
+# Deux séries : le paysage pour les écrans larges, le portrait pour les
+# téléphones tenus debout. La seconde n'est pas la première rognée — deux
+# des quatre plans sont nativement en 9:16.
+SERIES = {"accueil": "assets/film/accueil",
+          "accueil-etroit": "assets/film/accueil-etroit"}
 
 _libres = [a for a in sys.argv[1:] if a != "artefact" and not a.startswith("net=")]
 ARTEFACT = "artefact" in sys.argv[1:]
@@ -62,19 +66,18 @@ def en_webp(im, largeur, qualite):
     return tampon.getvalue()
 
 
-def sequence():
-    fichiers = sorted(glob(os.path.join(SITE, SEQUENCE, "*.jpg")))
+def sequence(nom, dossier, largeur):
+    fichiers = sorted(glob(os.path.join(SITE, dossier, "*.jpg")))
     if not fichiers:
-        sys.exit(f"aucune image dans {SEQUENCE} : lancer d'abord\n"
-                 f"  node film_rendu.mjs 160 1920 1080 {SEQUENCE} vitrine.html")
+        return None, 0
     sorties, avant, apres = [], 0, 0
     for f in fichiers:
         avant += os.path.getsize(f)
-        octets = en_webp(Image.open(f).convert("RGB"), LARGEUR, QUALITE)
+        octets = en_webp(Image.open(f).convert("RGB"), largeur, QUALITE)
         apres += len(octets)
         sorties.append(base64.b64encode(octets).decode())
-    print(f"  prologue  {len(sorties):4d} images · {avant/1048576:5.1f} Mo JPEG -> "
-          f"{apres/1048576:5.1f} Mo WebP {LARGEUR}px q{QUALITE} "
+    print(f"  {nom:15s} {len(sorties):4d} images · {avant/1048576:5.1f} Mo JPEG -> "
+          f"{apres/1048576:5.1f} Mo WebP {largeur}px q{QUALITE} "
           f"({apres/len(sorties)/1024:.0f} Ko/image)")
     return sorties, apres
 
@@ -121,12 +124,25 @@ def fontes(src):
 
 def main():
     src = open(SOURCE, encoding="utf-8").read()
-    images, poids_seq = sequence()
+    film, poids_seq = {}, 0
+    for nom, dossier in SERIES.items():
+        # Le portrait est servi moins large : il occupe l'écran d'un téléphone,
+        # pas celui d'un bureau, et il s'ajoute au poids du paysage.
+        largeur = LARGEUR if nom == "accueil" else min(LARGEUR, 720)
+        images, poids = sequence(nom, dossier, largeur)
+        if images is None:
+            print(f"  {nom:15s} absente — ignorée")
+            continue
+        film[nom] = images
+        poids_seq += poids
+    if not film:
+        sys.exit("aucune image : lancer d'abord film_video.py")
+
     src, poids_vig = vignettes(src)
     src = fontes(src)
 
     charge = ("<script>window.__FILM = "
-              + json.dumps({"accueil": images}, separators=(",", ":")) + ";</script>\n")
+              + json.dumps(film, separators=(",", ":")) + ";</script>\n")
 
     # On garde le document ENTIER et on injecte avant </head>. Ne recopier que
     # l'intérieur de <head> et <body> — comme le faisait la première version du

@@ -1,8 +1,13 @@
 # La continuité — cinq mondes, un seul mouvement
 
 Le prologue du site n'est pas une suite d'exemples. C'est **un seul travelling
-avant qui ne s'arrête jamais** et qui traverse cinq métiers : une villa, une
-piscine, une voiture, un restaurant, un terrain de foot.
+avant qui ne s'arrête jamais** et qui traverse quatre métiers : une villa, une
+piscine, une voiture, un restaurant.
+
+> **Le terrain de foot n'a pas été tourné** — le plan 5 reste écrit plus bas
+> pour le jour où on le voudra, mais le montage en cours s'arrête au
+> restaurant, sur la terrasse allumée à la tombée de la nuit. Quatre plans
+> suffisent à démontrer ce qu'il y avait à démontrer.
 
 C'est ça, la démonstration. Pas « voici cinq sites », mais « voici cinq
 commerces sur le même rail, et vous ne voyez pas la jointure ».

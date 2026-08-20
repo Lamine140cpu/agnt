@@ -90,19 +90,61 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    dans une boîte plus haute que large trace sa propre diagonale, et cette
    diagonale se voit. Leçon payée sur le film précédent. */
 #prologue{position:relative;z-index:3}
-#prologue::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:linear-gradient(90deg,rgba(10,12,14,.95) 0%,rgba(10,12,14,.88) 26%,
-    rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
 #prologue section{min-height:100svh;display:flex;flex-direction:column;
-  justify-content:flex-end;padding-bottom:clamp(76px,12vh,150px)}
-@media (max-width:820px){
-  #prologue::before{background:linear-gradient(transparent 6%,rgba(10,12,14,.45) 34%,
-    rgba(10,12,14,.9) 66%,rgba(10,12,14,.96) 100%)}
-}
+  justify-content:flex-end;padding-bottom:clamp(76px,12vh,150px);
+  position:relative;z-index:0}
+
+/* Le voile suit le texte, il n'éclaire pas toujours le même côté.
+
+   Chaque acte porte le sien, fixe et plein écran, éteint par défaut et allumé
+   quand l'acte entre en scène — deux actes qui se croisent produisent donc un
+   fondu, pas une bascule. Un seul voile commun aurait obligé le texte à rester
+   au même endroit toute la descente, ce qui est exactement ce qu'on veut
+   éviter : quatre plans très différents méritent quatre compositions.
+
+   Fixe et strictement horizontal ou vertical : un dégradé incliné dans une
+   boîte plus haute que large trace sa propre diagonale, et cette diagonale se
+   voit. Leçon payée sur le film précédent. */
+#prologue section::before{content:"";position:fixed;inset:0;z-index:-1;
+  pointer-events:none;opacity:0;transition:opacity .7s ease}
+#prologue section.en-scene::before{opacity:1}
+.a-g::before{background:linear-gradient(90deg,rgba(10,12,14,.95) 0%,
+  rgba(10,12,14,.88) 26%,rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
+.a-d::before{background:linear-gradient(270deg,rgba(10,12,14,.95) 0%,
+  rgba(10,12,14,.88) 26%,rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
+.a-c::before{background:linear-gradient(180deg,transparent 18%,rgba(10,12,14,.3) 42%,
+  rgba(10,12,14,.78) 68%,rgba(10,12,14,.94) 100%)}
+
+/* La colonne de texte se range du côté que le voile a éteint. */
+/* Le texte s'efface avec son acte, sinon deux actes se lisent en même temps
+   au moment de la charnière. */
+#prologue .mot{opacity:0;transform:translateY(14px);
+  transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)}
+#prologue .en-scene .mot{opacity:1;transform:none}
+
+.a-g .mot{margin-right:auto}
+.a-d{align-items:flex-end;text-align:right}
+.a-d .mot{margin-left:auto}
+.a-d .defiler{justify-content:flex-end}
+.a-c{align-items:center;text-align:center}
+.a-c .mot{margin:0 auto}
+.a-c .corps{margin-left:auto;margin-right:auto}
+
 .mot{max-width:min(46ch,50vw)}
-@media (max-width:820px){.mot{max-width:none}}
 .mot .corps{margin-top:20px}
 .mot .eti{margin-bottom:26px}
+
+/* Sous 820 px la colonne prend toute la largeur : aucun côté n'est libre, donc
+   plus de dégradé latéral. Tout passe par le bas, où le texte est posé — et
+   les alignements à droite ou au centre sont annulés, illisibles sur une
+   colonne étroite. */
+@media (max-width:820px){
+  .mot{max-width:none}
+  #prologue section::before{background:linear-gradient(transparent 6%,
+    rgba(10,12,14,.45) 34%,rgba(10,12,14,.9) 66%,rgba(10,12,14,.96) 100%)!important}
+  .a-d,.a-c{align-items:stretch;text-align:left}
+  .a-d .defiler{justify-content:flex-start}
+}
 
 /* Le reste du site : opaque, il recouvre la toile. */
 #suite{position:relative;z-index:4;background:var(--noir)}
@@ -127,6 +169,24 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .chapitre{display:grid;gap:clamp(28px,4vw,64px);align-items:start}
 @media (min-width:900px){.chapitre{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}}
 .chapitre .corps + .corps{margin-top:18px}
+
+/* Trois variantes de chapitre, parce que quatre fois la même grille se lit
+   comme un gabarit. Elles ne sont pas décoratives : chacune sert son contenu.
+
+   `inverse` met le texte à gauche et le titre à droite — pour le procédé, dont
+   l'explication compte plus que l'intitulé.
+   `centre` supprime la colonne — pour les chiffres, qui n'ont pas besoin
+   d'être introduits sur le côté, et pour l'invitation, qui doit s'adresser à
+   quelqu'un et non se ranger dans une grille. */
+@media (min-width:900px){
+  .chapitre.inverse{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+  .chapitre.inverse > :first-child{order:2}
+  .chapitre.inverse > :last-child{order:1;align-self:end}
+}
+.chapitre.centre{grid-template-columns:1fr;justify-items:center;text-align:center;
+  gap:clamp(18px,2.4vw,30px)}
+.chapitre.centre .corps{margin-left:auto;margin-right:auto}
+@media (min-width:900px){.chapitre.centre{grid-template-columns:1fr}}
 
 /* Les pièces : les travaux réels, chacun avec son image. */
 .pieces{display:grid;gap:clamp(20px,2.6vw,34px);margin-top:clamp(40px,6vh,72px)}
@@ -229,7 +289,13 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 <main>
 <div id="prologue">
 
-  <section class="bande">
+  <!-- Quatre actes, quatre places. Le texte ne se pose jamais deux fois au
+       même endroit : il suit ce que l'image laisse libre. Acte I à gauche,
+       parce que la villa s'ouvre à droite ; acte II à droite, parce que le
+       bassin occupe la gauche ; acte III à gauche, la voiture arrivant par la
+       droite ; acte IV centré et bas, la terrasse fuyant au fond. -->
+
+  <section class="bande a-g" data-voile="g">
     <div class="mot">
       <p class="eti"><b>I</b> · Le plan</p>
       <h1 class="marque">Ultra&nbsp;Motion</h1>
@@ -240,42 +306,37 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
     </div>
   </section>
 
-  <section class="bande">
+  <section class="bande a-d" data-voile="d">
     <div class="mot">
-      <p class="eti"><b>II</b> · Le principe</p>
-      <p class="titre t-xl">Rien n’est calculé<br><span class="ital">chez vous.</span></p>
-      <p class="corps">Un site en trois dimensions demande au téléphone du visiteur
-        de recalculer la scène soixante fois par seconde, et lui impose
-        <strong>733 Ko de moteur</strong> avant la première image. Nous faisons
-        l’inverse : la scène est calculée une fois, ici, sans limite de temps —
-        puis livrée en images.</p>
-      <p class="corps">Ce que vous regardez en ce moment en est une. Il n’y a
-        aucun moteur 3D sur cette page.</p>
+      <p class="eti"><b>II</b> · Un seul mouvement</p>
+      <p class="titre t-xl">Cinq métiers,<br>un seul <span class="ital">rail.</span></p>
+      <p class="corps">Vous venez de sortir d’une villa, vous survolez sa
+        piscine, vous allez croiser une voiture et finir dans un restaurant.
+        Sans une seule coupe. Ce ne sont pas cinq exemples posés bout à bout :
+        c’est un même travelling qui traverse cinq commerces.</p>
     </div>
   </section>
 
-  <section class="bande">
+  <section class="bande a-g" data-voile="g">
     <div class="mot">
-      <p class="eti"><b>III</b> · Ce que ça change</p>
+      <p class="eti"><b>III</b> · Le calcul</p>
+      <p class="titre t-xl">Rien n’est calculé<br><span class="ital">chez vous.</span></p>
+      <p class="corps">Un site en trois dimensions impose au téléphone du
+        visiteur <strong>733 Ko de moteur</strong> avant la première image, puis
+        lui demande de recalculer la scène soixante fois par seconde. Nous
+        faisons l’inverse : tout est calculé une fois, ici, sans limite de
+        temps — puis livré en images.</p>
+      <p class="corps">Il n’y a aucun moteur 3D sur cette page.</p>
+    </div>
+  </section>
+
+  <section class="bande a-c" data-voile="c">
+    <div class="mot">
+      <p class="eti"><b>IV</b> · Ce que ça change</p>
       <p class="titre t-xl">Le rendu cesse<br>d’être <span class="ital">pressé.</span></p>
       <p class="corps">Seize millisecondes : c’est tout ce qu’une image a pour
         exister en temps réel. Hors ligne, elle peut en prendre huit secondes.
-        Le verre a de vrais reflets, les creux ont de vraies ombres, la lumière
-        rebondit vraiment.</p>
-      <p class="corps">Le visiteur, lui, ne reçoit que le résultat.</p>
-    </div>
-  </section>
-
-  <section class="bande">
-    <div class="mot">
-      <p class="eti"><b>IV</b> · La portée</p>
-      <p class="titre t-xl">Une villa, une piscine,<br>un <span class="ital">terrain.</span></p>
-      <p class="corps">La chaîne ne sait pas ce qu’elle regarde. Une maison à
-        louer, un bassin à construire, une voiture, une salle, un stade :
-        c’est le même rail, et c’est pour ça qu’un commerce de quartier peut
-        s’offrir une page que seules les grandes marques avaient.</p>
-      <p class="corps">Ce qui change d’un sujet à l’autre, ce n’est pas le moteur.
-        C’est la matière — et c’est elle qui décide du travail.</p>
+        Le visiteur, lui, ne reçoit que le résultat.</p>
     </div>
   </section>
 
@@ -329,7 +390,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 
   <!-- ============================================================== LE PROCÉDÉ -->
   <section class="bloc bande regle" id="procede">
-    <div class="chapitre">
+    <div class="chapitre inverse">
       <div>
         <p class="eti pose"><b>VI</b> · Le procédé</p>
         <p class="titre t-xl pose" style="margin-top:18px">Trois temps,<br>
@@ -372,7 +433,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 
   <!-- ============================================================== LES CHIFFRES -->
   <section class="bloc bande regle" id="chiffres">
-    <div class="chapitre">
+    <div class="chapitre centre">
       <div>
         <p class="eti pose"><b>VII</b> · Les chiffres</p>
         <p class="titre t-xl pose" style="margin-top:18px">Mesurés,<br>
@@ -411,7 +472,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 
   <!-- ============================================================ L'INVITATION -->
   <section class="bloc bande regle" id="parler">
-    <div class="chapitre">
+    <div class="chapitre centre">
       <div>
         <p class="eti pose"><b>VIII</b> · Parler</p>
         <p class="titre t-xl pose" style="margin-top:20px">Montrez-nous<br>
@@ -476,12 +537,32 @@ const etape = document.getElementById('etape');
 const { min, max, round, abs, exp } = Math;
 const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
 
-const SEQ = { chemin: 'assets/film/accueil/f', images: 160,
-              avant: 24, arriere: 8, oubli: 38 };
+/* Deux montages, pas un seul recadré.
+
+   Un téléphone tenu debout ne reçoit PAS l'image large rognée : deux des
+   quatre plans ont été tournés nativement en 9:16, et rogner un cadre 16:9
+   en portrait ne garde que 32 % de sa largeur — le sujet en sort. La série
+   étroite est donc un vrai montage, plus courte parce qu'elle pèse en plus
+   du reste, mais à sa définition d'origine. */
+const SEQUENCES = {
+  accueil:          { chemin: 'assets/film/accueil/f',        images: 200,
+                      avant: 24, arriere: 8, oubli: 38 },
+  'accueil-etroit': { chemin: 'assets/film/accueil-etroit/f',  images: 88,
+                      avant: 16, arriere: 6, oubli: 26 },
+};
 /* La construction dépose les images ici ; sans elle on va les lire sur le
    disque. Le lecteur n'a pas à savoir lequel des deux. */
 const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || null;
-if (SOURCES && SOURCES.accueil) SEQ.images = SOURCES.accueil.length;
+
+const portrait = matchMedia('(max-aspect-ratio: 4/5)').matches;
+const NOM = (portrait && (!SOURCES || SOURCES['accueil-etroit']))
+  ? 'accueil-etroit' : 'accueil';
+const SEQ = SEQUENCES[NOM];
+/* Le compte écrit ci-dessus n'est qu'un défaut pour le mode disque : dès que
+   la construction a injecté les images, c'est elle qui a raison. Sans ça, une
+   série plus longue s'arrêterait avant la fin et le dernier tiers du
+   défilement resterait figé sur la même image. */
+if (SOURCES && SOURCES[NOM]) SEQ.images = SOURCES[NOM].length;
 
 /* Le type déclaré doit être le vrai. L'écrire en dur marchait tant que le
    navigateur reniflait les octets — rien ne l'y oblige, et un navigateur
@@ -494,8 +575,8 @@ function typeDe(u){
 }
 
 function source(i){
-  if (SOURCES && SOURCES.accueil) {
-    const b = atob(SOURCES.accueil[i]), u = new Uint8Array(b.length);
+  if (SOURCES && SOURCES[NOM]) {
+    const b = atob(SOURCES[NOM][i]), u = new Uint8Array(b.length);
     for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
     return Promise.resolve(new Blob([u], { type: typeDe(u) }));
   }
@@ -592,18 +673,43 @@ function boucle(now){
   const i = borne(round(courant), 0, SEQ.images - 1);
   fenetre(i);
   if (i !== dessinee) dessiner(i);
+  acteCourant();
   requestAnimationFrame(boucle);
 }
 
-/* L'apparition des blocs. Un seul observateur pour toute la page. */
+/* L'apparition des blocs de la suite. Une seule fois : on cesse d'observer
+   après, pour qu'un aller-retour ne fasse pas clignoter la page. */
 const oeil = new IntersectionObserver((entrees) => {
   for (const e of entrees) if (e.isIntersecting) {
     e.target.classList.add('vu');
-    oeil.unobserve(e.target);        // une apparition, pas un clignotant
+    oeil.unobserve(e.target);
   }
 }, { rootMargin: '-12% 0px -12% 0px' });
 document.querySelectorAll('#suite section, #suite .piece, #suite .etape, #suite .chiffre')
   .forEach((n) => oeil.observe(n));
+
+/* L'acte en scène : le plus proche du centre de l'écran, et LUI SEUL.
+
+   Un observateur d'intersection ne peut pas donner ça. Des sections pleine
+   hauteur se recouvrent forcément dans la bande observée au moment de la
+   charnière : deux actes s'y déclaraient visibles en même temps, leurs deux
+   textes s'affichaient l'un sur l'autre et leurs deux voiles s'additionnaient
+   jusqu'au noir. On désigne donc un seul gagnant, mesuré à chaque image. */
+const actes = [...document.querySelectorAll('#prologue section')];
+let enScene = -1;
+function acteCourant(){
+  const milieu = innerHeight / 2;
+  let gagnant = 0, meilleur = Infinity;
+  for (let i = 0; i < actes.length; i++) {
+    const r = actes[i].getBoundingClientRect();
+    const d = abs(r.top + r.height / 2 - milieu);
+    if (d < meilleur) { meilleur = d; gagnant = i; }
+  }
+  if (gagnant === enScene) return;
+  if (enScene >= 0) actes[enScene].classList.remove('en-scene');
+  actes[gagnant].classList.add('en-scene');
+  enScene = gagnant;
+}
 
 /* ------------------------------------------------------------- le démarrage */
 (async function demarrer(){
