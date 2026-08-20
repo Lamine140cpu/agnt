@@ -20,7 +20,10 @@ Le lecteur n'a rien à changer. Il possède déjà les deux voies : si la page n
 trouve pas de tableau embarqué, il va chercher les fichiers sur le disque. Ici
 on se contente de NE PAS embarquer.
 
-    usage : python3 build_flux.py [q=N] [large=N] [etroit=N]
+    usage : python3 build_flux.py [q=N] [large=N] [etroit=N] [page]
+
+« page » réécrit index.html sans réencoder les images. L'encodage prend
+quarante minutes ; une correction du lecteur n'a pas à les payer.
 
 CE QUI DÉCIDE DE LA DÉFINITION N'EST PAS LE POIDS, C'EST LE DÉCODAGE.
 
@@ -71,6 +74,8 @@ def _drapeau(nom, defaut):
 # économisé achetait une image, ici il n'achète rien du tout. Le seul coût
 # d'un octet supplémentaire est un octet supplémentaire sur un disque.
 QUALITE = _drapeau("q=", 45)
+# Réécrit seulement index.html, sans toucher aux images déjà encodées.
+PAGE_SEULE = "page" in sys.argv[1:]
 SERIES = {
     "accueil":        dict(dossier="assets/film/accueil",        largeur=_drapeau("large=", 1280)),
     "accueil-etroit": dict(dossier="assets/film/accueil-etroit", largeur=_drapeau("etroit=", 720)),
@@ -100,8 +105,11 @@ def _un(travail):
 
 def main():
     src = open(SOURCE, encoding="utf-8").read()
-    shutil.rmtree(OUT, ignore_errors=True)
-    os.makedirs(OUT)
+    if not PAGE_SEULE:
+        shutil.rmtree(OUT, ignore_errors=True)
+        os.makedirs(OUT)
+    elif not os.path.isdir(OUT):
+        sys.exit(f"« page » suppose une construction existante : {OUT} est absent")
 
     comptes, total = {}, 0
     for nom, reg in SERIES.items():
@@ -110,6 +118,10 @@ def main():
             print(f"  {nom:15s} absente — ignorée")
             continue
         cible = os.path.join(OUT, "assets", "film", nom)
+        if PAGE_SEULE:
+            comptes[nom] = len(os.listdir(cible))
+            print(f"  {nom:15s} {comptes[nom]:4d} images déjà encodées")
+            continue
         os.makedirs(cible)
         travaux = [(f, reg["largeur"], os.path.join(cible, f"f{i:04d}.jpg"))
                    for i, f in enumerate(fichiers, 1)]
@@ -129,11 +141,17 @@ def main():
     # le dossier qui fait foi : on les corrige, sinon le lecteur s'arrêterait au
     # compte d'origine et le reste du défilement resterait figé.
     for nom, n in comptes.items():
-        avant = src
-        src = re.sub(rf"(chemin: *'assets/film/{re.escape(nom)}/f', *images: *)\d+",
-                     rf"\g<1>{n}", src)
-        if src == avant:
-            sys.exit(f"compte de {nom} non trouvé dans la page — lecteur modifié ?")
+        # On compte les REMPLACEMENTS, pas les différences. Vérifier que le
+        # texte a changé paraît équivalent et ne l'est pas : quand la page
+        # porte déjà le bon compte — ce qui est le cas dès que le disque et le
+        # fichier unique s'accordent — la substitution est un non-changement,
+        # et le test criait à l'échec sur une opération parfaitement réussie.
+        src, combien = re.subn(
+            rf"(chemin: *'assets/film/{re.escape(nom)}/f', *images: *)\d+",
+            rf"\g<1>{n}", src)
+        if combien != 1:
+            sys.exit(f"compte de {nom} : {combien} correspondance(s) dans la page "
+                     f"au lieu d'une — lecteur modifié ?")
 
     # La feuille des fontes reste un fichier à part : elle est mise en cache une
     # fois pour toutes, et 216 Ko dans chaque page seraient 216 Ko à chaque
