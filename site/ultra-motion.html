@@ -893,6 +893,16 @@ function fondu(pos){
   if (b && cache.has(bas) && t > 0.01) { ctx.globalAlpha = t; poser(b); ctx.globalAlpha = 1; }
   posee = pos;
   dessinee = -1;
+  /* Point d'observation. `posee` vit dans cette fermeture, donc de l'extérieur
+     rien ne permet de savoir si l'image affichée AVANCE réellement pendant un
+     défilement — or c'est toute la question : `auPlusProche` ne bloque jamais,
+     il repose la voisine disponible, et un décodage trop lent se traduit non
+     par une erreur mais par une image qui se répète. Sans ce témoin, la
+     fluidité est invisible à la mesure et ne peut donc pas être défendue.
+     Deux propriétés au lieu d'une : ce qu'on VOULAIT afficher et ce qu'on a
+     vraiment posé — leur écart est exactement le retard du décodeur. */
+  window.__VOULUE = pos;
+  window.__POSEE = cache.has(bas) ? bas : -1;
 }
 
 function redimensionner(){
