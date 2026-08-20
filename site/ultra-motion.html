@@ -803,20 +803,31 @@ const AVANCE = 700, RECUL = 240, MEMOIRE = 1100;
 
 /* Le plafond mémoire, lui, ne se compte pas en pixels de course mais en
    octets. Une image décodée n'est plus compressée : elle occupe largeur ×
-   hauteur × 4 octets, soit neuf cents kilo-octets en 640×360 et un mégaoctet
-   six en 480×853. La purge se déclenche à deux fois `oubli`, donc c'est ce
-   double qu'il faut borner — sinon une séquence dense ferait tenir deux cents
-   images décodées à un téléphone, qui fermerait l'onglet sans prévenir. */
-const MEMOIRE_MAX = 96 * 1048576;
+   hauteur × 4 octets, soit neuf cents kilo-octets en 640×360 mais TROIS
+   MÉGAOCTETS ET DEMI en 1280×720, et huit en 1920×1080. La purge se déclenche
+   à deux fois `oubli`, donc c'est ce double qu'il faut borner.
+
+   Quatre-vingt-seize mégaoctets partout était un réglage fait pour des images
+   de neuf cents kilo-octets, et il est devenu absurde en montant en
+   définition : il ne laissait plus tenir que treize images de part et d'autre.
+   Un téléphone doit rester à ce niveau — il ferme l'onglet sans prévenir —
+   mais un ordinateur de bureau encaisse sans peine trois cent vingt. */
+const MEMOIRE_MAX = (innerWidth < 820 ? 96 : 320) * 1048576;
 let octetsImage = 0;
 
 function reglerFenetre(){
   const parImage = course / max(SEQ.images - 1, 1);
-  SEQ.avant   = borne(round(AVANCE  / parImage),  6, 120);
   SEQ.arriere = borne(round(RECUL   / parImage),  2,  40);
   let oubli   = borne(round(MEMOIRE / parImage), 10, 200);
   if (octetsImage) oubli = min(oubli, max(round(MEMOIRE_MAX / octetsImage / 2), 8));
   SEQ.oubli = oubli;
+  /* PRÉCHARGER PLUS LOIN QUE CE QU'ON GARDE N'A AUCUN SENS, et c'était le cas :
+     à 1280 px, `avant` valait 66 images quand `oubli` en gardait 13. Le lecteur
+     décodait cinquante images par-dessus la limite de purge, qui les jetait
+     aussitôt — il travaillait à plein régime pour la poubelle, et l'image
+     demandée manquait quand même neuf fois sur dix. Le plafond mémoire commande
+     donc les deux : on ne demande jamais au-delà de ce qui survivra. */
+  SEQ.avant = min(borne(round(AVANCE / parImage), 6, 120), oubli);
 }
 
 function fenetre(centre){

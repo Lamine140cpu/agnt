@@ -20,31 +20,50 @@ Le lecteur n'a rien à changer. Il possède déjà les deux voies : si la page n
 trouve pas de tableau embarqué, il va chercher les fichiers sur le disque. Ici
 on se contente de NE PAS embarquer.
 
-    usage : python3 build_flux.py [q=N] [large=N] [etroit=N] [page]
+    usage : python3 build_flux.py [q=N] [large=N] [etroit=N] [parimage=N] [page]
 
 « page » réécrit index.html sans réencoder les images. L'encodage prend
 quarante minutes ; une correction du lecteur n'a pas à les payer.
 
-CE QUI DÉCIDE DE LA DÉFINITION N'EST PAS LE POIDS, C'EST LE DÉCODAGE.
+MOINS D'IMAGES, BEAUCOUP PLUS GRANDES. C'est l'échange, et la première
+version l'avait fait à l'envers.
 
-Sans plafond de poids on pourrait servir le 1920 que porte le disque. On ne
-le fait pas, et la raison est mesurée dans un vrai navigateur, sur soixante
-images décodées en parallèle par `createImageBitmap` :
+Elle servait 1 440 images de 1280 px, soit 10,6 px de défilement par image.
+À mille pixels par seconde — un défilement ordinaire — cela réclame
+QUATRE-VINGT-QUATORZE images décodées par seconde. Le résultat se mesurait :
+l'image demandée était absente du cache 86 à 91 % du temps, et la page ne
+faisait que reposer la voisine. Illisible.
 
-     640 px   1,89 ms l'image   529 images par seconde
-    1280 px  12,39 ms l'image    81
-    1600 px  26,66 ms l'image    38
-    1920 px  29,76 ms l'image    34
+Le site qui servait de référence fait exactement l'inverse, vérifié sur son
+serveur : 2560x1440 en WebP, 135 à 220 Ko l'image, environ 800 images, soit
+33 px de défilement par image. Huit fois plus d'octets par image, trois fois
+moins d'images. À mille pixels par seconde cela ne demande plus que TRENTE
+décodages — la cadence du cinéma, celle au-delà de laquelle l'oeil ne
+distingue plus rien.
 
-Un défilement ordinaire consomme entre 70 et 100 images par seconde. À 1920
-le navigateur en fournit 34 : il resterait bloqué sur la même image un tiers
-du temps. 1280 est donc le plafond praticable — et c'est déjà 2,5 fois
-d'agrandissement sur une toile de bureau au lieu de 5.
+C'est là qu'était l'erreur de raisonnement : croire que la densité fait la
+fluidité. Au-delà d'une trentaine de changements d'image par seconde elle
+n'achète plus rien de visible, mais elle continue de taxer le décodeur et la
+mémoire — et elle se paye en définition, qui, elle, se voit.
 
-Le portrait est servi à 720 px et non 1280 : la toile d'un téléphone fait
-585 px (390 points à 1,5 pixel physique, plafond imposé dans la page). 720 y
-est déjà au-dessus du un pour un, et un téléphone décode plus lentement qu'un
-ordinateur — c'est le seul endroit où le décodage se sent vraiment.
+`parimage` fixe donc la densité, et le nombre d'images s'en déduit de la
+course mesurée. 33 par défaut, comme la référence.
+
+Le décodage, mesuré à nouveau machine au repos — la première mesure avait été
+prise pendant un encodage et annonçait des chiffres deux à trois fois trop
+pessimistes, ce qui avait fait choisir 1280 à tort :
+
+     640 px   1,78 ms l'image   562 images par seconde
+    1280 px   5,38 ms l'image   186
+    1600 px   7,46 ms l'image   134
+    1920 px  11,73 ms l'image    85
+
+À 33 px par image il faut 30 décodages par seconde : le 1920 passe largement.
+
+Le portrait est servi moins large que le paysage, et pas par condescendance :
+la toile d'un téléphone fait 585 px (390 points à 1,5 pixel physique, plafond
+imposé dans la page), donc 1080 y est déjà bien au-dessus du un pour un. Et
+c'est l'appareil où la mémoire se ferme sans prévenir.
 
 Sortie : dist/flux/ — un dossier à déposer tel quel sur un hébergement, ou à
 servir en local par `python3 -m http.server` depuis l'intérieur du dossier.
@@ -59,6 +78,7 @@ import sys
 from glob import glob
 from multiprocessing import Pool
 
+import numpy as np
 from PIL import Image
 
 SITE = os.path.dirname(os.path.abspath(__file__))
@@ -76,12 +96,15 @@ def _drapeau(nom, defaut):
 QUALITE = _drapeau("q=", 45)
 # Réécrit seulement index.html, sans toucher aux images déjà encodées.
 PAGE_SEULE = "page" in sys.argv[1:]
+# Densité voulue, en pixels de défilement par image. C'est ELLE qu'on choisit ;
+# le nombre d'images en découle.
+PAR_IMAGE = _drapeau("parimage=", 33)
 SERIES = {
-    "accueil":        dict(dossier="assets/film/accueil",        largeur=_drapeau("large=", 1280)),
-    "accueil-etroit": dict(dossier="assets/film/accueil-etroit", largeur=_drapeau("etroit=", 720)),
+    "accueil":        dict(dossier="assets/film/accueil",        largeur=_drapeau("large=", 1920)),
+    "accueil-etroit": dict(dossier="assets/film/accueil-etroit", largeur=_drapeau("etroit=", 1080)),
 }
-# Les courses mesurées dans un navigateur, qui servent à dire la densité
-# obtenue — et non à la décider, puisqu'ici on livre TOUTES les images.
+# Les courses mesurées dans un navigateur. Ce sont elles qui, divisées par la
+# densité voulue, donnent le nombre d'images à livrer.
 COURSES = {"accueil": 15300, "accueil-etroit": 10297}
 # Pas d'affûtage : les images viennent d'un agrandissement 4K qui l'a déjà
 # fait, et mieux. Voir la note de build_ultra.py.
@@ -117,6 +140,13 @@ def main():
         if not fichiers:
             print(f"  {nom:15s} absente — ignorée")
             continue
+        # Sous-échantillonnage RÉGULIER sur toute la série. Prendre les N
+        # premières donnerait une séquence qui s'arrête au premier tiers du
+        # parcours ; il faut un pas constant pour que la vitesse le soit.
+        voulu = max(round(COURSES.get(nom, len(fichiers) * PAR_IMAGE) / PAR_IMAGE), 2)
+        if voulu < len(fichiers):
+            idx = np.linspace(0, len(fichiers) - 1, voulu).round().astype(int)
+            fichiers = [fichiers[i] for i in idx]
         cible = os.path.join(OUT, "assets", "film", nom)
         if PAGE_SEULE:
             comptes[nom] = len(os.listdir(cible))
