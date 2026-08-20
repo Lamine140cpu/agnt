@@ -202,6 +202,12 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
     rgba(10,12,14,.45) 34%,rgba(10,12,14,.9) 66%,rgba(10,12,14,.96) 100%)!important}
   .a-d .tenir,.a-c .tenir{align-items:stretch;text-align:left}
   .a-d .defiler{justify-content:flex-start}
+  /* Le numéro d'acte suit l'alignement, sinon il reste seul contre le bord
+     droit pendant que le métier est à gauche : sur écran large le bloc entier
+     est aligné à droite et le filet précède le numéro, ce qui se tient ;
+     ici tout retombe à gauche et le numéro doit suivre. */
+  .a-d .acte-num,.a-c .acte-num{flex-direction:row;justify-content:flex-start}
+  .a-c .acte-num::after{display:block}
 }
 
 /* Le reste du site : opaque, il recouvre la toile. */
@@ -644,16 +650,19 @@ const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
 
 /* Deux montages, pas un seul recadré.
 
-   Un téléphone tenu debout ne reçoit PAS l'image large rognée : deux des
-   quatre plans ont été tournés nativement en 9:16, et rogner un cadre 16:9
+   Un téléphone tenu debout ne reçoit PAS l'image large rognée : plusieurs
+   des plans ont été tournés nativement en 9:16, et rogner un cadre 16:9
    en portrait ne garde que 32 % de sa largeur — le sujet en sort. La série
-   étroite est donc un vrai montage, plus courte parce qu'elle pèse en plus
-   du reste, mais à sa définition d'origine. */
+   étroite est donc un vrai montage.
+
+   Elle compte moins d'images que la large, et ce n'est pas une économie :
+   sur un téléphone les actes font deux écrans au lieu de trois, ce qui met
+   la course du prologue à 10 297 px contre 15 300. Deux tiers de la
+   distance demandent deux tiers des images pour le même grain. La
+   construction calcule ce partage toute seule. */
 const SEQUENCES = {
-  accueil:          { chemin: 'assets/film/accueil/f',        images: 1440,
-                      avant: 24, arriere: 8, oubli: 38 },
-  'accueil-etroit': { chemin: 'assets/film/accueil-etroit/f',  images: 1440,
-                      avant: 16, arriere: 6, oubli: 26 },
+  accueil:          { chemin: 'assets/film/accueil/f',        images: 1440 },
+  'accueil-etroit': { chemin: 'assets/film/accueil-etroit/f',  images: 1440 },
 };
 /* La construction dépose les images ici ; sans elle on va les lire sur le
    disque. Le lecteur n'a pas à savoir lequel des deux. */
@@ -751,7 +760,14 @@ function charger(i){
 }
 
 async function lire(i){
-  try { cache.set(i, await decoder(await source(i))); }
+  try {
+    const im = await decoder(await source(i));
+    /* La première image décodée révèle ce que coûte vraiment une image en
+       mémoire — la construction peut servir n'importe quelle définition, la
+       page n'a pas à la connaître d'avance. */
+    if (!octetsImage) { octetsImage = im.width * im.height * 4; reglerFenetre(); }
+    cache.set(i, im);
+  }
   catch (e) { echecs++; }
   encours.delete(i);
 }
@@ -766,6 +782,43 @@ async function lire(i){
    seconde, c'est cent vingt décodages lancés par seconde pour une séquence qui
    en compte quatre-vingt-huit. */
 const PAR_IMAGE = 2;
+
+/* ----------------------------------------- la fenêtre se mesure en PIXELS
+
+   Elle était écrite en NOMBRE D'IMAGES : vingt-quatre en avance, trente-huit
+   gardées. Tant que la séquence comptait cinq cent quatre-vingts images
+   c'était cohérent — vingt-quatre images valaient six cents pixels de course.
+   En doublant la densité, les mêmes vingt-quatre images ne valent plus que
+   trois cents pixels : la même page se serait retrouvée avec deux fois moins
+   d'avance, et un défilement rapide l'aurait dépassée. Plus d'images aurait
+   rendu la page MOINS sûre, ce qui est exactement l'inverse du but.
+
+   On règle donc la fenêtre en distance de défilement, et le nombre d'images
+   s'en déduit. La densité peut alors changer sans que rien d'autre bouge.
+
+   Sept cents pixels d'avance : à trois mille pixels par seconde — un geste
+   franc sur un pavé tactile — c'est près d'un quart de seconde de marge, et
+   le fondu au plus proche couvre le reste. */
+const AVANCE = 700, RECUL = 240, MEMOIRE = 1100;
+
+/* Le plafond mémoire, lui, ne se compte pas en pixels de course mais en
+   octets. Une image décodée n'est plus compressée : elle occupe largeur ×
+   hauteur × 4 octets, soit neuf cents kilo-octets en 640×360 et un mégaoctet
+   six en 480×853. La purge se déclenche à deux fois `oubli`, donc c'est ce
+   double qu'il faut borner — sinon une séquence dense ferait tenir deux cents
+   images décodées à un téléphone, qui fermerait l'onglet sans prévenir. */
+const MEMOIRE_MAX = 96 * 1048576;
+let octetsImage = 0;
+
+function reglerFenetre(){
+  const parImage = course / max(SEQ.images - 1, 1);
+  SEQ.avant   = borne(round(AVANCE  / parImage),  6, 120);
+  SEQ.arriere = borne(round(RECUL   / parImage),  2,  40);
+  let oubli   = borne(round(MEMOIRE / parImage), 10, 200);
+  if (octetsImage) oubli = min(oubli, max(round(MEMOIRE_MAX / octetsImage / 2), 8));
+  SEQ.oubli = oubli;
+}
+
 function fenetre(centre){
   let lances = 0;
   for (let d = 0; d <= SEQ.avant && lances < PAR_IMAGE; d++) {
@@ -883,6 +936,9 @@ function mesurer(){
   course = max(prologue.offsetHeight - innerHeight, 1);
   const haut = prologue.offsetTop;
   centres = actes.map((a) => haut + a.offsetTop + a.offsetHeight / 2);
+  /* La fenêtre du chargeur dépend de la course : elle se relit ici, et pas
+     ailleurs, pour qu'un changement d'orientation la remette d'aplomb. */
+  reglerFenetre();
 }
 
 function progression(){
