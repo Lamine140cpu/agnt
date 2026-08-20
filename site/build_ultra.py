@@ -75,20 +75,25 @@ ARTEFACT = "artefact" in sys.argv[1:]
 BUDGET = float(_libres[0]) if _libres else 15.6
 
 # Qualité et netteté vérifiées à l'œil, pas choisies au hasard : la même image
-# encodée à 760 px q45 et à 640 px q34, puis RAMENÉE À LA TAILLE QUE LA TOILE
+# encodée à 760 px q45 et à 640 px q32, puis RAMENÉE À LA TAILLE QUE LA TOILE
 # AFFICHE VRAIMENT (2 880 px sur un écran large, 585 sur un téléphone), est
 # indiscernable. L'écart de définition disparaît dans l'agrandissement — la
 # toile fait déjà quatre fois la largeur de la source. Il ne disparaît pas du
 # poids : 9,7 Ko contre 5,6. Ces quatre kilo-octets par image achètent des
 # images, et ce sont elles qui se voient.
-QUALITE = _drapeau("q=", 34)
+QUALITE = _drapeau("q=", 32)
 # Masque flou, appliqué APRÈS la réduction — qui est elle-même adoucissante.
-# Seuil 3 : on ne renforce que ce qui est déjà un contour, pour ne pas réveiller
-# le bruit de compression des aplats. Il a un prix mesuré : à 640 px q35 il
-# coûte 5,50 -> 5,94 Ko l'image entre net=0 et net=45, soit huit pour cent du
-# poids. On le ramène à 20, qui garde l'essentiel du mordant pour trois pour
-# cent — le reste part en images.
-NETTETE = _drapeau("net=", 20)
+# Il a un prix mesuré : à 640 px q35 il coûte 5,50 -> 5,94 Ko l'image entre
+# net=0 et net=45, soit huit pour cent du poids.
+#
+# Il est maintenant à ZÉRO, et c'est un changement de nature, pas de dosage.
+# Les images ne viennent plus directement des vidéos : elles sont issues d'un
+# agrandissement 4K par réseau de neurones, qui a DÉJÀ fait ce travail — et
+# mieux, puisqu'il reconstruit du détail au lieu de rehausser des contours.
+# En remettre par-dessus reviendrait à affûter deux fois : on paierait des
+# octets pour un aspect croustillant. Si l'on repartait un jour d'images
+# extraites brutes, net=20 redeviendrait le bon réglage.
+NETTETE = _drapeau("net=", 0)
 # Garde-fou : si la configuration ne permet plus d'atteindre ce compte, mieux
 # vaut s'arrêter en le disant que livrer une séquence hachée sans prévenir.
 MINI = _drapeau("mini=", 1000)
