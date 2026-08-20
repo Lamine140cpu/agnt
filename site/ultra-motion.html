@@ -271,54 +271,53 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 <main>
 <div id="prologue">
 
-  <!-- Quatre actes, quatre places. Le texte ne se pose jamais deux fois au
-       même endroit : il suit ce que l'image laisse libre. Acte I à gauche,
-       parce que la villa s'ouvre à droite ; acte II à droite, parce que le
-       bassin occupe la gauche ; acte III à gauche, la voiture arrivant par la
-       droite ; acte IV centré et bas, la terrasse fuyant au fond. -->
+  <!-- Quatre actes, quatre commerces, quatre places à l'écran. Le texte nomme
+       ce qu'on regarde : sans ça il parle de moteur et de millisecondes pendant
+       qu'on traverse une villa, et les deux ne se rencontrent jamais. La
+       technique a sa section, plus bas. -->
 
   <section class="bande a-g" data-voile="g">
     <div class="mot">
-      <p class="eti"><b>I</b> · Le plan</p>
+      <p class="eti"><b>I</b> · La villa</p>
       <h1 class="marque">Ultra&nbsp;Motion</h1>
-      <p class="corps">Nous construisons des sites où le défilement ne fait pas
-        glisser une page : il déroule un film. Celui-ci est déjà tourné. Vous ne
-        faites que tourner la manivelle.</p>
+      <p class="corps">Ce séjour est une page d’accueil. Celle d’une villa qui
+        se loue à la semaine. Vous n’avez pas cliqué : vous faites défiler, et
+        la caméra avance.</p>
       <p class="defiler"><i></i> Défiler</p>
     </div>
   </section>
 
   <section class="bande a-d" data-voile="d">
     <div class="mot">
-      <p class="eti"><b>II</b> · Un seul mouvement</p>
-      <p class="titre t-xl">Cinq métiers,<br>un seul <span class="ital">rail.</span></p>
-      <p class="corps">Vous venez de sortir d’une villa, vous survolez sa
-        piscine, vous allez croiser une voiture et finir dans un restaurant.
-        Sans une seule coupe. Ce ne sont pas cinq exemples posés bout à bout :
-        c’est un même travelling qui traverse cinq commerces.</p>
+      <p class="eti"><b>II</b> · La piscine</p>
+      <p class="titre t-xl">Vous venez de sortir<br>de la <span class="ital">maison.</span></p>
+      <p class="corps">Sans coupe, sans transition, sans changement de page. Le
+        bassin, la terrasse, les oliviers : c’est le même plan qui continue, et
+        c’est vous qui le tirez.</p>
+      <p class="corps">Un pisciniste n’a pas besoin d’autre argumentaire que
+        ça.</p>
     </div>
   </section>
 
   <section class="bande a-g" data-voile="g">
     <div class="mot">
-      <p class="eti"><b>III</b> · Le calcul</p>
-      <p class="titre t-xl">Rien n’est calculé<br><span class="ital">chez vous.</span></p>
-      <p class="corps">Un site en trois dimensions impose au téléphone du
-        visiteur <strong>733 Ko de moteur</strong> avant la première image, puis
-        lui demande de recalculer la scène soixante fois par seconde. Nous
-        faisons l’inverse : tout est calculé une fois, ici, sans limite de
-        temps — puis livré en images.</p>
-      <p class="corps">Il n’y a aucun moteur 3D sur cette page.</p>
+      <p class="eti"><b>III</b> · La voiture</p>
+      <p class="titre t-xl">Et voilà<br>la <span class="ital">Golf.</span></p>
+      <p class="corps">Elle attend sur le gravier depuis le début — regardez
+        bien, elle était déjà là au fond de la cour. On ne l’a pas fait
+        apparaître : on s’en est approché.</p>
+      <p class="corps">C’est la page d’un loueur. La même mécanique, un autre
+        métier.</p>
     </div>
   </section>
 
   <section class="bande a-c" data-voile="c">
     <div class="mot">
-      <p class="eti"><b>IV</b> · Ce que ça change</p>
-      <p class="titre t-xl">Le rendu cesse<br>d’être <span class="ital">pressé.</span></p>
-      <p class="corps">Seize millisecondes : c’est tout ce qu’une image a pour
-        exister en temps réel. Hors ligne, elle peut en prendre huit secondes.
-        Le visiteur, lui, ne reçoit que le résultat.</p>
+      <p class="eti"><b>IV</b> · Le restaurant</p>
+      <p class="titre t-xl">La nuit est tombée<br>derrière un <span class="ital">mur.</span></p>
+      <p class="corps">La caméra a frôlé la pierre du mas, elle a rempli l’écran
+        une demi-seconde, et de l’autre côté les tables sont dressées. Quatre
+        commerces, un seul mouvement, aucune coupe.</p>
     </div>
   </section>
 
@@ -512,11 +511,32 @@ function typeDe(u){
   return 'application/octet-stream';
 }
 
+/* Décoder le base64 à la main coûte cher : `atob` rend une chaîne, et la
+   recopier octet par octet dans un tableau fait quarante mille tours de boucle
+   par image, sur le fil principal. En rafale — la fenêtre glissante en demande
+   une vingtaine d'un coup — c'est ce qui faisait tomber le défilement à onze
+   images par seconde sur téléphone.
+
+   `fetch` sur une adresse `data:` fait le même travail dans le navigateur, en
+   code natif et hors du fil principal. On garde l'ancienne voie en repli : une
+   politique de sécurité stricte peut refuser `fetch` sur `data:`, et mieux vaut
+   une page lente qu'une page vide. */
+function depuisBase64(str){
+  const b = atob(str), u = new Uint8Array(b.length);
+  for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
+  return new Blob([u], { type: typeDe(u) });
+}
+
+let fetchData = true;
 function source(i){
   if (SOURCES && SOURCES[NOM]) {
-    const b = atob(SOURCES[NOM][i]), u = new Uint8Array(b.length);
-    for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
-    return Promise.resolve(new Blob([u], { type: typeDe(u) }));
+    const str = SOURCES[NOM][i];
+    if (fetchData) {
+      return fetch('data:image/webp;base64,' + str)
+        .then((r) => r.blob())
+        .catch(() => { fetchData = false; return depuisBase64(str); });
+    }
+    return Promise.resolve(depuisBase64(str));
   }
   return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`)
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); });
@@ -540,20 +560,36 @@ const cache = new Map();
 const encours = new Set();
 let dessinee = -1, echecs = 0;
 
-async function charger(i){
-  if (i < 0 || i >= SEQ.images || cache.has(i) || encours.has(i)) return;
+/* Rend vrai si un décodage a réellement été lancé — c'est ce qui permet à la
+   fenêtre de compter ce qu'elle dépense. */
+function charger(i){
+  if (i < 0 || i >= SEQ.images || cache.has(i) || encours.has(i)) return false;
   encours.add(i);
+  lire(i);
+  return true;
+}
+
+async function lire(i){
   try { cache.set(i, await decoder(await source(i))); }
   catch (e) { echecs++; }
   encours.delete(i);
 }
 
 /* La fenêtre glissante. On demande ce qui vient, on tolère un peu de ce qui
-   précède — le défilement se remonte — et on libère le reste. */
+   précède — le défilement se remonte — et on libère le reste.
+
+   Le nombre de décodages lancés par image est PLAFONNÉ. Sans plafond, un
+   changement de position en demandait une vingtaine d'un seul coup, et la
+   rafale tenait le fil principal occupé bien au-delà des seize millisecondes
+   d'une image. Deux par image suffisent largement : à soixante images par
+   seconde, c'est cent vingt décodages lancés par seconde pour une séquence qui
+   en compte quatre-vingt-huit. */
+const PAR_IMAGE = 2;
 function fenetre(centre){
-  for (let d = 0; d <= SEQ.avant; d++) {
-    charger(centre + d);
-    if (d <= SEQ.arriere) charger(centre - d);
+  let lances = 0;
+  for (let d = 0; d <= SEQ.avant && lances < PAR_IMAGE; d++) {
+    if (charger(centre + d)) lances++;
+    if (d <= SEQ.arriere && lances < PAR_IMAGE && charger(centre - d)) lances++;
   }
   if (cache.size > SEQ.oubli * 2) {
     for (const i of cache.keys())
@@ -563,19 +599,56 @@ function fenetre(centre){
 
 /* Dessin en « couvrir » : l'image remplit la toile sans se déformer, quitte à
    déborder. Recalculé à chaque dessin, la fenêtre pouvant changer. */
-function dessiner(i){
-  const im = cache.get(i);
-  if (!im) return false;
+function poser(im){
   const cw = canvas.width, ch = canvas.height;
   const k = max(cw / im.width, ch / im.height);
   ctx.drawImage(im, (cw - im.width * k) / 2, (ch - im.height * k) / 2,
                 im.width * k, im.height * k);
+}
+
+function dessiner(i){
+  const im = cache.get(i);
+  if (!im) return false;
+  poser(im);
   dessinee = i;
   return true;
 }
 
+/* Le fondu entre deux images voisines.
+
+   C'est ce qui change tout sur téléphone. La série étroite compte moins
+   d'images que la large — elle s'ajoute au poids de l'autre — et à une
+   soixantaine d'images pour quatre écrans de défilement, chaque image tient
+   une trentaine de pixels. Arrondir à l'image la plus proche fait donc voir
+   les marches.
+
+   On dessine plutôt les DEUX images qui encadrent la position courante, la
+   seconde par-dessus la première avec l'opacité de la fraction. Le défilement
+   devient continu au lieu d'être quantifié, et ça ne coûte qu'un second tracé
+   — pas un octet de plus au chargement.
+
+   `dessinee` passe à -1 : la position varie en continu, on ne peut plus se
+   contenter de comparer un numéro d'image pour savoir s'il faut redessiner. */
+let posee = -1;
+function fondu(pos){
+  const bas = borne(Math.floor(pos), 0, SEQ.images - 1);
+  const haut = borne(bas + 1, 0, SEQ.images - 1);
+  const t = pos - bas;
+  const a = cache.get(bas), b = cache.get(haut);
+  if (!a && !b) return;
+  ctx.globalAlpha = 1;
+  if (a) poser(a); else poser(b);
+  if (a && b && t > 0.01) { ctx.globalAlpha = t; poser(b); ctx.globalAlpha = 1; }
+  posee = pos;
+  dessinee = -1;
+}
+
 function redimensionner(){
-  const dpr = min(devicePixelRatio || 1, 2);
+  /* Sur un écran étroit on plafonne à 1,5 au lieu de 2. Une toile de 390 px
+     rendue en 2 fait 780 x 1688 pixels à remplir ; en 1,5 elle en fait 585 x
+     1266, soit 44 % de moins à chaque image. À la densité d'un téléphone, la
+     différence ne se voit pas — la charge, elle, se sent. */
+  const dpr = min(devicePixelRatio || 1, innerWidth < 820 ? 1.5 : 2);
   canvas.width = round(innerWidth * dpr);
   canvas.height = round(innerHeight * dpr);
   canvas.style.width = innerWidth + 'px';
@@ -586,16 +659,34 @@ function redimensionner(){
      dès qu'on affiche une source plus petite que l'écran. Gratuit. */
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  if (dessinee >= 0) dessiner(dessinee);
+  if (posee >= 0) fondu(posee); else if (dessinee >= 0) dessiner(dessinee);
 }
-addEventListener('resize', redimensionner, { passive: true });
+addEventListener('resize', () => { redimensionner(); mesurer(); }, { passive: true });
 
 /* Le film ne couvre que le prologue : au-delà, la suite du site est opaque et
    recouvre la toile. On mesure donc la progression sur le prologue seul, pas
    sur toute la page — sinon le film se terminerait bien après avoir disparu. */
 const prologue = document.getElementById('prologue');
+const actes = [...document.querySelectorAll('#prologue section')];
+
+/* Les mesures de mise en page se prennent UNE fois, pas soixante fois par
+   seconde.
+
+   La boucle lisait `offsetHeight` du prologue et le rectangle de chacun des
+   quatre actes à chaque image — cinq lectures qui forcent le navigateur à
+   recalculer la mise en page avant de répondre. Sur un ordinateur ça passe
+   inaperçu ; sur un téléphone c'est la première cause de saccade, parce que ce
+   recalcul tombe pile dans le temps imparti à l'image. On mesure donc au
+   chargement et au redimensionnement, et la boucle ne fait plus que de
+   l'arithmétique. */
+let course = 1, centres = [];
+function mesurer(){
+  course = max(prologue.offsetHeight - innerHeight, 1);
+  const haut = prologue.offsetTop;
+  centres = actes.map((a) => haut + a.offsetTop + a.offsetHeight / 2);
+}
+
 function progression(){
-  const course = max(prologue.offsetHeight - innerHeight, 1);
   return borne(scrollY / course, 0, 1);
 }
 
@@ -610,7 +701,9 @@ function boucle(now){
   courant = lent ? vise : courant + (vise - courant) * (1 - exp(-9 * dt));
   const i = borne(round(courant), 0, SEQ.images - 1);
   fenetre(i);
-  if (i !== dessinee) dessiner(i);
+  /* Un vingtième d'image : en deçà, le fondu ne se verrait pas et on
+     économise deux tracés. */
+  if (abs(courant - posee) > 0.05) fondu(courant);
   acteCourant();
   requestAnimationFrame(boucle);
 }
@@ -633,14 +726,12 @@ document.querySelectorAll('#suite section, #suite .etape, #suite .chiffre')
    charnière : deux actes s'y déclaraient visibles en même temps, leurs deux
    textes s'affichaient l'un sur l'autre et leurs deux voiles s'additionnaient
    jusqu'au noir. On désigne donc un seul gagnant, mesuré à chaque image. */
-const actes = [...document.querySelectorAll('#prologue section')];
 let enScene = -1;
 function acteCourant(){
-  const milieu = innerHeight / 2;
+  const milieu = scrollY + innerHeight / 2;
   let gagnant = 0, meilleur = Infinity;
-  for (let i = 0; i < actes.length; i++) {
-    const r = actes[i].getBoundingClientRect();
-    const d = abs(r.top + r.height / 2 - milieu);
+  for (let i = 0; i < centres.length; i++) {
+    const d = abs(centres[i] - milieu);
     if (d < meilleur) { meilleur = d; gagnant = i; }
   }
   if (gagnant === enScene) return;
@@ -652,14 +743,20 @@ function acteCourant(){
 /* ------------------------------------------------------------- le démarrage */
 (async function demarrer(){
   redimensionner();
+  mesurer();
   const amorce = min(16, SEQ.images);
   let faites = 0;
-  await Promise.all(Array.from({ length: amorce }, (v, i) =>
-    charger(i).then(() => {
+  /* `lire` et non `charger` : le plafond par image ne concerne que la fenêtre
+     glissante. À l'amorçage il n'y a encore rien à afficher, donc rien à
+     saccader — on décode aussi vite que possible. */
+  await Promise.all(Array.from({ length: amorce }, (v, i) => {
+    encours.add(i);
+    return lire(i).then(() => {
       const p = round(++faites / amorce * 100);
       jauge.style.width = p + '%';
       pct.textContent = p + ' %';
-    })));
+    });
+  }));
 
   /* Si rien n'a pu être décodé, on le DIT. La page se révélait autrefois quand
      même, sur une toile vide : le visiteur voyait un écran noir sans savoir si
