@@ -375,9 +375,9 @@ Les autres références jointes — photographies ou vidéo — sont des RÉFÉR
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui quitte la piscine et longe une voiture garée sur l'allée.
 
-MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent, sur le même axe et à la même hauteur : elle quitte le bord du bassin, franchit la terrasse dallée, et traverse la cour en gravier. Une voiture y est garée de profil DEPUIS LE DÉBUT, sur la droite de la cour : elle est déjà en place à la première image, simplement lointaine et partiellement masquée par la jardinière en pierre. Rien n'apparaît, rien ne surgit, rien n'entre dans le champ : c'est la caméra qui s'approche, et la voiture qui grandit dans le cadre à mesure. La caméra la rejoint, la longe du capot jusqu'à l'arrière, et la dépasse. À la dernière image, la voiture est derrière nous et la caméra fait face au mur de pierre sèche d'un mas, qui ferme la cour et se rapproche de l'objectif. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
+MOUVEMENT. La caméra poursuit son avance en ligne droite, à la même vitesse rigoureusement constante que le plan précédent, sur le même axe et à la même hauteur : elle quitte le bord du bassin, franchit la terrasse dallée, et traverse la cour en gravier. Une voiture y est garée de profil DEPUIS LE DÉBUT, sur la droite de la cour : elle est déjà en place à la première image, simplement lointaine et partiellement masquée par la jardinière en pierre. Rien n'apparaît, rien ne surgit, rien n'entre dans le champ : c'est la caméra qui s'approche, et la voiture qui grandit dans le cadre à mesure. La caméra la rejoint et la longe, du capot jusqu'au milieu du flanc, où elle cesse d'avancer face à la portière conducteur, GRANDE OUVERTE DEPUIS LA PREMIÈRE IMAGE. À la dernière image, l'ouverture sombre de la portière occupe presque tout le cadre : on distingue le bord du siège, le bas du volant et la garniture de porte, le reste du cadre étant l'ombre de l'habitacle. Aucune rotation, aucun zoom, aucun tremblement. La voiture est absolument immobile : roues droites, portières fermées, aucune roue qui tourne, aucune suspension qui travaille.
 
-SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. Portières fermées. Les emplacements de plaque d'immatriculation, devant comme derrière, sont LISSES, VIDES ET UNIS : pas de plaque, pas de support, pas de cadre, aucun caractère, aucun chiffre, aucune lettre, aucun symbole. C'est un véhicule de présentation non immatriculé. Elle est garée de profil sur la droite d'une cour en gravier clair.
+SUJET. Une Volkswagen Golf 8 GTI rouge, exactement celle des photographies de référence jointes. Compacte cinq portes. Ses proportions, sa teinte rouge, le dessin de ses jantes, la forme de ses optiques et tous ses détails doivent correspondre aux photographies — c'est le même véhicule, vu sous un autre angle et dans une autre lumière, pas une interprétation. Trois repères à vérifier : le bandeau lumineux horizontal qui traverse la calandre d'un phare à l'autre, le liseré rouge qui la souligne sur toute sa largeur, et les étriers de frein rouges derrière les jantes. Carrosserie propre et polie, vitres teintées, phares allumés, blancs et constants. La portière conducteur est GRANDE OUVERTE depuis la première image — elle ne s'ouvre pas pendant le plan, elle l'est déjà ; les trois autres sont fermées. Les emplacements de plaque d'immatriculation, devant comme derrière, sont LISSES, VIDES ET UNIS : pas de plaque, pas de support, pas de cadre, aucun caractère, aucun chiffre, aucune lettre, aucun symbole. C'est un véhicule de présentation non immatriculé. Elle est garée de profil sur la droite d'une cour en gravier clair.
 
 DÉCOR — celui de l'image de départ, à conserver strictement. Une terrasse dallée en pierre claire au premier plan, prolongée par une cour en gravier beige ratissé. Deux jardinières basses en pierre sèche encadrent la cour, chacune plantée d'un cyprès étroit. Massifs de lavande argentée sur les côtés. Une murette basse en pierre ferme la cour au fond, et au-delà s'étend une oliveraie aux troncs noueux et aux feuillages gris-vert, puis des collines boisées à l'horizon. Aucun autre bâtiment, aucun mobilier, aucune clôture qui n'y soit déjà. AUCUNE PERSONNE.
 
@@ -404,6 +404,60 @@ Prenez le raccord. Une jointure qui saute se voit à chaque descente ; une
 jante approximative, presque jamais. Et si la voiture doit absolument être
 exacte, la solution propre est de la **filmer** : huit secondes de travelling
 le long du flanc, et le même pipeline tourne sans changer une ligne.
+
+---
+
+# Plan 3 bis — L'habitacle
+
+**C'est le plan qui vend, et c'est celui qui rate le plus facilement.**
+
+Un habitacle généré est un champ de mines : les modèles fabriquent des écrans
+allumés remplis de faux texte, des emblèmes déformés au moyeu du volant, des
+cadrans illisibles. Or le site interdit tout texte, et un caractère tordu au
+milieu du tableau de bord ruine une image qu'on regarde ARRÊTÉE.
+
+La parade est celle qu'on a déjà payée deux fois, sur le badge et sur la
+plaque : **ce qui doit être absent se décrit dans SUJET, positivement.** On
+n'écrit pas « pas de logo » — on écrit « moyeu lisse et uni ». On n'écrit pas
+« pas de texte à l'écran » — on écrit « écran éteint, surface noire mate ».
+Un modèle rend ce qu'on décrit ; il n'efface pas ce qu'on refuse.
+
+**Le passage est au DÉBUT, comme toujours.** Le plan 3 s'arrête sur
+l'ouverture sombre de la portière : c'est cette masse noire qui ouvre
+celui-ci, et qui masque le raccord. Elle ne doit jamais être à la fin du plan
+qui donne, sinon l'image de raccord ne porte plus aucune information.
+
+**Et il ressort de l'autre côté.** L'habitacle n'est pas un cul-de-sac : la
+caméra le traverse et débouche par le pare-brise sur la cour et le mur du mas.
+C'est ce qui permet au plan 4 de rester inchangé — il commence toujours par
+longer cette pierre.
+
+```
+L'image jointe est la première image de ce plan. Reprends exactement la même voiture, la même lumière, la même heure, et poursuis le mouvement sans le moindre à-coup.
+
+Un seul plan continu de huit secondes, sans aucune coupe, qui traverse l'habitacle d'une voiture compacte sportive et ressort par le pare-brise.
+
+MOUVEMENT. Le plan se déroule en trois temps enchaînés, à vitesse rigoureusement constante du début à la fin, sans jamais s'arrêter ni ralentir.
+
+Premier temps, environ une seconde et demie : l'ouverture sombre de la portière conducteur occupe presque tout le cadre et la caméra la franchit. L'image est brièvement très sombre, presque noire, le temps de passer le montant de porte. Aucune coupe, aucun fondu : c'est le seuil de l'habitacle qui assombrit l'image, et rien d'autre.
+
+Deuxième temps, environ cinq secondes : la caméra progresse en ligne droite à l'intérieur de l'habitacle, à hauteur de poitrine d'un conducteur assis, axe strictement horizontal. Elle passe entre les deux sièges avant, découvre le volant à gauche et la planche de bord sur toute sa largeur, puis continue vers le pare-brise. Le mouvement est un simple travelling avant : aucune rotation, aucun panoramique, aucun balayage, aucun zoom, aucun tremblement.
+
+Troisième temps, environ une seconde et demie : la caméra franchit le pare-brise et débouche sur la cour en gravier clair. À la dernière image, elle fait face au mur de pierre sèche d'un mas qui ferme la cour et se rapproche de l'objectif.
+
+SUJET. Habitacle d'une compacte sportive contemporaine, propre et neuf, cuir et alcantara noirs. Sièges baquets avant à surpiqûres rouges fines et régulières, appuie-tête intégrés. Volant à trois branches gainé de cuir noir perforé, méplat en bas ; son moyeu central est LISSE, NOIR ET UNI — surface pleine, sans emblème, sans motif, sans relief, sans inscription. Les branches du volant sont NUES : aucune commande, aucun bouton, aucun pictogramme. Planche de bord noir mat, aérateurs rectangulaires à lames horizontales, une bande d'alcantara traversant la planche. L'écran central est ÉTEINT : rectangle de verre noir mat, uni, sans image, sans lueur, sans icône, sans caractère. Le combiné derrière le volant est ÉTEINT lui aussi : surface noire unie, sans cadran, sans aiguille, sans chiffre. Console centrale avec un levier court gainé de cuir noir à pommeau LISSE ET UNI. Pédalier en aluminium brossé. Ciel de toit noir. Vitres latérales teintées, pare-brise parfaitement propre. AUCUNE PERSONNE, aucune main, aucune silhouette, aucun reflet d'opérateur dans les surfaces vitrées. Aucun objet posé : pas de téléphone, pas de gobelet, pas de papier, pas de porte-clés. Aucun texte, aucun chiffre, aucun symbole nulle part dans le champ.
+
+CAMÉRA. Objectif 24 mm, f/5.6, ISO 200, sur rail motorisé parfaitement stabilisé, axe strictement horizontal, verticales redressées. Nette de bout en bout, du volant au pare-brise. Obturateur très rapide, 1/1000 s : chaque image parfaitement nette, sans le moindre flou de bougé.
+
+LUMIÈRE. Même fin de journée que les plans précédents. La lumière entre par le pare-brise et par la portière ouverte, chaude et rasante, glissant sur le cuir et allumant les surpiqûres. Habitacle contrasté mais entièrement lisible : les noirs conservent leur matière, on distingue le grain du cuir et la trame de l'alcantara. Aucun éclairage d'ambiance, aucune diode allumée, aucune veilleuse. Exposition et balance des blancs VERROUILLÉES du début à la fin : aucune variation au passage de la portière ni au franchissement du pare-brise — l'image ne doit ni s'éclaircir ni s'assombrir brutalement en sortant.
+
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : le volant et la partie centrale de la planche de bord doivent y tenir. Les bords gauche et droit ne portent que de la garniture, jamais le sujet.
+
+RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre et fidèle, contraste doux, noirs profonds mais lisibles, rouge des surpiqûres juste et non saturé. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : grain du cuir, trame de l'alcantara, régularité des surpiqûres, brossage de l'aluminium.
+
+INTERDIT. Coupe, changement de plan, fondu, transition, saut, rotation de caméra, panoramique, balayage, zoom, tremblement, accélération, ralentissement, flou de mouvement, flou de bougé, variation d'exposition au passage de la portière ou du pare-brise, personne, main, silhouette, reflet d'opérateur, écran allumé, lueur d'écran, diode, veilleuse, éclairage d'ambiance coloré, texte, chiffre, lettre, symbole, pictogramme, cadran, aiguille, emblème, logo, marque, filigrane, objet posé, poussière en suspension, particules, fumée, rendu 3D, image de synthèse, aspect jeu vidéo, couleurs saturées, HDR excessif.
+```
+
 
 # Plan 4 — Le restaurant
 
