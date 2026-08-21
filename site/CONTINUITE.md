@@ -589,7 +589,7 @@ Aucune rotation, aucun panoramique, aucun zoom, aucun changement de hauteur, auc
 
 SUJET. Un burger de restaurant, entier, posé sur une planche en chêne huilé. Pain brioché doré parsemé de graines de sésame, légèrement écrasé sur le dessus comme un vrai pain qu'on vient d'assembler. On devine sur la tranche, de haut en bas : la sauce, une tranche de cheddar fondue qui déborde, un steak haché épais aux bords irréguliers et à la croûte grillée, une feuille de sucrine, deux rondelles de tomate. Autour : un plan de travail en inox brossé, propre et vide, quelques ustensiles alignés au fond, une crédence en carrelage blanc. AUCUNE PERSONNE, aucune main, aucun cuisinier. Aucune étiquette, aucune marque, aucun texte, aucune ardoise.
 
-CAMÉRA. Objectif 50 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strictement horizontal, verticales redressées. Nette de bout en bout, y compris le grain du cuir au moment où il frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette.
+CAMÉRA. Objectif 50 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strictement horizontal, verticales redressées. Nette de bout en bout, y compris le grain de la pierre du pilier au moment où elle frôle l'objectif. Obturateur 1/1000 s, chaque image parfaitement nette.
 
 LUMIÈRE. La lumière change PENDANT le passage le long du pilier, et à aucun autre moment. Avant : la lumière chaude et tamisée de la salle, exactement celle du plan précédent, inchangée. Après : l'éclairage d'une cuisine, blanc neutre, franc et régulier, venant du haut, sans ombre dure. Une fois la cuisine atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus.
 
