@@ -133,7 +133,13 @@ SERIES = {
 }
 # Les courses mesurées dans un navigateur. Ce sont elles qui, divisées par la
 # densité voulue, donnent le nombre d'images à livrer.
-COURSES = {"accueil": 15300, "accueil-etroit": 10297}
+#
+# Elles dépendent de la MISE EN PAGE, donc elles changent d'un site à l'autre :
+# la vitrine tient ses actes sur trois écrans, un client peut en vouloir cinq.
+# D'où les drapeaux, plutôt qu'une constante à retoucher — deux sites doivent
+# pouvoir se construire le même jour sans se marcher dessus.
+COURSES = {"accueil": _drapeau("course=", 15300),
+           "accueil-etroit": _drapeau("courseetroit=", 10297)}
 # Pas d'affûtage : les images viennent d'un agrandissement 4K qui l'a déjà
 # fait, et mieux. Voir la note de build_ultra.py.
 FORMAT = "AVIF"
