@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trans Gold</title>
+<!-- Fontes embarquées, pas appelées chez un tiers. Une page qui dépend d'un
+     hôte extérieur substitue sa police de secours en silence quand cet hôte
+     est lent ou bloqué : on croit voir sa maquette, on voit autre chose.
+     Produit par fontes_locales.py. -->
+<link rel="stylesheet" href="assets/fonts/ultra.css">
+<style>
+/* ============================================================================
+   ULTRA MOTION — la vitrine du studio.
+
+   Un parti pris de couleur unique, assumé : la page ne bascule pas en clair.
+   Le sujet est une cabine de projection, et une cabine de projection éclairée
+   n'existe pas. Toutes les couleurs sont donc peintes explicitement — rien
+   n'est laissé au fond de l'hôte — mais il n'y a qu'un seul jeu.
+
+   La palette vient de là aussi : le noir n'est pas neutre, il tire sur le bleu
+   comme un écran éteint ; l'accent est l'ambre d'une lampe inactinique, le
+   seul éclairage qu'on tolère à côté d'une pellicule. Il ne sert qu'à deux
+   choses — les numéros de chapitre et le seul bouton de la page.
+   ============================================================================ */
+:root{
+  --noir:#0A0C0E;        /* le fond, bleuté */
+  --nuit:#12161A;        /* la surface soulevée */
+  --os:#EDE9E3;          /* blanc chaud, jamais #fff */
+  --gris:#8A8F96;        /* gris froid, accordé au fond */
+  --sourd:#5C626A;       /* gris de second plan */
+  --ambre:#B8963E;       /* l'or de la livrée Trans Gold */
+  --ligne:rgba(237,233,227,.13);
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --marge:clamp(22px,6vw,110px);
+  --max:1380px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
+  font-size:clamp(15px,1.05vw,17px);line-height:1.65;-webkit-font-smoothing:antialiased}
+::selection{background:var(--ambre);color:var(--noir)}
+:focus-visible{outline:2px solid var(--ambre);outline-offset:4px;border-radius:2px}
+
+/* ------------------------------------------------------------ la typographie
+   Trois rôles, trois familles. Le serif ne sert QUE aux grandes phrases : dès
+   qu'il descend au niveau du paragraphe il perd son tranchant. Le mono ne sert
+   qu'à ce qui se mesure — numéros, unités, libellés. Entre les deux, la sans
+   porte tout le reste sans se faire remarquer, ce qui est son travail. */
+.titre{font-family:var(--serif);font-weight:400;line-height:.98;letter-spacing:-.015em;
+  text-wrap:balance;margin:0}
+.t-xxl{font-size:clamp(3.1rem,10.5vw,9.5rem)}
+.t-xl{font-size:clamp(2.5rem,6.4vw,5.2rem)}
+.t-l{font-size:clamp(1.9rem,3.4vw,3rem)}
+.ital{font-style:italic}
+.corps{margin:0;color:var(--gris);max-width:62ch}
+.corps strong{color:var(--os);font-weight:500}
+.eti{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sourd);margin:0}
+.eti b{color:var(--ambre);font-weight:500}
+
+/* --------------------------------------------------------------- la structure
+   Une seule gouttière, une seule largeur maximale, partout. C'est ce qui tient
+   une page longue : le lecteur n'a jamais à retrouver le bord du texte. */
+.bande{max-width:var(--max);margin:0 auto;padding:0 var(--marge)}
+.bloc{padding:clamp(86px,13vh,170px) 0}
+.regle{border-top:1px solid var(--ligne)}
+
+/* En-tête et pied fixes, en mono, très discrets : ce sont des repères, pas des
+   éléments de composition. */
+.tete{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;
+  justify-content:space-between;align-items:center;gap:16px;
+  padding:18px var(--marge);font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--sourd);
+  pointer-events:none;mix-blend-mode:difference}
+.tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
+.tete span{display:none}
+@media (min-width:720px){.tete span{display:inline}}
+
+/* ================================================================== LE FILM
+   La toile est fixe et couvre l'écran ; le défilement ne la déplace pas, il
+   change l'image qu'elle affiche. Les sections du prologue sont transparentes
+   et passent par-dessus. La suite du site, elle, est opaque : elle recouvre la
+   toile sans qu'on ait à l'éteindre en JavaScript. */
+#toile{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:block;
+  background:var(--noir)}
+/* Le voile : fixe, plein écran, strictement horizontal. Un dégradé incliné
+   dans une boîte plus haute que large trace sa propre diagonale, et cette
+   diagonale se voit. Leçon payée sur le film précédent. */
+#prologue{position:relative;z-index:3}
+/* Chaque acte dure TROIS écrans, pas un.
+
+   C'est la longueur qui manquait. Le site de référence tient sa descente sur
+   vingt-neuf écrans — 800 images à 33 px de défilement chacune — là où notre
+   prologue en faisait trois. On avait la densité et pas la durée : les images
+   défilaient si vite qu'aucun plan n'avait le temps d'exister.
+
+   Le texte, lui, ne défile pas avec la section : il est collé en haut d'une
+   boîte d'un écran de haut, et tient donc en place pendant que les trois
+   écrans passent. C'est ce qu'on appelle épingler, et c'est ce qui donne
+   l'impression que la caméra avance pendant qu'on lit. */
+#prologue section{min-height:500svh;position:relative;z-index:0}
+.tenir{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:0 var(--marge) clamp(76px,12vh,150px);
+  max-width:var(--max);margin:0 auto}
+@media (max-width:820px){
+  /* Sur un téléphone, trois écrans par acte feraient douze écrans de prologue
+     au doigt : c'est long. Deux suffisent, l'écran étant plus haut que large. */
+  #prologue section{min-height:360svh}
+}
+
+/* Le voile suit le texte, il n'éclaire pas toujours le même côté.
+
+   Chaque acte porte le sien, fixe et plein écran, éteint par défaut et allumé
+   quand l'acte entre en scène — deux actes qui se croisent produisent donc un
+   fondu, pas une bascule. Un seul voile commun aurait obligé le texte à rester
+   au même endroit toute la descente, ce qui est exactement ce qu'on veut
+   éviter : quatre plans très différents méritent quatre compositions.
+
+   Fixe et strictement horizontal ou vertical : un dégradé incliné dans une
+   boîte plus haute que large trace sa propre diagonale, et cette diagonale se
+   voit. Leçon payée sur le film précédent. */
+#prologue section::before{content:"";position:fixed;inset:0;z-index:-1;
+  pointer-events:none;opacity:0;transition:opacity .7s ease}
+#prologue section.en-scene::before{opacity:1}
+.a-g::before{background:linear-gradient(90deg,rgba(10,12,14,.95) 0%,
+  rgba(10,12,14,.88) 26%,rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
+.a-d::before{background:linear-gradient(270deg,rgba(10,12,14,.95) 0%,
+  rgba(10,12,14,.88) 26%,rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
+.a-c::before{background:linear-gradient(180deg,transparent 18%,rgba(10,12,14,.3) 42%,
+  rgba(10,12,14,.78) 68%,rgba(10,12,14,.94) 100%)}
+
+/* ------------------------------------------------- la hiérarchie d'un acte
+
+   Le métier était en onze pixels gris pendant que la phrase d'accroche
+   occupait quatre-vingts pixels. Visuellement, la poésie dominait et le
+   commerce concerné passait pour une note de bas de page — l'inverse de ce
+   qu'une vitrine doit faire.
+
+   L'ordre de lecture est désormais : le numéro d'acte, le MÉTIER en très
+   grand, à qui il s'adresse, puis seulement l'argument. Un agent immobilier
+   sait en une seconde que la page lui parle. */
+.acte-num{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--ambre);margin:0 0 14px;
+  display:flex;align-items:center;gap:14px}
+.acte-num::after{content:"";flex:0 0 clamp(28px,5vw,64px);height:1px;background:var(--ligne)}
+.a-d .acte-num{flex-direction:row-reverse}
+.a-c .acte-num{justify-content:center}
+.a-c .acte-num::after{display:none}
+
+/* Le corps est calé sur le mot le PLUS LONG, pas sur le plus court :
+   « RESTAURATION » compte douze signes et touchait le bord de la colonne à
+   6,2 rem. On descend à 5,4 et on élargit la colonne du prologue — un métier
+   qui déborde du cadre se lit moins bien qu'un métier un peu plus petit. */
+.metier-titre{font-family:var(--serif);font-weight:400;text-transform:uppercase;
+  font-size:clamp(2.4rem,6.2vw,5.4rem);line-height:.94;letter-spacing:-.01em;
+  margin:0;text-wrap:balance}
+#prologue .mot{max-width:min(52ch,46vw)}
+@media (max-width:820px){#prologue .mot{max-width:none}}
+
+/* À qui, nommément. En capitales étroites et espacées : ça se lit comme une
+   liste de destinataires, pas comme une phrase. */
+.cibles{font-family:var(--mono);font-size:clamp(10px,1.05vw,12px);font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--os);
+  margin:16px 0 0;line-height:1.9}
+.cibles em{font-style:normal;color:var(--sourd)}
+
+/* L'offre, en bas du bloc, précédée d'un filet : c'est la seule ligne de
+   l'acte qui promette quelque chose, elle a droit à son propre rang. */
+.offre{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ambre);margin:22px 0 0;
+  padding-top:16px;border-top:1px solid var(--ligne);display:inline-block}
+
+/* La colonne de texte se range du côté que le voile a éteint. */
+/* Le texte s'efface avec son acte, sinon deux actes se lisent en même temps
+   au moment de la charnière. */
+#prologue .mot{opacity:0;transform:translateY(14px);
+  transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)}
+#prologue .en-scene .mot{opacity:1;transform:none}
+
+.a-g .mot{margin-right:auto}
+.a-d .tenir{align-items:flex-end;text-align:right}
+.a-d .mot{margin-left:auto}
+.a-d .defiler{justify-content:flex-end}
+.a-c .tenir{align-items:center;text-align:center}
+.a-c .mot{margin:0 auto}
+.a-c .corps{margin-left:auto;margin-right:auto}
+
+.mot{max-width:min(46ch,50vw)}
+.mot .corps{margin-top:20px}
+.mot .eti{margin-bottom:26px}
+
+/* Sous 820 px la colonne prend toute la largeur : aucun côté n'est libre, donc
+   plus de dégradé latéral. Tout passe par le bas, où le texte est posé — et
+   les alignements à droite ou au centre sont annulés, illisibles sur une
+   colonne étroite. */
+@media (max-width:820px){
+  .mot{max-width:none}
+  #prologue section::before{background:linear-gradient(transparent 6%,
+    rgba(10,12,14,.45) 34%,rgba(10,12,14,.9) 66%,rgba(10,12,14,.96) 100%)!important}
+  .a-d .tenir,.a-c .tenir{align-items:stretch;text-align:left}
+  .a-d .defiler{justify-content:flex-start}
+  /* Le numéro d'acte suit l'alignement, sinon il reste seul contre le bord
+     droit pendant que le métier est à gauche : sur écran large le bloc entier
+     est aligné à droite et le filet précède le numéro, ce qui se tient ;
+     ici tout retombe à gauche et le numéro doit suivre. */
+  .a-d .acte-num,.a-c .acte-num{flex-direction:row;justify-content:flex-start}
+  .a-c .acte-num::after{display:block}
+}
+
+/* Le reste du site : opaque, il recouvre la toile. */
+#suite{position:relative;z-index:4;background:var(--noir)}
+
+/* La marque, en ouverture. Interlettrage large : un mot de onze signes tenu
+   sur toute la largeur se lit comme une enseigne, pas comme un titre. */
+.marque{font-family:var(--serif);font-size:clamp(2.6rem,11.5vw,10rem);line-height:.9;
+  letter-spacing:.02em;margin:0 0 6px}
+.defiler{display:flex;align-items:center;gap:12px;margin-top:38px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--sourd)}
+.defiler i{display:block;width:52px;height:1px;background:var(--sourd);
+  transform-origin:left;animation:tirer 2.6s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes tirer{0%{transform:scaleX(0);opacity:0}
+  30%{transform:scaleX(1);opacity:1}70%{transform:scaleX(1);opacity:1}
+  100%{transform:scaleX(1);opacity:0}}
+
+/* ============================================================== LES CHAPITRES
+   Le numéro romain n'est pas un ornement : la page décrit une chaîne de
+   production, et une chaîne a un ordre. I précède II parce que la composition
+   précède le calcul, pas parce que ça fait sérieux. */
+.chapitre{display:grid;gap:clamp(28px,4vw,64px);align-items:start}
+@media (min-width:900px){.chapitre{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}}
+.chapitre .corps + .corps{margin-top:18px}
+
+/* Trois variantes de chapitre, parce que quatre fois la même grille se lit
+   comme un gabarit. Elles ne sont pas décoratives : chacune sert son contenu.
+
+   `inverse` met le texte à gauche et le titre à droite — pour le procédé, dont
+   l'explication compte plus que l'intitulé.
+   `centre` supprime la colonne — pour les chiffres, qui n'ont pas besoin
+   d'être introduits sur le côté, et pour l'invitation, qui doit s'adresser à
+   quelqu'un et non se ranger dans une grille. */
+@media (min-width:900px){
+  .chapitre.inverse{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+  .chapitre.inverse > :first-child{order:2}
+  .chapitre.inverse > :last-child{order:1;align-self:end}
+}
+.chapitre.centre{grid-template-columns:1fr;justify-items:center;text-align:center;
+  gap:clamp(18px,2.4vw,30px)}
+.chapitre.centre .corps{margin-left:auto;margin-right:auto}
+@media (min-width:900px){.chapitre.centre{grid-template-columns:1fr}}
+
+
+/* Les métiers. Même dispositif que les étapes — des filets, pas des cartes —
+   mais numérotés en chiffres arabes et non romains : ce n'est pas une séquence,
+   c'est une liste. Quatre métiers dans n'importe quel ordre. */
+.metiers{margin-top:clamp(40px,6vh,72px);display:grid;gap:0}
+.metier{display:grid;gap:8px clamp(24px,4vw,64px);padding:clamp(26px,3.4vw,44px) 0;
+  border-top:1px solid var(--ligne)}
+.metier:last-child{border-bottom:1px solid var(--ligne)}
+@media (min-width:900px){.metier{grid-template-columns:auto minmax(0,4fr) minmax(0,6fr);
+  align-items:baseline}}
+.metier .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--sourd)}
+.metier h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,2.4vw,2rem);
+  line-height:1.05;margin:0}
+.metier .corps{font-size:.95em}
+
+/* Le procédé : trois étapes, séparées par des filets et non par des cartes.
+   Une carte suggère qu'on peut prendre les étapes dans le désordre. */
+.etapes{margin-top:clamp(40px,6vh,72px);display:grid;gap:0}
+.etape{display:grid;gap:10px clamp(24px,4vw,64px);padding:clamp(26px,3.4vw,44px) 0;
+  border-top:1px solid var(--ligne)}
+.etape:last-child{border-bottom:1px solid var(--ligne)}
+@media (min-width:900px){.etape{grid-template-columns:auto minmax(0,4fr) minmax(0,6fr);
+  align-items:baseline}}
+.etape .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ambre)}
+.etape h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,2.4vw,2rem);
+  line-height:1.05;margin:0}
+
+/* Les chiffres. Tous mesurés — c'est la seule raison pour laquelle ils ont le
+   droit d'être écrits aussi gros. Chiffres tabulaires : sans ça les colonnes
+   dansent d'une ligne à l'autre. */
+.chiffres{margin-top:clamp(40px,6vh,72px);display:grid;gap:1px;background:var(--ligne);
+  border:1px solid var(--ligne)}
+@media (min-width:640px){.chiffres{grid-template-columns:1fr 1fr}}
+@media (min-width:1000px){.chiffres{grid-template-columns:repeat(4,1fr)}}
+.chiffre{background:var(--noir);padding:clamp(24px,3vw,40px);display:flex;
+  flex-direction:column;gap:8px}
+.chiffre .val{font-family:var(--serif);font-size:clamp(2.6rem,5.2vw,4.2rem);line-height:.9;
+  font-variant-numeric:tabular-nums;color:var(--os)}
+.chiffre .val u{text-decoration:none;font-size:.4em;color:var(--gris);margin-left:.15em}
+.chiffre .quoi{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--sourd)}
+.chiffre .note{font-size:.88em;color:var(--gris);margin:0}
+
+/* L'invitation : le seul endroit ambre plein de la page. Sa rareté est ce qui
+   lui donne son poids. */
+.appel{display:inline-flex;align-items:center;gap:14px;margin-top:36px;
+  padding:17px 30px;background:var(--ambre);color:var(--noir);text-decoration:none;
+  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;pointer-events:auto;
+  transition:background .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
+.appel:hover{background:#DCA157;transform:translateY(-2px)}
+.appel span{transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.appel:hover span{transform:translateX(5px)}
+.sous{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--sourd)}
+
+.pied{border-top:1px solid var(--ligne);padding:clamp(40px,6vh,64px) 0 clamp(30px,4vh,48px);
+  display:flex;flex-wrap:wrap;gap:20px 40px;justify-content:space-between;align-items:baseline;
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--sourd)}
+
+/* L'apparition. Une seule, discrète, et coupée net si le visiteur a demandé
+   moins de mouvement — auquel cas tout est visible d'emblée. */
+.pose{opacity:0;transform:translateY(20px);
+  transition:opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)}
+.vu .pose{opacity:1;transform:none}
+.vu .pose:nth-child(2){transition-delay:.08s}
+.vu .pose:nth-child(3){transition-delay:.16s}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms!important;animation:none!important}
+  .pose{opacity:1;transform:none}
+}
+
+/* Le chargement. Il porte un nom, parce qu'un chargement qui dit ce qu'il fait
+   fait déjà partie du film. */
+.voile{position:fixed;inset:0;z-index:90;background:var(--noir);
+  display:grid;place-content:center;justify-items:center;gap:22px;
+  transition:opacity .9s ease}
+.voile.parti{opacity:0;pointer-events:none}
+.voile em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sourd)}
+.voile .jauge{width:min(230px,52vw);height:1px;background:var(--ligne);overflow:hidden}
+.voile .jauge b{display:block;height:100%;width:0;background:var(--ambre);
+  transition:width .3s ease}
+.voile .pct{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--os);
+  font-variant-numeric:tabular-nums}
+
+/* Les champs encore vides des mentions légales se signalent d'eux-mêmes.
+   Un « à compléter » en gris passe inaperçu et finit publié tel quel ; en
+   ambre souligné, il saute aux yeux à la relecture comme au client. */
+[data-a-completer]{color:var(--ambre);border-bottom:1px dashed var(--ambre);
+  font-style:italic}
+
+/* ==================================================================== LE MENU
+
+   Une page de trente écrans sans menu est une page où l'on ne trouve rien. Le
+   visiteur d'un site de transporteur ne vient pas admirer un camion : il vient
+   savoir s'il peut faire enlever une palette jeudi, et à quel prix. Il lui faut
+   donc un chemin direct vers le numéro, à tout moment.
+
+   La barre est FIXE et non collante : elle ne disparaît jamais, y compris
+   pendant le film. Elle reste discrète — fond translucide, filet d'un pixel —
+   pour ne pas manger l'image.
+
+   `mix-blend-mode: difference` a été retiré de l'en-tête : il rendait le texte
+   illisible sur les plages claires du film, et surtout il empêchait toute
+   interaction. Un menu qu'on ne peut pas cliquer n'est pas un menu. */
+.tete{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;
+  justify-content:space-between;align-items:center;gap:16px;
+  padding:14px var(--marge);font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--gris);
+  pointer-events:auto;mix-blend-mode:normal;
+  background:linear-gradient(180deg,rgba(10,12,14,.92),rgba(10,12,14,.55) 70%,transparent);
+  backdrop-filter:saturate(140%) blur(6px);-webkit-backdrop-filter:saturate(140%) blur(6px)}
+.tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
+.tete a{color:inherit;text-decoration:none}
+
+/* Les sections visées par le menu se décalent de la hauteur de l'en-tête,
+   sinon leur première ligne atterrit DERRIÈRE lui — mesuré : la section
+   arrivait à 0 px du haut, donc sous une barre de cinquante pixels. */
+[id]{scroll-margin-top:96px}
+@media (max-width:899px){[id]{scroll-margin-top:118px}}
+
+/* Le menu ne disparaît pas sur téléphone : il passe sur une seconde ligne,
+   défilable à l'horizontale. Un site de transporteur consulté depuis un quai
+   ou une cabine l'est surtout au téléphone — c'est là qu'il faut pouvoir
+   atteindre les garanties et le contact, pas seulement sur un bureau. */
+.menu{display:flex;gap:26px;align-items:center;overflow-x:auto;
+  scrollbar-width:none;-ms-overflow-style:none}
+.menu::-webkit-scrollbar{display:none}
+@media (max-width:899px){
+  .tete{flex-wrap:wrap;row-gap:10px;padding-bottom:10px}
+  .tete > a:first-child{order:1}
+  .tel{order:2}
+  .menu{order:3;flex:1 0 100%;gap:18px;font-size:10px;letter-spacing:.14em;
+    padding-bottom:2px}
+}
+.menu a{position:relative;padding:4px 0;transition:color .25s ease}
+.menu a:hover{color:var(--os)}
+.menu a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:var(--ambre);transform:scaleX(0);transform-origin:left;
+  transition:transform .25s ease}
+.menu a:hover::after{transform:scaleX(1)}
+
+/* Le bouton d'appel. Sur téléphone il porte le numéro entier : c'est l'action
+   la plus utile de tout le site, et la cacher derrière un menu déroulant
+   serait une faute. */
+.tel{display:inline-flex;align-items:center;gap:9px;padding:9px 16px;
+  border:1px solid var(--ambre);border-radius:2px;color:var(--ambre);
+  letter-spacing:.16em;white-space:nowrap;transition:background .25s ease,color .25s ease}
+.tel:hover{background:var(--ambre);color:var(--noir)}
+.tel i{width:6px;height:6px;border-radius:50%;background:var(--ambre);
+  flex:0 0 auto;transition:background .25s ease}
+.tel:hover i{background:var(--noir)}
+.tel span{display:none}
+@media (min-width:520px){.tel span{display:inline}}
+
+/* -------------------------------------------------------------- le contact
+   Deux colonnes sur écran large : ce qu'on écrit à gauche, ce qu'on compose à
+   droite. Sur téléphone elles s'empilent, le numéro d'abord. */
+.coord{display:grid;gap:34px;margin-top:28px}
+@media (min-width:820px){.coord{grid-template-columns:1fr 1fr;gap:48px}}
+.coord dt{font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--sourd);margin:0 0 6px}
+.coord dd{margin:0 0 22px;color:var(--os);line-height:1.75}
+.coord dd a{color:var(--ambre);text-decoration:none;border-bottom:1px solid transparent;
+  transition:border-color .25s ease}
+.coord dd a:hover{border-bottom-color:var(--ambre)}
+</style>
+</head>
+<body>
+
+<canvas id="toile"></canvas>
+
+<header class="tete">
+  <a href="#top"><b>Trans Gold</b></a>
+  <nav class="menu">
+    <a href="#metiers">Prestations</a>
+    <a href="#procede">Comment ça marche</a>
+    <a href="#garanties">Garanties</a>
+    <a href="#maison">Qui nous sommes</a>
+    <a href="#parler">Contact</a>
+  </nav>
+  <a class="tel" href="tel:+33660926646"><i></i><span>+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</span></a>
+</header>
+
+<main>
+<div id="prologue"><span id="top"></span>
+
+  <!-- Six actes, six plans, une seule livraison racontée de bout en bout.
+       Ce qui est écrit ici ne dit jamais plus que ce qu'on sait : deux
+       véhicules, une année de création, un numéro. Le reste — nombre de
+       camions, pays desservis, licence, assurances — attend le client.
+       Une vitrine de transporteur qui promet ce qu'elle ne tient pas se
+       retourne au premier litige. -->
+
+  <section class="a-g" data-voile="g">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte I</p>
+        <h1 class="metier-titre">Transport de<br>marchandises</h1>
+        <p class="cibles">Industriels · Négociants · Distributeurs<br>
+          <em>Artisans · Grossistes · E-commerce</em></p>
+        <p class="corps">Depuis 2017, vos marchandises partent d’ici et arrivent
+          là-bas. Entre les deux, un seul interlocuteur — celui qui répond au
+          téléphone est celui qui suit votre lot.</p>
+        <p class="offre">France &amp; Europe · Un seul numéro</p>
+        <p class="defiler"><i></i> Défiler</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-d" data-voile="d">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte II</p>
+        <h2 class="metier-titre">Le matériel</h2>
+        <p class="cibles">Semi-remorque fourgon · Porteur à hayon<br>
+          <em>Lot complet · Groupage · Palettes</em></p>
+        <p class="corps">Une caisse fermée pour la distance, un porteur à hayon
+          pour la ville. Deux gabarits parce qu’une livraison n’a pas les mêmes
+          contraintes selon qu’elle finit sur un quai ou sur un trottoir.</p>
+        <p class="offre">Fret sec · Chargement bâché ou fourgon</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-g" data-voile="g">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte III</p>
+        <h2 class="metier-titre">L’arrimage</h2>
+        <p class="cibles">Ce qui décide d’un litige<br>
+          <em>Sangles · Filmage · Calage</em></p>
+        <p class="corps">C’est la seule chose qui compte vraiment, et c’est celle
+          qu’aucun site de transporteur ne montre. Une palette mal tenue arrive
+          abîmée, et personne ne discute plus du prix ensuite.</p>
+        <p class="offre">Sanglé sur rails · Filmé · Calé</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-d" data-voile="d">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte IV</p>
+        <h2 class="metier-titre">France<br>&amp; Europe</h2>
+        <p class="cibles">Toute l’Europe · Longue distance<br>
+          <em>Enlèvement · Livraison · Retour</em></p>
+        <p class="corps">Et sans rupture de charge : ce qui est chargé chez vous
+          ressort chez le destinataire, dans la même remorque. Pas de
+          plateforme, pas de re-manipulation, pas de palette qui change de
+          camion à trois heures du matin.</p>
+        <p class="offre">Porte à porte · Toute l’Europe</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-g" data-voile="g">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte V</p>
+        <h2 class="metier-titre">Le dernier<br>kilomètre</h2>
+        <p class="cibles">Commerces · Chantiers · Particuliers<br>
+          <em>Centre-ville · Rue étroite · Sans quai</em></p>
+        <p class="corps">Un semi ne passe pas partout, et beaucoup d’adresses
+          n’ont pas de quai. Le porteur à hayon prend le relais là où le gros
+          porteur s’arrête.</p>
+        <p class="offre">Livraison à hayon · Sans quai ni chariot</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-c" data-voile="c">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte VI</p>
+        <h2 class="metier-titre">La livraison</h2>
+        <p class="corps">Ce que vous achetez, ce n’est pas un camion. C’est que
+          votre palette soit là, entière, à l’heure convenue. Tout le reste
+          n’est que la façon d’y arriver.</p>
+        <p class="offre">+33 6 60 92 66 46</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ======================================================= LA SUITE, OPAQUE
+     À partir d'ici les sections recouvrent la toile : le film est fini, on
+     passe à ce qui se lit. -->
+
+<!-- ================================================== LA SUITE, OPAQUE
+
+     Ce conteneur n'est pas décoratif, il fait DEUX choses indispensables :
+     il place les sections au-dessus de la toile fixe du film (z-index 4
+     contre 1), et c'est lui que l'observateur d'apparition interroge pour
+     révéler les blocs « pose », qui naissent à opacité zéro.
+
+     Sans lui, la moitié basse du site est invisible ET derrière l'image.
+     Défaut introduit en remplaçant le contenu de la vitrine et rattrapé à la
+     capture d'écran : le clic du menu menait au bon endroit, mais on n'y
+     voyait que le film. -->
+<div id="suite">
+
+  <section class="bloc bande" id="metiers">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>VI</b> · Ce qu’on transporte</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Du fret,<br>
+          pas une <span class="ital">spécialité.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Trans Gold est un transporteur généraliste. C’est
+          une force pour qui a des besoins irréguliers : une palette cette
+          semaine, un camion complet le mois prochain.</p>
+        <div class="grille pose">
+          <div><p class="eti">Lot complet</p><p class="corps">Un camion, un
+            client, un trajet. De l’enlèvement à la livraison sans rupture de
+            charge.</p></div>
+          <div><p class="eti">Groupage</p><p class="corps">Quelques palettes qui
+            partagent la remorque. Moins cher, à condition d’accepter le
+            calendrier.</p></div>
+          <div><p class="eti">Palettes</p><p class="corps">Europe, perdue,
+            spéciale. Filmées et sanglées, hauteurs inégales acceptées.</p></div>
+          <div><p class="eti">Sans rupture de charge</p><p class="corps">La
+            marchandise ne quitte pas la remorque entre le départ et l’arrivée.
+            Moins de manipulations, moins de casse, moins de litiges.</p></div>
+          <div><p class="eti">Ce qu’on ne prend pas</p><p class="corps">Matières
+            dangereuses, température dirigée, animaux vivants. Le dire est plus
+            utile que de laisser croire.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc bande regle" id="procede">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>VII</b> · Comment ça se passe</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Un appel,<br>
+          une <span class="ital">réponse.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Il n’y a pas de portail à remplir ni de numéro de
+          dossier à retenir. Vous appelez, vous décrivez, on vous dit si c’est
+          faisable et à quel prix.</p>
+        <div class="grille pose">
+          <div><p class="eti">1 · Vous décrivez</p><p class="corps">Ce qui part,
+            d’où, vers où, et quand ça doit arriver. Le poids et le nombre de
+            palettes suffisent pour commencer.</p></div>
+          <div><p class="eti">2 · On répond</p><p class="corps">Faisable ou non,
+            à quelle date, à quel prix. Une réponse claire vaut mieux qu’un devis
+            qui arrive trop tard.</p></div>
+          <div><p class="eti">3 · On enlève</p><p class="corps">Sur votre site,
+            au créneau convenu. La marchandise est sanglée devant vous avant que
+            les portes se ferment.</p></div>
+          <div><p class="eti">4 · On livre</p><p class="corps">À l’adresse, à
+            l’heure. Avec le hayon si le lieu n’a pas de quai.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc bande regle" id="garanties">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>VIII</b> · Ce que vous pouvez vérifier</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Avant de confier<br>
+          une <span class="ital">palette.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Personne ne remet sa marchandise à un transporteur
+          sur parole. Ces documents existent, ils sont à jour, et ils vous sont
+          envoyés avant le premier enlèvement — pas après.</p>
+        <div class="grille pose">
+          <div><p class="eti">Licence de transport</p><p class="corps">En cours
+            de validité. L’attestation vous est transmise sur simple
+            demande.</p></div>
+          <div><p class="eti">Assurance</p><p class="corps">Responsabilité
+            civile professionnelle et marchandises transportées. Attestation
+            fournie avant enlèvement.</p></div>
+          <div><p class="eti">Un interlocuteur</p><p class="corps">Le même du
+            devis à la livraison. Pas de numéro de dossier, pas de service
+            client, pas de renvoi.</p></div>
+          <div><p class="eti">Depuis 2017</p><p class="corps">Huit ans
+            d’exploitation. Les références clients sont communiquées sur
+            demande.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc bande regle" id="maison">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>IX</b> · Qui nous sommes</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Aulnay,<br>
+          porte de <span class="ital">l’Europe.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Trans Gold Marchandises est une société de transport
+          routier créée en 2017 et établie à Aulnay-sous-Bois, en
+          Seine-Saint-Denis.</p>
+        <p class="corps pose" style="margin-top:18px">L’adresse n’est pas un
+          détail : on est à quelques minutes de l’A1 et de l’A3, à un quart
+          d’heure de Roissy, aux portes de Paris et de la première zone
+          logistique de France. Un enlèvement en Île-de-France se cale dans la
+          journée, et un départ vers le nord ou l’est de l’Europe ne commence
+          pas par deux heures de périphérique.</p>
+        <div class="grille pose">
+          <div><p class="eti">Depuis 2017</p><p class="corps">Huit ans
+            d’exploitation continue.</p></div>
+          <div><p class="eti">Seine-Saint-Denis</p><p class="corps">Aulnay-sous-Bois,
+            au cœur du réseau autoroutier francilien.</p></div>
+          <div><p class="eti">Deux gabarits</p><p class="corps">Semi-remorque
+            fourgon et porteur à hayon.</p></div>
+          <div><p class="eti">France &amp; Europe</p><p class="corps">Porte à
+            porte, sans rupture de charge.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc bande regle" id="parler">
+    <div class="chapitre centre">
+      <div>
+        <p class="eti pose"><b>X</b> · Appeler</p>
+        <p class="titre t-xl pose" style="margin-top:20px">Dites-nous ce<br>
+          qui doit <span class="ital">partir.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Le poids, le nombre de palettes, le départ,
+          l’arrivée, la date. Cinq informations et on sait vous répondre.</p>
+        <p class="pose"><a class="appel" href="tel:+33660926646">
+          +33 6 60 92 66 46 <span>→</span></a></p>
+        <dl class="coord pose">
+          <div>
+            <dt>Adresse</dt>
+            <dd>Trans Gold Marchandises<br>45 rue Jean Charcot<br>93600 Aulnay-sous-Bois<br>France</dd>
+          </div>
+          <div>
+            <dt>Téléphone</dt>
+            <dd><a href="tel:+33660926646">+33 6 60 92 66 46</a></dd>
+            <dt>Activité</dt>
+            <dd>Transport routier de fret interurbain<br>France &amp; Europe · Depuis 2017</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mentions légales : ce n'est pas une convention mais une obligation.
+       Un site professionnel français doit porter la raison sociale, la forme
+       juridique, le SIRET, le siège, le responsable de publication et
+       l'hébergeur. Données vérifiées au registre national des entreprises
+       (SIREN 831321112), pas recopiées d'un document du client. -->
+  <section class="bloc bande regle" id="mentions">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose">Mentions légales</p>
+      </div>
+      <div>
+        <p class="sous pose"><strong>TRANS GOLD MARCHANDISES</strong> — société par
+          actions simplifiée (SAS).<br>
+          Siège social : 45 rue Jean Charcot, 93600 Aulnay-sous-Bois, France.<br>
+          SIREN 831&nbsp;321&nbsp;112 · SIRET du siège 831&nbsp;321&nbsp;112&nbsp;00029.<br>
+          Code APE 49.41A — transports routiers de fret interurbains.<br>
+          Société immatriculée le 31 juillet 2017.<br>
+          Téléphone : <a href="tel:+33660926646">+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</a>.<br>
+          Directeur de la publication : <span data-a-completer>à compléter</span>.<br>
+          Hébergeur : <span data-a-completer>à compléter</span>.</p>
+        <p class="sous pose">Les photographies et séquences présentées sur ce site
+          illustrent l’activité de transport ; les véhicules figurés portent la
+          livrée de la société.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bande">
+    <div class="pied">
+      <span>© 2026 Trans Gold Marchandises</span>
+      <span>Aulnay-sous-Bois · SIREN 831 321 112</span>
+      <span><a href="tel:+33660926646">+33 6 60 92 66 46</a></span>
+    </div>
+  </footer>
+
+</div>
+</main>
+
+<div class="voile" id="voile">
+  <em id="etape">Composition du mouvement</em>
+  <div class="jauge"><b id="jauge"></b></div>
+  <p class="pct" id="pct">0 %</p>
+</div>
+
+<script>
+/* ============================================================================
+   Le prologue est un film déroulé par le défilement.
+
+   Aucune 3D ici : une toile en deux dimensions, et le défilement décide quelle
+   image y est peinte. Les images viennent de notre propre scène, calculée hors
+   ligne. On échange le calcul chez le visiteur contre du transfert — et on
+   gagne une qualité que le temps réel ne donnera jamais.
+
+   Deux difficultés, deux réponses :
+
+   1. La séquence entière est trop lourde pour être chargée d'un bloc. D'où la
+      FENÊTRE GLISSANTE : on ne garde que les images proches de celle qu'on
+      regarde, on précharge devant, on jette derrière.
+
+   2. Décoder une image bloque le fil principal et fait saccader le défilement.
+      D'où createImageBitmap, qui décode ailleurs et rend un objet que la toile
+      dessine sans retravail.
+   ============================================================================ */
+const canvas = document.getElementById('toile');
+/* alpha:false — la toile est opaque, le navigateur n'a pas à la composer avec
+   ce qu'il y a dessous. desynchronized:true — on renonce à la synchronisation
+   stricte avec le reste de la page, ce qui réduit la latence du geste. */
+const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+const voile = document.getElementById('voile');
+const jauge = document.getElementById('jauge');
+const pct = document.getElementById('pct');
+const etape = document.getElementById('etape');
+const { min, max, round, abs, exp } = Math;
+const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
+
+/* Deux montages, pas un seul recadré.
+
+   Un téléphone tenu debout ne reçoit PAS l'image large rognée : plusieurs
+   des plans ont été tournés nativement en 9:16, et rogner un cadre 16:9
+   en portrait ne garde que 32 % de sa largeur — le sujet en sort. La série
+   étroite est donc un vrai montage.
+
+   Elle compte moins d'images que la large, et ce n'est pas une économie :
+   sur un téléphone les actes font deux écrans au lieu de trois, ce qui met
+   la course du prologue à 10 297 px contre 15 300. Deux tiers de la
+   distance demandent deux tiers des images pour le même grain. La
+   construction calcule ce partage toute seule. */
+const SEQUENCES = {
+  accueil:          { chemin: 'assets/film/transgold/f',        images: 791 },
+  'accueil-etroit': { chemin: 'assets/film/transgold-etroit/f',  images: 527 },
+};
+/* La construction dépose les images ici ; sans elle on va les lire sur le
+   disque. Le lecteur n'a pas à savoir lequel des deux. */
+const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || null;
+
+const portrait = matchMedia('(max-aspect-ratio: 4/5)').matches;
+const NOM = (portrait && (!SOURCES || SOURCES['accueil-etroit']))
+  ? 'accueil-etroit' : 'accueil';
+const SEQ = SEQUENCES[NOM];
+/* Le compte écrit ci-dessus n'est qu'un défaut pour le mode disque : dès que
+   la construction a injecté les images, c'est elle qui a raison. Sans ça, une
+   série plus longue s'arrêterait avant la fin et le dernier tiers du
+   défilement resterait figé sur la même image. */
+if (SOURCES && SOURCES[NOM]) SEQ.images = SOURCES[NOM].length;
+
+/* Le type déclaré doit être le vrai. L'écrire en dur marchait tant que le
+   navigateur reniflait les octets — rien ne l'y oblige, et un navigateur
+   strict rejette alors le lot entier, donc une page noire. */
+function typeDe(u){
+  if (u[0] === 0xFF && u[1] === 0xD8) return 'image/jpeg';
+  if (u[8] === 0x57 && u[9] === 0x45 && u[10] === 0x42 && u[11] === 0x50) return 'image/webp';
+  if (u[4] === 0x66 && u[5] === 0x74 && u[6] === 0x79 && u[7] === 0x70) return 'image/avif';
+  if (u[0] === 0x89 && u[1] === 0x50) return 'image/png';
+  return 'application/octet-stream';
+}
+
+/* Décoder le base64 à la main coûte cher : `atob` rend une chaîne, et la
+   recopier octet par octet dans un tableau fait quarante mille tours de boucle
+   par image, sur le fil principal. En rafale — la fenêtre glissante en demande
+   une vingtaine d'un coup — c'est ce qui faisait tomber le défilement à onze
+   images par seconde sur téléphone.
+
+   `fetch` sur une adresse `data:` fait le même travail dans le navigateur, en
+   code natif et hors du fil principal. On garde l'ancienne voie en repli : une
+   politique de sécurité stricte peut refuser `fetch` sur `data:`, et mieux vaut
+   une page lente qu'une page vide. */
+/* Les douze premiers octets suffisent à reconnaître un format : on ne décode
+   pas les quarante mille autres pour ça. */
+function entete(str){
+  const b = atob(str.slice(0, 24));
+  const u = new Uint8Array(12);
+  for (let k = 0; k < 12 && k < b.length; k++) u[k] = b.charCodeAt(k);
+  return u;
+}
+
+function depuisBase64(str){
+  const b = atob(str), u = new Uint8Array(b.length);
+  for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
+  return new Blob([u], { type: typeDe(u) });
+}
+
+let fetchData = true;
+function source(i){
+  if (SOURCES && SOURCES[NOM]) {
+    const str = SOURCES[NOM][i];
+    if (fetchData) {
+      /* Le type se lit dans les octets, il ne se suppose pas : la
+         construction peut produire du WebP comme de l'AVIF, et un navigateur
+         strict rejette un lot mal étiqueté. */
+      return fetch('data:' + typeDe(entete(str)) + ';base64,' + str)
+        .then((r) => r.blob())
+        .catch(() => { fetchData = false; return depuisBase64(str); });
+    }
+    return Promise.resolve(depuisBase64(str));
+  }
+  return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`)
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); });
+}
+
+/* Repli pour les navigateurs sans createImageBitmap — Safari ne l'a qu'à partir
+   de la version 15. Sans lui, TOUTES les images échouaient et la page se
+   révélait sur une toile vide. Un <img> décode sur le fil principal et se voit
+   au défilement, mais un site lent vaut mieux qu'un site noir. */
+function decoder(blob){
+  if (typeof createImageBitmap === 'function') return createImageBitmap(blob);
+  return new Promise((ok, non) => {
+    const im = new Image(), url = URL.createObjectURL(blob);
+    im.onload = () => { URL.revokeObjectURL(url); ok(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); non(new Error('décodage')); };
+    im.src = url;
+  });
+}
+
+const cache = new Map();
+const encours = new Set();
+let dessinee = -1, echecs = 0;
+
+/* Rend vrai si un décodage a réellement été lancé — c'est ce qui permet à la
+   fenêtre de compter ce qu'elle dépense. */
+function charger(i){
+  if (i < 0 || i >= SEQ.images || cache.has(i) || encours.has(i)) return false;
+  encours.add(i);
+  lire(i);
+  return true;
+}
+
+async function lire(i){
+  try {
+    const im = await decoder(await source(i));
+    /* La première image décodée révèle ce que coûte vraiment une image en
+       mémoire — la construction peut servir n'importe quelle définition, la
+       page n'a pas à la connaître d'avance. */
+    if (!octetsImage) { octetsImage = im.width * im.height * 4; reglerFenetre(); }
+    cache.set(i, im);
+  }
+  catch (e) { echecs++; }
+  encours.delete(i);
+}
+
+/* La fenêtre glissante. On demande ce qui vient, on tolère un peu de ce qui
+   précède — le défilement se remonte — et on libère le reste.
+
+   LE CHARGEMENT NE DOIT PAS DÉPENDRE DU RYTHME D'AFFICHAGE. C'était le cas :
+   deux décodages lancés par image RENDUE. Tant que la page tourne à soixante
+   images par seconde, cela fait cent vingt lancements par seconde et personne
+   ne le remarque. Mais dès que le rendu ralentit — une grande toile, une
+   machine chargée, un téléphone — le chargement ralentit avec lui, donc les
+   images manquent, donc le lecteur repose la voisine, et l'on croit que c'est
+   le décodeur qui sature alors que c'est l'affichage qui l'affame. Une boucle
+   qui s'auto-entretient, et qui punit exactement les machines déjà lentes.
+
+   On plafonne donc le nombre de décodages EN VOL, pas le nombre de lancements
+   par trame. Le chargeur reste saturé quel que soit le rythme d'affichage, et
+   le fil principal reste protégé — c'était le but du plafond d'origine.
+
+   VINGT-QUATRE ET NON HUIT, et le chiffre est mesuré. Le débit du chargeur
+   vaut le nombre en vol divisé par la latence d'une image : à 300 ms l'image,
+   huit en vol ne donnent que vingt-sept chargements par seconde. Or un
+   défilement de mille pixels par seconde en consomme trente. Un déficit de dix
+   pour cent seulement — mais il ne coûte pas dix pour cent d'absences, il en
+   coûte quatre-vingt-quinze : le retard s'accumule sans jamais se résorber, et
+   le chargeur finit par toujours réclamer l'image qu'on vient de dépasser. Il
+   faut donc de la MARGE, pas l'équilibre. */
+const EN_VOL = 24;
+
+/* ----------------------------------------- la fenêtre se mesure en PIXELS
+
+   Elle était écrite en NOMBRE D'IMAGES : vingt-quatre en avance, trente-huit
+   gardées. Tant que la séquence comptait cinq cent quatre-vingts images
+   c'était cohérent — vingt-quatre images valaient six cents pixels de course.
+   En doublant la densité, les mêmes vingt-quatre images ne valent plus que
+   trois cents pixels : la même page se serait retrouvée avec deux fois moins
+   d'avance, et un défilement rapide l'aurait dépassée. Plus d'images aurait
+   rendu la page MOINS sûre, ce qui est exactement l'inverse du but.
+
+   On règle donc la fenêtre en distance de défilement, et le nombre d'images
+   s'en déduit. La densité peut alors changer sans que rien d'autre bouge.
+
+   Sept cents pixels d'avance : à trois mille pixels par seconde — un geste
+   franc sur un pavé tactile — c'est près d'un quart de seconde de marge, et
+   le fondu au plus proche couvre le reste. */
+const AVANCE = 700, RECUL = 240, MEMOIRE = 1100;
+
+/* Le plafond mémoire, lui, ne se compte pas en pixels de course mais en
+   octets. Une image décodée n'est plus compressée : elle occupe largeur ×
+   hauteur × 4 octets, soit neuf cents kilo-octets en 640×360 mais TROIS
+   MÉGAOCTETS ET DEMI en 1280×720, et huit en 1920×1080. La purge se déclenche
+   à deux fois `oubli`, donc c'est ce double qu'il faut borner.
+
+   Quatre-vingt-seize mégaoctets partout était un réglage fait pour des images
+   de neuf cents kilo-octets, et il est devenu absurde en montant en
+   définition : il ne laissait plus tenir que treize images de part et d'autre.
+   Un téléphone doit rester prudent — il ferme l'onglet sans prévenir — mais
+   quatre-vingt-seize mégaoctets étaient trop stricts même pour lui : à 8 Mo
+   l'image il n'en gardait que SIX, soit deux cents pixels d'avance. Cent
+   quarante-quatre, avec une série servie à sa vraie taille, en gardent
+   dix-neuf.
+
+   SUR ORDINATEUR, LE BUDGET SUIT LA MACHINE. Une constante ne peut pas être
+   juste à la fois pour un portable d'entrée de gamme et pour une tour : trop
+   basse elle gâche la fluidité, trop haute elle fait tuer l'onglet. En 2560 px
+   une image décodée pèse 14,1 Mo et il en faut une vingtaine d'avance, soit
+   cinq cent soixante mégaoctets — ce qu'une machine de huit gigaoctets porte
+   sans broncher, et qu'une machine de deux ne doit surtout pas tenter.
+   `deviceMemory` rend la mémoire vive en gigaoctets, arrondie et plafonnée à
+   huit par la norme ; on en prend soixante-dix mégaoctets par gigaoctet. Le
+   navigateur qui ne connaît pas cette propriété — Safari, Firefox — est
+   supposé être sur un ordinateur de bureau ordinaire, donc huit. */
+const MEMOIRE_MAX = (innerWidth < 820 ? 144
+  : min(560, round((navigator.deviceMemory || 8) * 70))) * 1048576;
+let octetsImage = 0;
+
+function reglerFenetre(){
+  const parImage = course / max(SEQ.images - 1, 1);
+  SEQ.arriere = borne(round(RECUL   / parImage),  2,  40);
+  let oubli   = borne(round(MEMOIRE / parImage), 10, 200);
+  if (octetsImage) oubli = min(oubli, max(round(MEMOIRE_MAX / octetsImage / 2), 8));
+  SEQ.oubli = oubli;
+  /* PRÉCHARGER PLUS LOIN QUE CE QU'ON GARDE N'A AUCUN SENS, et c'était le cas :
+     à 1280 px, `avant` valait 66 images quand `oubli` en gardait 13. Le lecteur
+     décodait cinquante images par-dessus la limite de purge, qui les jetait
+     aussitôt — il travaillait à plein régime pour la poubelle, et l'image
+     demandée manquait quand même neuf fois sur dix. Le plafond mémoire commande
+     donc les deux : on ne demande jamais au-delà de ce qui survivra. */
+  SEQ.avant = min(borne(round(AVANCE / parImage), 6, 120), oubli);
+}
+
+function fenetre(centre){
+  for (let d = 0; d <= SEQ.avant && encours.size < EN_VOL; d++) {
+    charger(centre + d);
+    if (d <= SEQ.arriere && encours.size < EN_VOL) charger(centre - d);
+  }
+  if (cache.size > SEQ.oubli * 2) {
+    for (const i of cache.keys())
+      if (abs(i - centre) > SEQ.oubli) { cache.get(i).close?.(); cache.delete(i); }
+  }
+}
+
+/* Dessin en « couvrir » : l'image remplit la toile sans se déformer, quitte à
+   déborder. Recalculé à chaque dessin, la fenêtre pouvant changer. */
+function poser(im){
+  const cw = canvas.width, ch = canvas.height;
+  const k = max(cw / im.width, ch / im.height);
+  ctx.drawImage(im, (cw - im.width * k) / 2, (ch - im.height * k) / 2,
+                im.width * k, im.height * k);
+}
+
+function dessiner(i){
+  const im = cache.get(i);
+  if (!im) return false;
+  poser(im);
+  dessinee = i;
+  return true;
+}
+
+/* Le fondu entre deux images voisines.
+
+   C'est ce qui change tout sur téléphone. La série étroite compte moins
+   d'images que la large — elle s'ajoute au poids de l'autre — et à une
+   soixantaine d'images pour quatre écrans de défilement, chaque image tient
+   une trentaine de pixels. Arrondir à l'image la plus proche fait donc voir
+   les marches.
+
+   On dessine plutôt les DEUX images qui encadrent la position courante, la
+   seconde par-dessus la première avec l'opacité de la fraction. Le défilement
+   devient continu au lieu d'être quantifié, et ça ne coûte qu'un second tracé
+   — pas un octet de plus au chargement.
+
+   `dessinee` passe à -1 : la position varie en continu, on ne peut plus se
+   contenter de comparer un numéro d'image pour savoir s'il faut redessiner. */
+/* À défaut de l'image demandée, la plus proche déjà décodée.
+
+   Sans ce repli, une image pas encore prête ne dessinait rien : la toile
+   gardait l'image précédente, et le défilement semblait se bloquer alors qu'il
+   avançait. On préfère montrer une voisine — décalée d'une ou deux images,
+   invisible en mouvement — que de figer l'écran. C'est ce que fait
+   velaarmon.com, et c'est ce qui fait qu'on ne les voit jamais buter. */
+function auPlusProche(i){
+  const im = cache.get(i);
+  if (im) return im;
+  for (let d = 1; d < SEQ.images; d++) {
+    const a = cache.get(i - d); if (a) return a;
+    const b = cache.get(i + d); if (b) return b;
+  }
+  return null;
+}
+
+let posee = -1;
+/* ------------------------------------------------ SE POSER SUR UNE IMAGE
+
+   Le fondu enchaîné existe pour masquer le pas entre deux images pendant le
+   mouvement. À L'ARRÊT il devient un défaut : la page tient un mélange à
+   parts égales de deux vues distantes de trente-trois pixels de travelling,
+   et le résultat est un DÉDOUBLEMENT — un bord de lettre en devient deux.
+   Vérifié sur le logo d'un client : le « D » sort franc sur une image seule
+   et fantomatique sur le mélange.
+
+   On mesure donc la vitesse, en images par trame, et l'on ramène la position
+   affichée vers l'image entière la plus proche à mesure qu'elle tombe. Au
+   repos l'accroche vaut un : une seule image est posée, sans aucun mélange.
+   Au-delà du seuil elle vaut zéro et le fondu reprend tous ses droits.
+
+   Le seuil est en images par trame et non en pixels par seconde, pour rester
+   juste quelle que soit la densité de la séquence : un quart d'image par
+   trame, soit une quinzaine d'images par seconde, ce qui correspond à un
+   défilement lent et délibéré. Au-dessus, l'oeil ne distingue plus le
+   dédoublement de toute façon.
+
+   L'accroche est lissée dans le temps, sinon elle vacillerait entre deux
+   trames et l'image tressauterait au lieu de se poser. */
+const SEUIL_ACCROCHE = 0.25;
+let posPrec = -1, accroche = 0;
+
+function fondu(brut){
+  if (posPrec >= 0) {
+    const vitesse = abs(brut - posPrec);
+    const vise = vitesse >= SEUIL_ACCROCHE ? 0 : 1 - vitesse / SEUIL_ACCROCHE;
+    accroche += (vise - accroche) * 0.25;
+  }
+  posPrec = brut;
+  const pos = brut + (Math.round(brut) - brut) * accroche;
+  const bas = borne(Math.floor(pos), 0, SEQ.images - 1);
+  const haut = borne(bas + 1, 0, SEQ.images - 1);
+  const t = pos - bas;
+  const a = auPlusProche(bas);
+  if (!a) return;
+  ctx.globalAlpha = 1;
+  poser(a);
+  const b = cache.get(haut);
+  if (b && cache.has(bas) && t > 0.01) { ctx.globalAlpha = t; poser(b); ctx.globalAlpha = 1; }
+  posee = pos;
+  window.__ACCROCHE = accroche;
+  dessinee = -1;
+  /* Point d'observation. `posee` vit dans cette fermeture, donc de l'extérieur
+     rien ne permet de savoir si l'image affichée AVANCE réellement pendant un
+     défilement — or c'est toute la question : `auPlusProche` ne bloque jamais,
+     il repose la voisine disponible, et un décodage trop lent se traduit non
+     par une erreur mais par une image qui se répète. Sans ce témoin, la
+     fluidité est invisible à la mesure et ne peut donc pas être défendue.
+     Deux propriétés au lieu d'une : ce qu'on VOULAIT afficher et ce qu'on a
+     vraiment posé — leur écart est exactement le retard du décodeur. */
+  window.__VOULUE = pos;
+  window.__POSEE = cache.has(bas) ? bas : -1;
+}
+
+function redimensionner(){
+  /* Sur un écran étroit on plafonne à 1,5 au lieu de 2. Une toile de 390 px
+     rendue en 2 fait 780 x 1688 pixels à remplir ; en 1,5 elle en fait 585 x
+     1266, soit 44 % de moins à chaque image. À la densité d'un téléphone, la
+     différence ne se voit pas — la charge, elle, se sent. */
+  const dpr = min(devicePixelRatio || 1, innerWidth < 820 ? 1.5 : 2);
+  canvas.width = round(innerWidth * dpr);
+  canvas.height = round(innerHeight * dpr);
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  /* La toile perd tous ses réglages quand on change sa taille : à replacer
+     ici, jamais une seule fois au démarrage. Par défaut l'agrandissement est
+     bilinéaire ; « high » emploie un filtre à plusieurs passes, ce qui se voit
+     dès qu'on affiche une source plus petite que l'écran. Gratuit. */
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  if (posee >= 0) fondu(posee); else if (dessinee >= 0) dessiner(dessinee);
+}
+addEventListener('resize', () => { redimensionner(); mesurer(); }, { passive: true });
+
+/* Le film ne couvre que le prologue : au-delà, la suite du site est opaque et
+   recouvre la toile. On mesure donc la progression sur le prologue seul, pas
+   sur toute la page — sinon le film se terminerait bien après avoir disparu. */
+const prologue = document.getElementById('prologue');
+const actes = [...document.querySelectorAll('#prologue section')];
+
+/* Les mesures de mise en page se prennent UNE fois, pas soixante fois par
+   seconde.
+
+   La boucle lisait `offsetHeight` du prologue et le rectangle de chacun des
+   quatre actes à chaque image — cinq lectures qui forcent le navigateur à
+   recalculer la mise en page avant de répondre. Sur un ordinateur ça passe
+   inaperçu ; sur un téléphone c'est la première cause de saccade, parce que ce
+   recalcul tombe pile dans le temps imparti à l'image. On mesure donc au
+   chargement et au redimensionnement, et la boucle ne fait plus que de
+   l'arithmétique. */
+let course = 1, centres = [];
+function mesurer(){
+  course = max(prologue.offsetHeight - innerHeight, 1);
+  const haut = prologue.offsetTop;
+  centres = actes.map((a) => haut + a.offsetTop + a.offsetHeight / 2);
+  /* La fenêtre du chargeur dépend de la course : elle se relit ici, et pas
+     ailleurs, pour qu'un changement d'orientation la remette d'aplomb. */
+  reglerFenetre();
+}
+
+function progression(){
+  return borne(scrollY / course, 0, 1);
+}
+
+const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let vise = 0, courant = 0, dernier = performance.now();
+
+/* ------------------------------------------------- le défilement lissé
+   La différence la plus visible avec les sites qu'on prend pour référence, et
+   ce n'est pas leur séquence d'images : c'est qu'ils lissent LA POSITION DE
+   DÉFILEMENT elle-même.
+
+   Un cran de molette déplace la page d'une centaine de pixels d'un coup. Si
+   l'on ne rattrape que le numéro d'image, la toile glisse doucement pendant
+   que le TEXTE, lui, saute — et c'est ce décalage qu'on lit comme « moins
+   fluide ». On déplace donc une cible, et la position réelle la rejoint à taux
+   constant : tout bouge ensemble.
+
+   Uniquement à la molette. Le tactile garde le défilement natif, avec son
+   inertie propre que le système gère mieux que nous — c'est aussi le réglage
+   par défaut de Lenis, la bibliothèque qu'ils emploient. Et rien du tout si le
+   visiteur a demandé moins de mouvement : on ne s'interpose pas dans le
+   défilement de quelqu'un qui a explicitement dit non. */
+const molette = !lent && matchMedia('(hover: hover) and (pointer: fine)').matches;
+let cibleY = scrollY, lisseY = scrollY;
+
+if (molette) {
+  addEventListener('wheel', (e) => {
+    if (e.ctrlKey) return;                    // le zoom du navigateur reste au navigateur
+    e.preventDefault();
+    const bas = max(document.body.scrollHeight - innerHeight, 0);
+    cibleY = borne(cibleY + e.deltaY * (e.deltaMode === 1 ? 18 : 1), 0, bas);
+  }, { passive: false });
+  /* Clavier, barre de défilement, ancres : tout ce qui déplace la page sans
+     passer par la molette doit ramener la cible, sinon elle tirerait la page
+     en arrière à la molette suivante. */
+  addEventListener('scroll', () => {
+    if (abs(scrollY - lisseY) > 2) { cibleY = scrollY; lisseY = scrollY; }
+  }, { passive: true });
+}
+
+function boucle(now){
+  const dt = min((now - dernier) / 1000, 0.05); dernier = now;
+
+  if (molette && abs(cibleY - lisseY) > 0.4) {
+    lisseY += (cibleY - lisseY) * (1 - exp(-9 * dt));
+    scrollTo(0, lisseY);
+  }
+
+  vise = progression() * (SEQ.images - 1);
+  /* Le rattrapage. Sauter à l'image visée donne un défilement nerveux ; la
+     rattraper à taux constant donne l'inertie d'une caméra. */
+  courant = lent ? vise : courant + (vise - courant) * (1 - exp(-9 * dt));
+  const i = borne(round(courant), 0, SEQ.images - 1);
+  fenetre(i);
+  /* Un vingtième d'image : en deçà, le fondu ne se verrait pas et on
+     économise deux tracés. */
+  if (abs(courant - posee) > 0.05) fondu(courant);
+  acteCourant();
+  requestAnimationFrame(boucle);
+}
+
+/* L'apparition des blocs de la suite. Une seule fois : on cesse d'observer
+   après, pour qu'un aller-retour ne fasse pas clignoter la page. */
+const oeil = new IntersectionObserver((entrees) => {
+  for (const e of entrees) if (e.isIntersecting) {
+    e.target.classList.add('vu');
+    oeil.unobserve(e.target);
+  }
+}, { rootMargin: '-12% 0px -12% 0px' });
+document.querySelectorAll('#suite section, #suite .etape, #suite .metier, #suite .chiffre')
+  .forEach((n) => oeil.observe(n));
+
+/* L'acte en scène : le plus proche du centre de l'écran, et LUI SEUL.
+
+   Un observateur d'intersection ne peut pas donner ça. Des sections pleine
+   hauteur se recouvrent forcément dans la bande observée au moment de la
+   charnière : deux actes s'y déclaraient visibles en même temps, leurs deux
+   textes s'affichaient l'un sur l'autre et leurs deux voiles s'additionnaient
+   jusqu'au noir. On désigne donc un seul gagnant, mesuré à chaque image. */
+let enScene = -1;
+function acteCourant(){
+  const milieu = scrollY + innerHeight / 2;
+  let gagnant = 0, meilleur = Infinity;
+  for (let i = 0; i < centres.length; i++) {
+    const d = abs(centres[i] - milieu);
+    if (d < meilleur) { meilleur = d; gagnant = i; }
+  }
+  if (gagnant === enScene) return;
+  if (enScene >= 0) actes[enScene].classList.remove('en-scene');
+  actes[gagnant].classList.add('en-scene');
+  enScene = gagnant;
+}
+
+/* ------------------------------------------------------------- le démarrage */
+(async function demarrer(){
+  redimensionner();
+  mesurer();
+  const amorce = min(16, SEQ.images);
+  let faites = 0;
+  /* `lire` et non `charger` : le plafond par image ne concerne que la fenêtre
+     glissante. À l'amorçage il n'y a encore rien à afficher, donc rien à
+     saccader — on décode aussi vite que possible. */
+  await Promise.all(Array.from({ length: amorce }, (v, i) => {
+    encours.add(i);
+    return lire(i).then(() => {
+      const p = round(++faites / amorce * 100);
+      jauge.style.width = p + '%';
+      pct.textContent = p + ' %';
+    });
+  }));
+
+  /* Si rien n'a pu être décodé, on le DIT. La page se révélait autrefois quand
+     même, sur une toile vide : le visiteur voyait un écran noir sans savoir si
+     ça chargeait encore, si c'était cassé, ou si c'était voulu. */
+  if (!cache.size) {
+    etape.textContent = 'Séquence introuvable';
+    return;
+  }
+  if (echecs) console.warn(`${echecs} image(s) non décodée(s)`);
+
+  dessiner(0);
+  requestAnimationFrame(boucle);
+  voile.classList.add('parti');
+})();
+</script>
+</body>
+</html>
