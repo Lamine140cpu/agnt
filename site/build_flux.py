@@ -91,7 +91,15 @@ SITE = os.path.dirname(os.path.abspath(__file__))
 # demandait de dupliquer ce fichier, elle ne le serait pas.
 CLIENT = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("client=")), None)
 SOURCE = os.path.join(SITE, f"{CLIENT}.html" if CLIENT else "ultra-motion.html")
-OUT = os.path.join(SITE, "dist", CLIENT if CLIENT else "flux")
+
+# `out=` et `fichier=` séparent la PAGE de son EMPLACEMENT. Trois directions
+# artistiques du même site partagent une pellicule de 34 Mo : les publier dans
+# trois dossiers en recopierait trois fois, pour rien. Elles cohabitent donc
+# dans le même dossier sous trois noms de fichier, et se partagent
+# « assets/film » sans qu'aucun chemin ne change dans le lecteur.
+_OUTNOM = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("out=")), None)
+OUT = os.path.join(SITE, "dist", _OUTNOM or (CLIENT if CLIENT else "flux"))
+FICHIER = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("fichier=")), "index.html")
 
 
 def _drapeau(nom, defaut):
@@ -126,8 +134,16 @@ PAR_IMAGE = _drapeau("parimage=", 33)
 # Les CLÉS restent « accueil » et « accueil-etroit » : ce sont les noms que le
 # lecteur emploie pour choisir sa série selon la forme de l'écran, et il n'a
 # pas à savoir de quel client il s'agit. Seuls les DOSSIERS changent.
-_pref = CLIENT if CLIENT else "accueil"
-_etroit = f"{CLIENT}-etroit" if CLIENT else "accueil-etroit"
+#
+# `film=` sépare la PAGE de son FILM. Deux directions artistiques d'un même
+# site partagent la même pellicule : il serait absurde de réencoder 1 318
+# images parce qu'on a changé la couleur du fond. Sans ce drapeau, une page
+# nommée « transgold-bord » irait chercher « assets/film/transgold-bord », qui
+# n'existe pas — et la construction produirait une page noire sans rien dire,
+# ce qui est déjà arrivé trois fois dans ce projet.
+FILM = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("film=")), None) or CLIENT
+_pref = FILM if FILM else "accueil"
+_etroit = f"{FILM}-etroit" if FILM else "accueil-etroit"
 SERIES = {
     "accueil":        dict(dossier=f"assets/film/{_pref}",   largeur=_drapeau("large=", 1920)),
     "accueil-etroit": dict(dossier=f"assets/film/{_etroit}", largeur=_drapeau("etroit=", 720)),
@@ -240,9 +256,21 @@ def main():
     # La feuille des fontes reste un fichier à part : elle est mise en cache une
     # fois pour toutes, et 216 Ko dans chaque page seraient 216 Ko à chaque
     # visite.
+    # La feuille de fontes est celle que la PAGE demande, pas une constante :
+    # chaque direction artistique a la sienne, et copier « ultra.css » pour une
+    # page qui appelle « ultra-bord.css » donnait un 404 muet — la page
+    # s'affichait, dans la fonte de secours, sans que rien ne le signale.
     os.makedirs(os.path.join(OUT, "assets", "fonts"), exist_ok=True)
-    shutil.copy(os.path.join(SITE, "assets", "fonts", "ultra.css"),
-                os.path.join(OUT, "assets", "fonts", "ultra.css"))
+    feuilles = sorted(set(re.findall(r"assets/fonts/([\w.-]+\.css)", src)))
+    if not feuilles:
+        sys.exit("la page n'appelle aucune feuille de fontes")
+    for f in feuilles:
+        depuis = os.path.join(SITE, "assets", "fonts", f)
+        if not os.path.exists(depuis):
+            sys.exit(f"la page demande {f}, absent de assets/fonts/ — "
+                     f"le produire avec fontes_locales.py")
+        shutil.copy(depuis, os.path.join(OUT, "assets", "fonts", f))
+        print(f"  assets/fonts/{f}  {os.path.getsize(depuis)/1024:.0f} Ko")
 
     # Les fichiers d'« assets » cités en dur par la page — l'image de partage,
     # par exemple. On les recopie d'après ce que la page demande réellement,
@@ -264,7 +292,7 @@ def main():
     # page. Sans eux un moteur finit par trouver le site, mais plus tard et sans
     # savoir quand il a changé. Deux fichiers de dix lignes.
     canon = re.search(r'<link rel="canonical" href="([^"]+)"', src)
-    if canon:
+    if canon and FICHIER == "index.html":
         base = canon.group(1).rstrip("/") + "/"
         jour = datetime.date.today().isoformat()
         open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8").write(
@@ -279,10 +307,10 @@ def main():
             '    <priority>1.0</priority>\n  </url>\n</urlset>\n')
         print("  robots.txt · sitemap.xml")
 
-    open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(src)
-    page = os.path.getsize(os.path.join(OUT, "index.html")) / 1024
+    open(os.path.join(OUT, FICHIER), "w", encoding="utf-8").write(src)
+    page = os.path.getsize(os.path.join(OUT, FICHIER)) / 1024
     print(f"\nécrit {OUT}/")
-    print(f"  index.html   {page:6.0f} Ko  <- ce que le visiteur télécharge d'abord")
+    print(f"  {FICHIER:12s} {page:6.0f} Ko  <- ce que le visiteur télécharge d'abord")
     print(f"  images       {total/1048576:6.1f} Mo  <- demandées au fil du défilement")
     print(f"\n  pour l'essayer :  cd {OUT} && python3 -m http.server 8000")
 

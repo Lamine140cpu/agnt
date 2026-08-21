@@ -21,18 +21,44 @@ qui autorise explicitement la redistribution, y compris embarquée.
     usage : python3 fontes_locales.py
 """
 import base64
+import sys
 import os
 import re
 import urllib.request
 
 SITE = os.path.dirname(os.path.abspath(__file__))
-SORTIE = os.path.join(SITE, "assets", "fonts", "ultra.css")
 
-DEMANDE = ("https://fonts.googleapis.com/css2"
-           "?family=Instrument+Serif:ital@0;1"
-           "&family=IBM+Plex+Mono:wght@400;500"
-           "&family=IBM+Plex+Sans:wght@400;500"
-           "&display=swap")
+# Un jeu de fontes par direction artistique. La vitrine et la première page
+# client emploient « editorial » ; les deux refontes ont chacune le sien, parce
+# qu'une direction artistique se joue d'abord dans le dessin des lettres — et
+# qu'embarquer six familles pour n'en montrer que deux serait payer trois fois
+# le même écran.
+JEUX = {
+    "editorial": ("ultra.css",
+                  "?family=Instrument+Serif:ital@0;1"
+                  "&family=IBM+Plex+Mono:wght@400;500"
+                  "&family=IBM+Plex+Sans:wght@400;500"),
+    # A — le tableau de bord : une grotesque à fort contraste de graisse pour
+    # la structure, une mono pour tout ce qui est chiffré.
+    "bord":      ("ultra-bord.css",
+                  "?family=Archivo:wght@400;500;600;700"
+                  "&family=IBM+Plex+Mono:wght@400;500"),
+    # B — la signalisation : Anton pour les panneaux (condensée, très grasse,
+    # c'est la parente directe des caractères de signalisation), Archivo pour
+    # le texte courant, la mono pour les bornes.
+    "signal":    ("ultra-signal.css",
+                  "?family=Anton"
+                  "&family=Archivo:wght@400;500;600"
+                  "&family=IBM+Plex+Mono:wght@400;500"),
+}
+
+JEU = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("jeu=")), "editorial")
+if JEU not in JEUX:
+    raise SystemExit(f"jeu inconnu : {JEU} — au choix {', '.join(JEUX)}")
+
+_fichier, _familles = JEUX[JEU]
+DEMANDE = "https://fonts.googleapis.com/css2" + _familles + "&display=swap"
+SORTIE = os.path.join(SITE, "assets", "fonts", _fichier)
 
 # Sans en-tête moderne, Google renvoie du TrueType au lieu du WOFF2 — trois
 # fois plus lourd, pour le même dessin.
@@ -78,9 +104,9 @@ def main():
             url.group(0),
             "url(data:font/woff2;base64," + base64.b64encode(octets).decode() + ")"))
 
-    entete = ("/* Fontes embarquées — Instrument Serif et IBM Plex, SIL Open Font\n"
-              "   License 1.1. Sous-ensembles latins uniquement. Fichier produit par\n"
-              "   fontes_locales.py : ne pas le modifier à la main. */\n")
+    entete = (f"/* Fontes embarquées — jeu « {JEU} », SIL Open Font License 1.1.\n"
+              "   Sous-ensembles latins uniquement. Produit par fontes_locales.py :\n"
+              "   ne pas modifier à la main. */\n")
     os.makedirs(os.path.dirname(SORTIE), exist_ok=True)
     open(SORTIE, "w", encoding="utf-8").write(entete + "\n".join(sorties) + "\n")
     poids = os.path.getsize(SORTIE) / 1024
