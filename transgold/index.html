@@ -1387,15 +1387,37 @@ if (molette) {
 function boucle(now){
   const dt = min((now - dernier) / 1000, 0.05); dernier = now;
 
+  /* 14 et non 9. Une fois le second rattrapage supprimé, il reste ce seul
+     lissage : on peut donc le rendre plus franc sans que rien ne saute. Le
+     temps de réponse passe de 263 à environ 170 ms, ce qui est le domaine où
+     un geste et son effet se lisent comme simultanés. */
   if (molette && abs(cibleY - lisseY) > 0.4) {
-    lisseY += (cibleY - lisseY) * (1 - exp(-9 * dt));
+    lisseY += (cibleY - lisseY) * (1 - exp(-14 * dt));
     scrollTo(0, lisseY);
   }
 
   vise = progression() * (SEQ.images - 1);
   /* Le rattrapage. Sauter à l'image visée donne un défilement nerveux ; la
-     rattraper à taux constant donne l'inertie d'une caméra. */
-  courant = lent ? vise : courant + (vise - courant) * (1 - exp(-9 * dt));
+     rattraper à taux constant donne l'inertie d'une caméra.
+
+     MAIS PAS DEUX FOIS. C'était la faute, et elle ne touchait que le PC.
+     Quand le lissage de molette est actif, la position de défilement est DÉJÀ
+     rattrapée à taux constant ; lui appliquer un second rattrapage empile deux
+     retards du premier ordre. Mesuré sur la fenêtre du rapport, pour un cran
+     de molette de 300 px :
+
+         la page arrive à 90 % de sa cible    263 ms
+         l'image arrive à 90 % de la sienne   444 ms
+
+     Presque une demi-seconde entre le geste et l'image. Ce n'est pas un
+     manque de fluidité — la page tourne à soixante images par seconde — c'est
+     du RETARD, et aucun compteur d'images ne le dénonce. Sur téléphone il n'y
+     a qu'un seul lissage, le tactile gardant son défilement natif : d'où
+     « excellent sur téléphone, pâteux sur PC ».
+
+     Quand la position est déjà lissée, l'image la suit donc EXACTEMENT. */
+  courant = (lent || molette) ? vise
+          : courant + (vise - courant) * (1 - exp(-9 * dt));
   const i = borne(round(courant), 0, SEQ.images - 1);
   fenetre(i);
   /* Un vingtième d'image : en deçà, le fondu ne se verrait pas et on
