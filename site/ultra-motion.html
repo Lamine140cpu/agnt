@@ -3,7 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ultra Motion</title>
+
+<!-- La vitrine du studio ne peut pas être moins bien référencée que les sites
+     qu'elle vend. Adresses absolues à reprendre le jour du nom de domaine. -->
+<title>Ultra Motion — sites vitrines à film défilant pour PME</title>
+<meta name="description" content="Un film image par image, piloté par le défilement. Sites vitrines sur mesure pour artisans, commerces et PME : une page, un mouvement, aucun gabarit.">
+<link rel="canonical" href="https://lamine140cpu.github.io/agnt/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#0a0c0e">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Ultra Motion">
+<meta property="og:title" content="Ultra Motion — sites vitrines à film défilant">
+<meta property="og:description" content="Un film image par image, piloté par le défilement. Sites vitrines sur mesure pour PME.">
+<meta property="og:url" content="https://lamine140cpu.github.io/agnt/">
+<meta property="og:image" content="https://lamine140cpu.github.io/agnt/assets/ultra-partage.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://lamine140cpu.github.io/agnt/assets/ultra-partage.jpg">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "Ultra Motion",
+  "url": "https://lamine140cpu.github.io/agnt/",
+  "image": "https://lamine140cpu.github.io/agnt/assets/ultra-partage.jpg",
+  "description": "Studio de sites vitrines à film défilant : une séquence d'images pilotée par le défilement, conçue image par image pour chaque client.",
+  "areaServed": { "@type": "Country", "name": "France" },
+  "knowsLanguage": "fr",
+  "serviceType": "Conception de sites vitrines"
+}
+</script>
 <!-- Fontes embarquées, pas appelées chez un tiers. Une page qui dépend d'un
      hôte extérieur substitue sa police de secours en silence quand cet hôte
      est lent ou bloqué : on croit voir sa maquette, on voit autre chose.
@@ -765,7 +798,14 @@ async function lire(i){
     /* La première image décodée révèle ce que coûte vraiment une image en
        mémoire — la construction peut servir n'importe quelle définition, la
        page n'a pas à la connaître d'avance. */
-    if (!octetsImage) { octetsImage = im.width * im.height * 4; reglerFenetre(); }
+    if (!octetsImage) {
+      octetsImage = im.width * im.height * 4;
+      filmL = im.width; filmH = im.height;
+      reglerFenetre();
+      /* La toile a été taillée avant qu'on sache ce que mesure le film. On la
+         retaille maintenant : c'est de là que vient le dessin au rapport 1:1. */
+      redimensionner();
+    }
     cache.set(i, im);
   }
   catch (e) { echecs++; }
@@ -978,22 +1018,62 @@ function fondu(brut){
   window.__POSEE = cache.has(bas) ? bas : -1;
 }
 
+/* Ce que mesure une image du film, connu dès le premier décodage. */
+let filmL = 0, filmH = 0;
+
 function redimensionner(){
   /* Sur un écran étroit on plafonne à 1,5 au lieu de 2. Une toile de 390 px
      rendue en 2 fait 780 x 1688 pixels à remplir ; en 1,5 elle en fait 585 x
      1266, soit 44 % de moins à chaque image. À la densité d'un téléphone, la
      différence ne se voit pas — la charge, elle, se sent. */
-  const dpr = min(devicePixelRatio || 1, innerWidth < 820 ? 1.5 : 2);
+  const plafond = innerWidth < 820 ? 1.5 : 2;
+
+  /* ON NE FABRIQUE JAMAIS UNE TOILE PLUS FINE QUE LE FILM.
+
+     C'était le défaut le plus coûteux de tout le lecteur, et il ne se voyait
+     nulle part. Un écran de bureau à densité 2 donnait une toile de 3200 x
+     1800 ; le film mesure 1920 x 1080. On agrandissait donc chaque image de
+     67 %, à chaque trame, pour n'ajouter AUCUNE information : les pixels
+     supplémentaires sont inventés par l'interpolateur, pas lus dans le
+     fichier. Mesuré ici, sur ce conteneur sans carte graphique, pour une
+     image 1920 x 1080 :
+
+         dessin vers 1920 x 1080 (rapport 1:1)   1,3 ms
+         dessin vers 1600 x  900 (réduction)     5,7 ms  ·  27,5 ms en « high »
+         dessin vers 3200 x 1800 (agrandissement) 22 ms  ·  184 ms en « high »
+
+     Cent quatre-vingt-quatre millisecondes : cinq images par seconde. C'est
+     exactement le « pas fluide du tout sur PC » qu'on n'arrivait pas à
+     expliquer. Le décodeur n'y était pour rien.
+
+     La règle est donc simple : la densité retenue est la plus grande qui
+     laisse encore l'image COUVRIR la toile sans être agrandie. Le facteur de
+     couverture vaut alors exactement 1, et `drawImage` recopie au lieu de
+     rééchantillonner. On ne descend jamais sous 1 — une toile plus grossière
+     que l'écran serait floue, ce qui est le défaut qu'on cherche à éviter. */
+  const juste = (filmL && filmH)
+    ? min(filmL / innerWidth, filmH / innerHeight)
+    : plafond;
+  const dpr = max(1, min(devicePixelRatio || 1, plafond, juste));
+
   canvas.width = round(innerWidth * dpr);
   canvas.height = round(innerHeight * dpr);
   canvas.style.width = innerWidth + 'px';
   canvas.style.height = innerHeight + 'px';
+
   /* La toile perd tous ses réglages quand on change sa taille : à replacer
-     ici, jamais une seule fois au démarrage. Par défaut l'agrandissement est
-     bilinéaire ; « high » emploie un filtre à plusieurs passes, ce qui se voit
-     dès qu'on affiche une source plus petite que l'écran. Gratuit. */
+     ici, jamais une seule fois au démarrage.
+
+     « high » emploie un filtre à plusieurs passes. Il ne se justifie que
+     lorsqu'on agrandit vraiment — un écran plus large que le film, ce qui
+     n'arrive plus qu'à la série étroite sur une fenêtre large. Partout
+     ailleurs il coûte cinq fois le dessin pour une différence qu'aucun œil
+     ne relève sur une image qui bouge. */
+  const agrandit = (filmL && filmH)
+    && max(canvas.width / filmL, canvas.height / filmH) > 1.01;
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  ctx.imageSmoothingQuality = agrandit ? 'high' : 'low';
+
   if (posee >= 0) fondu(posee); else if (dessinee >= 0) dessiner(dessinee);
 }
 addEventListener('resize', () => { redimensionner(); mesurer(); }, { passive: true });

@@ -71,6 +71,7 @@ servir en local par `python3 -m http.server` depuis l'intérieur du dossier.
 Ouvrir index.html directement en double-cliquant NE MARCHE PAS : le protocole
 file:// interdit d'aller chercher les images voisines.
 """
+import datetime
 import io
 import os
 import re
@@ -242,6 +243,41 @@ def main():
     os.makedirs(os.path.join(OUT, "assets", "fonts"), exist_ok=True)
     shutil.copy(os.path.join(SITE, "assets", "fonts", "ultra.css"),
                 os.path.join(OUT, "assets", "fonts", "ultra.css"))
+
+    # Les fichiers d'« assets » cités en dur par la page — l'image de partage,
+    # par exemple. On les recopie d'après ce que la page demande réellement,
+    # pour ne pas avoir à tenir une liste à jour à la main : une vignette de
+    # partage manquante ne casse rien de visible et ne se découvre que le jour
+    # où quelqu'un colle le lien dans une conversation.
+    for chemin in sorted(set(re.findall(r"assets/[\w./-]+\.(?:jpg|png|svg|webp|avif|ico)", src))):
+        if "/film/" in chemin:
+            continue
+        depuis = os.path.join(SITE, chemin)
+        if not os.path.exists(depuis):
+            sys.exit(f"la page cite {chemin}, absent de {SITE}")
+        vers = os.path.join(OUT, chemin)
+        os.makedirs(os.path.dirname(vers), exist_ok=True)
+        shutil.copy(depuis, vers)
+        print(f"  {chemin}  {os.path.getsize(depuis)/1024:.0f} Ko")
+
+    # robots.txt et sitemap.xml, déduits de l'adresse canonique déclarée par la
+    # page. Sans eux un moteur finit par trouver le site, mais plus tard et sans
+    # savoir quand il a changé. Deux fichiers de dix lignes.
+    canon = re.search(r'<link rel="canonical" href="([^"]+)"', src)
+    if canon:
+        base = canon.group(1).rstrip("/") + "/"
+        jour = datetime.date.today().isoformat()
+        open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8").write(
+            "User-agent: *\nAllow: /\n\n"
+            f"Sitemap: {base}sitemap.xml\n")
+        open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8").write(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f'  <url>\n    <loc>{base}</loc>\n'
+            f'    <lastmod>{jour}</lastmod>\n'
+            '    <changefreq>monthly</changefreq>\n'
+            '    <priority>1.0</priority>\n  </url>\n</urlset>\n')
+        print("  robots.txt · sitemap.xml")
 
     open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(src)
     page = os.path.getsize(os.path.join(OUT, "index.html")) / 1024
