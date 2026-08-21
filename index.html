@@ -1027,7 +1027,22 @@ function redimensionner(){
      rendue en 2 fait 780 x 1688 pixels à remplir ; en 1,5 elle en fait 585 x
      1266, soit 44 % de moins à chaque image. À la densité d'un téléphone, la
      différence ne se voit pas — la charge, elle, se sent. */
-  const plafond = innerWidth < 820 ? 1.5 : 2;
+  /* LE LECTEUR NE POSSÈDE PLUS L'ÉCRAN, IL OBÉIT À LA MISE EN PAGE.
+
+     Il lisait `innerWidth` et réécrivait `canvas.style.width` : la toile était
+     donc forcée au plein écran, quoi qu'en dise la feuille de style. Tant que
+     le film occupait tout, personne ne le voyait — mais cela interdisait toute
+     mise en page où le film est ENCADRÉ, à côté du texte plutôt que dessous.
+     Or c'est exactement ce qu'exige une direction artistique sur fond clair.
+
+     On mesure donc la boîte que le CSS a réellement donnée à la toile. Le
+     plein écran devient un cas particulier — celui où la règle dit inset:0 —
+     au lieu d'être la seule possibilité. Mesuré : encadrer ne coûte rien
+     (60 i/s dans les deux cas), là où un masque dégradé coûte 40 %. */
+  const boite = canvas.getBoundingClientRect();
+  const larg = boite.width  || innerWidth;
+  const haut = boite.height || innerHeight;
+  const plafond = larg < 820 ? 1.5 : 2;
 
   /* ON NE FABRIQUE JAMAIS UNE TOILE PLUS FINE QUE LE FILM.
 
@@ -1067,14 +1082,12 @@ function redimensionner(){
      Le plancher réel est intrinsèque — la toile ne descend jamais sous la
      définition du film. */
   const juste = (filmL && filmH)
-    ? min(filmL / innerWidth, filmH / innerHeight)
+    ? min(filmL / larg, filmH / haut)
     : plafond;
   const dpr = min(devicePixelRatio || 1, plafond, juste) * echelle;
 
-  canvas.width = round(innerWidth * dpr);
-  canvas.height = round(innerHeight * dpr);
-  canvas.style.width = innerWidth + 'px';
-  canvas.style.height = innerHeight + 'px';
+  canvas.width = round(larg * dpr);
+  canvas.height = round(haut * dpr);
 
   /* La toile perd tous ses réglages quand on change sa taille : à replacer
      ici, jamais une seule fois au démarrage.
@@ -1090,6 +1103,18 @@ function redimensionner(){
   if (posee >= 0) fondu(posee); else if (dessinee >= 0) dessiner(dessinee);
 }
 addEventListener('resize', () => { redimensionner(); mesurer(); }, { passive: true });
+/* Une requête de média peut changer la boîte de la toile sans que la fenêtre
+   bouge — le film passe de la moitié droite à toute la largeur, par exemple.
+   `resize` ne le verrait pas. */
+if (typeof ResizeObserver === 'function') {
+  let dernL = 0, dernH = 0;
+  new ResizeObserver(() => {
+    const b = canvas.getBoundingClientRect();
+    if (round(b.width) === dernL && round(b.height) === dernH) return;
+    dernL = round(b.width); dernH = round(b.height);
+    redimensionner();
+  }).observe(canvas);
+}
 
 /* Le film ne couvre que le prologue : au-delà, la suite du site est opaque et
    recouvre la toile. On mesure donc la progression sur le prologue seul, pas
