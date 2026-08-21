@@ -1,245 +1,248 @@
-# Atteindre le niveau Ciao / Apple / Lusion — état des lieux
+# Ce qu'on passait à côté
 
-Recherche menée le 15 août 2026. Trois sources : un démontage direct des
-fichiers de ciaoenergy.com, deux recherches web approfondies, et nos propres
-mesures sur le moteur maison.
+Recherche menée à la demande : chercher les techniques qui pourraient
+améliorer nettement le moteur. Tout ce qui suit est **mesuré**, pas supposé.
 
-Les faits marqués **mesuré** ont été vérifiés en téléchargeant les fichiers ou
-en chronométrant le code. Les faits marqués **rapporté** viennent de sources
-citées, non reproduites ici.
+## Comment lire les chiffres
 
----
-
-## 1. Ce que charge réellement Ciao Energy — mesuré
-
-Fichiers téléchargés depuis `cdn.mprez.fr` et ouverts.
-
-| Ressource | Poids | Contenu |
-|---|---|---|
-| `can.glb` | **159 Ko** | **5 702 triangles**, 3 maillages (`Shell`, `Bottom`, `Top`), 2 matières (`Etiquette` métal 0 rugosité 0,5 ; `Metal`), **aucune image embarquée** |
-| `base.glb` | 607 Ko | 24 432 triangles — le socle (câble cuivre, tubes, embases) |
-| `hdri2.hdr` | 1,36 Mo | vraie carte HDR, chargée par `RGBELoader` |
-| étiquette AVIF | 180 Ko | une par parfum, **hors du .glb**, échangeable |
-| fonds animés | 1 à 2,7 Mo | **vidéos** mp4 + webm, une par parfum |
-
-Bibliothèques : three.js, `GLTFLoader`, `RGBELoader`, `EffectComposer`,
-`BloomPass`, `FXAAShader`, `SMAAPass`, `OutputPass` — plus **GSAP
-ScrollTrigger et SplitText** pour la chorégraphie. Le site est un Webflow ;
-tout le WebGL est un script ajouté.
-
-**Total 3D ≈ 2,3 Mo.** Notre page voiture en pèse 13.
-
-### Ce que ça établit
-
-- Leur canette fait 5 702 triangles ; notre canette procédurale en fait
-  environ 4 400. **Même ordre de grandeur.** La technique n'a jamais été
-  l'écart.
-- Leur architecture est la nôtre : un moteur, un objet léger, l'habillage
-  chargé à part et échangeable. On avait déduit « moteur + configuration »
-  tout seuls ; c'est bien ce qu'ils font.
-- Trois choses qu'ils font mieux et qui se copient en une journée : une vraie
-  HDRI plutôt qu'un JPEG dont on reconstruit la dynamique, des vidéos de fond
-  plutôt qu'un dégradé, et GSAP plutôt qu'une boucle maison.
+Les mesures viennent de ce conteneur : quatre cœurs, **pas de carte
+graphique**. Les valeurs absolues seront donc meilleures sur une vraie
+machine — mais les rapports entre elles tiennent, et c'est ce qui compte pour
+décider. Chaque mesure a été refaite machine au repos : une mesure prise
+pendant un encodage a déjà, dans ce projet, fait conclure l'inverse de la
+vérité.
 
 ---
 
-## 2. Les aveux des studios primés — rapporté
+## 1. Le défaut principal : on dessinait plus grand que le film
 
-La section la plus utile de toute la recherche. Aucun de ces studios ne
-calcule d'éclairage global en temps réel. Aucun. Ils pré-calculent tout ce
-qui peut l'être et réservent le GPU au mouvement.
+C'était invisible partout. Aucune erreur, aucun avertissement, aucun octet de
+plus au chargement.
 
-**Lusion** ([étude de cas Awwwards](https://www.awwwards.com/case-study-for-lusion-by-lusion-winner-of-site-of-the-month-may.html))
-mélange du **pré-rendu Redshift hors ligne** avec du temps réel : une vidéo
-de 150 Ko, la position de caméra exportée en JSON pour raccorder les deux.
-Leur simulation de tissu est calculée dans **Houdini** et stockée en
-ArrayBuffer de 220 Ko. L'animation de sommets passe par des **textures PNG**
-— une pour les positions, une pour les normales — avec 11 images-clés
-interpolées sur 66, et des flottants 32 bits ramenés à des entiers 16 bits.
-Échelonnement machine explicite : **983 Ko sur desktop, 246 Ko sur mobile**,
-4 096 sommets contre 1 024.
+La toile était taillée à la densité de l'écran, plafonnée à 2. Sur un bureau
+1600 × 900 en densité 2, cela fait une toile de **3200 × 1800**. Le film, lui,
+mesure 1920 × 1080. Chaque image était donc agrandie de 67 %, à chaque trame,
+pour n'ajouter **aucune information** : les pixels supplémentaires sont
+inventés par l'interpolateur, pas lus dans le fichier.
 
-**Edan Kwan**, fondateur de Lusion
-([billet](https://medium.com/@edankwan/lost-in-parallel-universe-dba640efd39a)) :
-« sacrifier la qualité d'image pour faire tourner une simulation de fumée en
-temps réel à 60 images par seconde était une idée stupide ».
+Coût d'un seul `drawImage`, image 1920 × 1080 :
 
-**Shopify Spring '26**
-([Codrops](https://tympanus.net/codrops/2026/06/26/engineering-the-web-experience-behind-shopifys-spring-26-edition-everywhere/))
-est le plus explicite : leur lumière volumétrique **est une vidéo**,
-pré-traitée en textures tableau KTX2. Ils écrivent noir sur blanc « mouvement
-exporté en vidéo quand l'animer au runtime ne valait pas son coût ».
-Échelonnement à quatre niveaux. Et une phrase directement transposable à
-notre chorégraphie : **« la position de défilement pilote des uniformes, pas
-des re-rendus »**.
-
-**The Sleepers** ([Codrops](https://tympanus.net/codrops/2026/07/10/the-sleepers-creating-an-atmospheric-webgl-experience-with-lightweight-techniques/))
-: le brouillard volumétrique est « une sorte de tour de passe-passe
-colorimétrique appliqué aux matières ». Zéro volumétrie.
-
-**Active Theory** ([billet](https://medium.com/active-theory/the-story-of-technology-built-at-active-theory-5d17ae0e3fb4))
-n'utilise même pas three.js — moteur maison *Hydra*. Pour adidas, des
-vêtements de plus de 500 000 polygones et des textures 4K ont été écrasés en
-maillages mobiles à deux textures 2K, et **ce sont les normal maps cuites
-depuis les originaux qui portent tout le rendu**.
-
----
-
-## 3. La géométrie : le verdict sur le génératif — rapporté
-
-Question posée : peut-on passer des images cohérentes que Gemini produit à un
-maillage de voiture **avec habitacle** ?
-
-**Réponse : non, pas aujourd'hui.** Et la raison est précise.
-
-### TRELLIS.2 : « enclosed interior structures » veut dire représenter, pas inventer
-
-Le [papier](https://arxiv.org/abs/2512.14692) dit que la représentation
-O-Voxel « peut modéliser une topologie arbitraire, y compris des surfaces
-entièrement fermées ». Le verbe est *modéliser*. C'est une propriété du
-**format de données**, pas une capacité de génération : contrairement aux
-champs de distance signée, O-Voxel enregistre où la surface croise les arêtes
-d'une grille, ce qui ne se soucie pas de savoir si elle se referme.
-
-La preuve contraire est dans
-[l'issue #140](https://github.com/microsoft/TRELLIS.2/issues/140) : « la
-plupart des générations ajoutent une coque interne entière ». Ce n'est pas un
-habitacle, c'est une **seconde carrosserie parasite** décalée vers
-l'intérieur. Aucune réponse des mainteneurs.
-
-Second bloquant, décisif pour nous :
-[l'issue #103](https://github.com/microsoft/TRELLIS.2/issues/103) rapporte que
-« les performances avec des entrées multi-images sont étonnamment pires
-qu'avec une seule image ». **Nos douze vues cohérentes ne servent à rien avec
-TRELLIS.2.** Il n'en consommera qu'une.
-
-Le seul point excellent : **licence MIT sur le code et les poids**, la plus
-permissive du marché. Hébergement : gratuit sur le Space Hugging Face,
-0,25 à 0,35 $ par génération sur fal.ai, 24 Go de VRAM en local.
-
-### Les concurrents
-
-| Outil | Multi-vues | Habitacle | Licence de sortie |
+| toile visée | `low` | `medium` | `high` |
 |---|---|---|---|
-| TRELLIS.2 | non | non (double coque) | **MIT** |
-| Meshy 7 | **4 vues à slots nommés** | non | propriété pleine sur plan payant |
-| Tripo 3.0 | oui | non | commercial sur Pro+ ; gratuit = non commercial |
-| Rodin / Hyper3D | **jusqu'à 5 images** | non | commercial sur tous les plans |
-| Hunyuan3D 3.1 | **jusqu'à 8 vues** | non | **exclut l'Union européenne** |
+| 1920 × 1080 — rapport 1:1 | 1,31 ms | 1,36 ms | **1,32 ms** |
+| 1600 × 900 — réduction | 5,71 ms | 26,8 ms | **27,5 ms** |
+| 3200 × 1800 — agrandissement | 22,2 ms | 104 ms | **184 ms** |
 
-Deux choses à retenir. **Hunyuan est hors jeu depuis la France** : sa licence
-exclut explicitement l'UE, le Royaume-Uni et la Corée du Sud, motif AI Act.
-Et paradoxalement, **TRELLIS.2 est le plus mal adapté à notre situation**
-malgré sa licence : c'est le seul qui refuse le multi-vues.
+184 ms par image, c'est 5 images par seconde. C'est exactement le « pas fluide
+du tout sur PC » qu'on n'arrivait pas à expliquer. **Le décodeur n'y était pour
+rien.**
 
-Aucun ne produit d'habitacle. La règle documentée par Meshy l'explique :
-le système fonctionne quand « toutes les parties sont clairement visibles sous
-au moins un angle ». Un habitacle occlus ne l'est jamais.
+Deux choses à noter dans ce tableau :
 
-### La piste qui marche : capturer au lieu de deviner
+- au rapport 1:1, le réglage de qualité ne change rien du tout — il n'y a pas
+  de rééchantillonnage à faire, `drawImage` recopie ;
+- `high` n'a de sens que si l'on agrandit. Partout ailleurs il coûte cinq fois
+  le dessin pour une différence qu'aucun œil ne relève sur une image en
+  mouvement.
 
-Un [Toyota 4Runner a été numérisé en splat gaussien, habitacle
-compris](https://80.lv/articles/look-inside-toyota-4runner-turned-into-a-3d-gaussian-splat)
-— quelques centaines de photos, environ une heure de prise de vue.
+**Correction retenue.** La densité choisie est la plus grande qui laisse encore
+l'image *couvrir* la toile sans être agrandie :
 
-**Et nous avons déjà notre moteur de rendu de splats.** C'est ce qui change
-l'arbitrage : la conversion splat vers maillage est l'étape qui dégrade tout,
-et nous pouvons la sauter.
+```js
+const juste = min(filmL / innerWidth, filmH / innerHeight);
+const dpr   = max(1, min(devicePixelRatio, plafond, juste));
+```
 
-Outils : **Scaniverse** (Niantic) est gratuit, traite sur l'appareil en 60 à
-90 secondes et exporte en PLY et SPZ. **KIRI Engine** (~18 $/mois) est le seul
-avec conversion splat vers maillage intégrée. **RealityScan 2.1** (Epic) est
-gratuit sous un million de dollars de chiffre d'affaires.
+Le facteur de couverture vaut alors exactement 1. Et la qualité de lissage
+passe à `low` sauf quand on agrandit vraiment.
 
-Difficultés connues du scan de voiture : peinture réfléchissante, pare-brise
-qui devient un voile blanc, optiques de phares ingérables. Ciel couvert
-obligatoire, recouvrement de 60 à 80 %, trois hauteurs de prise de vue.
+### Ce que ça donne, en défilement continu
 
----
+Bureau 1600 × 900, densité 2 :
 
-## 4. Le plan d'action, par ordre de rentabilité
+| | 600 px/s | 1000 px/s | 1800 px/s |
+|---|---|---|---|
+| avant — toile 3200 × 1800 | 4 i/s | 4 i/s | 4 i/s |
+| après — toile 1920 × 1080 | 40 i/s | 39 i/s | 32 i/s |
+| + sans le flou d'en-tête | **56 i/s** | **54 i/s** | **41 i/s** |
 
-### À faire — rendement immédiat
+Téléphone 390 × 844, densité 3 — **la toile ne change pas de taille** ; tout le
+gain vient du passage de `high` à `low` :
 
-**1. Passer des couleurs par sommet à un atlas de lightmap.**
-C'est notre plus grand écart mesurable avec les studios primés. Notre rebond
-est cuit correctement mais échantillonné à la densité du maillage : le dégradé
-de contact et l'ombrage d'angle sont lissés par l'interpolation. Un atlas
-2048² sur un second jeu de coordonnées donne le contact net qui se lit comme
-« rendu hors ligne ». Coût runtime : **négatif**. Gains rapportés sur des
-projets comparables : ×3 à ×4 sur desktop, ×5 sur mobile, et −15 % sur le
-poids du GLB.
+| | 600 px/s | 1000 px/s | 1800 px/s |
+|---|---|---|---|
+| avant | 31 i/s | 31 i/s | 32 i/s |
+| après | **60 i/s** | **60 i/s** | **60 i/s** |
 
-**2. Câbler les matières déjà disponibles** — `clearcoat`, `iridescence`,
-`anisotropy` sont dans `MeshPhysicalMaterial` et ne demandent que d'être
-activées. Le vernis à double lobe est le signal le plus immédiat de « ce site
-a coûté cher ».
+## 2. Le flou de l'en-tête coûtait un quart de l'affichage
 
-**3. Le défilement pilote des uniformes, jamais un re-rendu.** Coût négatif,
-gain de fluidité direct. C'est la règle explicite de Shopify.
+`backdrop-filter: blur(6px)` sur une barre fixe, au-dessus d'une toile qui
+change à chaque trame : le flou est recalculé à chaque trame, sur toute la
+largeur. Mesuré à 1000 px/s : **40 i/s avec, 54 i/s sans.**
 
-**4. Échelonnement machine à quatre niveaux et rapport de pixels plafonné.**
-Nul sur desktop, énorme sur le taux de rebond mobile.
+Retiré. Le dégradé sombre a été légèrement renforcé (.92 → .95) et porte le
+texte tout seul.
 
-### Ensuite — effort moyen, résultat visible
+## 3. Le retard du décodeur n'existe pas — c'était la mesure qui était fausse
 
-**5. Peinture automobile en couches.** La référence ouverte est
-[demo-2025-car-paint](https://github.com/Faraz-Portfolio/demo-2025-car-paint) :
-paillettes par bruit de Voronoï **3D** modulant rugosité et métallicité,
-couleur des paillettes variant avec l'angle par Fresnel, et **peau d'orange**
-perturbant les normales du vernis. Ce dernier détail est celui que 90 % des
-configurateurs oublient et qui trahit le rendu trop propre. L'auteur a
-abandonné les rayures, trop coûteuses.
+On mesurait l'« absence » comme `image posée ≠ arrondi(image voulue)`. Ce
+critère compare un entier à une position **fractionnaire**, alors que le
+lecteur fond volontairement les deux images voisines. Il annonçait 48 %
+d'absence sur une page parfaitement fluide.
 
-**6. Remplacer notre rebond unique par une convergence tracée hors ligne.**
-[three-gpu-pathtracer](https://github.com/gkjohnson/three-gpu-pathtracer)
-(MIT) rend environ 10 ms par échantillon, soit deux secondes pour deux cents
-échantillons. **À utiliser comme cuiseur de build, pas comme moteur de
-runtime.** On garde un coût runtime nul et on gagne les rebonds multiples et
-le color bleeding physique.
+Le bon critère est la **distance** :
 
-**7. Sondes en harmoniques sphériques L1** pour que le pré-calcul cesse de
-sentir le statique quand la caméra bouge. Quatre coefficients, pas neuf.
+| | images/s | retard moyen | 95ᵉ centile |
+|---|---|---|---|
+| bureau, 600 px/s | 56 | 0,51 image | 1 |
+| bureau, 1000 px/s | 53 | 0,55 image | 0,9 |
+| bureau, 1800 px/s | 39 | 0,48 image | 1 |
+| téléphone, 1800 px/s | 60 | 0,51 image | 0,9 |
 
-**8. Fusionner le post-traitement en une passe de composite unique.** Coût
-négatif ; c'est ce que font Active Theory et Aircord.
-
-### À ne pas faire maintenant
-
-**WebGPU et le SSGINode.** three.js embarque bien un SSGI natif depuis r181
-— un portage du composant Unity SSRT3. Mais il est en espace écran : **ce qui
-est hors champ ne rebondit pas, et l'algorithme invente au-delà de la
-géométrie visible**. Notre cuisson par lancer de rayons contre un arbre
-d'englobants capte le hors-écran ; on échangerait de la justesse contre du
-coût. Son auteur écrit lui-même que « le SSGI est en général un effet
-coûteux ». Ajouter à cela : Safari ne supporte WebGPU qu'à partir d'iOS 26,
-Chrome Android depuis la version 151 seulement, Firefox pas par défaut — et
-une à deux semaines de réécriture en TSL de notre post-traitement.
-
-**Les radiance cascades.** La seule implémentation three.js sérieuse est
-publiée **sans licence, tous droits réservés**. Juridiquement inutilisable.
+Un demi-image de retard moyen : c'est exactement ce que le fondu est censé
+absorber. **Le chargeur suit.** Il n'y a rien à corriger de ce côté.
 
 ---
 
-## 5. Ce qui reste ouvert
+# Les pistes examinées et écartées
 
-Quatre recherches ont été interrompues par une limite de session et doivent
-être relancées :
+## 4. Remplacer la suite d'images par une vidéo — écarté
 
-- **le sourcing de modèles avec habitacle** et le droit des marques
-  automobiles — la seule chose qui bloque encore la démonstration Clio ;
-- **le pipeline Apple chiffré** — coût réel d'une séquence d'images ;
-- **le tour photographique à 360°** — protocole de prise de vue et lecteurs
-  existants ;
-- **le plan d'allègement** de 13 Mo vers 2,3 Mo — Draco, Meshopt, KTX2,
-  décimation.
+Comparaison honnête, à qualité mesurée (PSNR contre les sources), sur les mêmes
+791 images 1920 × 1080 :
+
+| | poids | PSNR |
+|---|---|---|
+| 791 fichiers AVIF q45 (en service) | 34 Mo | **39,9 dB** |
+| VP9 CRF 30, GOP 12 | 29 Mo | 38,1 dB |
+
+**15 % de moins pour une qualité légèrement inférieure.** Ce n'est pas un gain
+qui justifie de réécrire le moteur. (Les chiffres H.264 relevés plus tôt —
+41 à 78 Mo selon le GOP — étaient à CRF 18, donc à une qualité bien plus haute :
+ils n'étaient pas comparables.)
+
+Le saut à une position quelconque, lui, s'est révélé meilleur que prévu :
+**6,3 ms en moyenne, 37 ms au pire**. C'est utilisable. Mais le débit en
+lecture accélérée plafonne à 20 images/s en décodage logiciel, et surtout un
+élément `<video>` ne donne accès qu'à **une** image à la fois : impossible de
+préparer une fenêtre glissante. On perdrait la seule garantie qui fait tenir le
+lecteur.
+
+## 5. WebCodecs — disponible, mais pas pour ça
+
+`VideoDecoder` existe partout depuis Safari 26 (Chrome 94, Firefox 130). Il
+donnerait le contrôle image par image qui manque à `<video>`.
+
+Mais il faut alors démultiplexer le MP4 soi-même, et surtout gérer les GOP :
+pour afficher l'image N il faut décoder depuis l'image-clé précédente, soit
+jusqu'à onze décodages de plus. Et chaque `VideoFrame` retient de la mémoire
+système qu'il faut fermer à la main.
+
+Beaucoup de machinerie pour les 15 % du point 4. **Écarté.**
+
+## 6. `createImageBitmap(blob, { resizeWidth })` — écarté comme levier de vitesse
+
+Mesuré : 17,65 ms tel quel contre 24 à 36,6 ms avec redimensionnement. La
+réduction s'ajoute **après** le décodage, elle ne l'allège pas.
+
+En revanche elle divise la mémoire par 4 à 960 px. C'est un levier sur la
+*profondeur de la fenêtre*, pas sur la vitesse. À garder en réserve si un jour
+la mémoire redevient la contrainte.
+
+## 7. Garder les octets compressés en mémoire — marginal
+
+C'est ce que fait velaarmon avec son tableau `h[]` : une image purgée est
+re-décodée au lieu d'être re-téléchargée. Mesuré, par image 1920 × 1080 :
+
+| | durée |
+|---|---|
+| requête, cache HTTP froid | 16,7 ms |
+| requête, cache HTTP chaud | 7,9 ms |
+| **décodage AVIF** | **62,8 ms** |
+| dessin (rapport 1:1) | 1,3 ms |
+
+Garder le blob économise les 7,9 ms de la requête chaude — **11 % du coût
+total**, contre de la mémoire retenue en permanence. Le cache HTTP du
+navigateur fait déjà l'essentiel du travail. **Écarté.**
+
+## 8. Changer de format d'image — écarté
+
+| format, 1920 × 1080 | poids moyen | décodage |
+|---|---|---|
+| AVIF q45 (en service) | 42 ko | 62,8 ms |
+| WebP q82 | 90 ko | 44,0 ms |
+| JPEG q82 | 156 ko | 49,2 ms |
+
+WebP décode 30 % plus vite mais pèse 2,1 fois plus : 34 Mo deviendraient 72 Mo.
+Le compromis n'en vaut pas la peine tant que le décodeur suit — et il suit
+(point 3).
+
+## 9. `OffscreenCanvas` + `Worker` — sans objet désormais
+
+L'idée était de sortir le dessin du fil principal. Mais le décodage était déjà
+hors fil principal (`createImageBitmap`), et depuis le point 1 le dessin coûte
+**1,3 ms**. Il n'y a plus rien à déplacer.
+
+## 10. `alpha: false`, `desynchronized: true` — déjà en place
+
+Vérifié dans le code des deux pages. J'avais annoncé le contraire : c'était
+faux.
+
+## 11. Un écran d'attente — déjà en place
+
+Le voile attend seize images décodées et affiche une jauge. Déjà fait.
 
 ---
 
-## En une phrase
+# Le vrai trou : le référencement
 
-Notre cuisson au chargement nous place déjà du bon côté de la ligne : les
-studios primés ne calculent pas d'éclairage global en temps réel non plus, ils
-**pré-calculent davantage et échelonnent mieux**. L'écart n'est ni le SSGI ni
-WebGPU — c'est la résolution de notre cuisson, la richesse de nos matières, et
-le poids de nos pages.
+Pour un site de transporteur, c'était le manque le plus coûteux de tout le
+projet — et il n'a rien à voir avec le décodage.
+
+Avant : titre de deux mots (`Trans Gold`), aucune description, aucune image de
+partage, aucune donnée structurée, pas de sitemap. Pour un moteur de recherche,
+trente écrans de film et de texte se résumaient à deux mots.
+
+Personne ne tape « trans gold marchandises ». On tape « transporteur palette
+Aulnay » ou « transport lot complet Seine-Saint-Denis ». Si ces phrases ne sont
+rattachées à rien, la page n'est jamais proposée.
+
+Ajouté aux deux sites :
+
+- un titre long et une description de 145 caractères (au-delà de 160, un moteur
+  coupe la phrase en plein milieu) ;
+- les balises Open Graph et Twitter, avec une vignette 1200 × 630 tirée du film ;
+- un `<link rel="canonical">`, `robots`, `theme-color` ;
+- un bloc JSON-LD `LocalBusiness` + `Organization` pour Trans Gold : adresse,
+  coordonnées géographiques, SIREN, SIRET, code APE, date de création,
+  catalogue de prestations. **Toutes ces données viennent du registre national
+  des entreprises**, pas d'une supposition : une donnée structurée fausse se
+  retourne contre le site ;
+- `robots.txt` et `sitemap.xml`, produits par la construction d'après l'adresse
+  canonique déclarée dans la page.
+
+## Ce qui reste à faire de ce côté
+
+**L'hébergement.** GitHub Pages renvoie `cache-control: max-age=600` sur tous
+les fichiers, et ce n'est pas réglable. Dix minutes. Un visiteur qui revient
+une heure plus tard **re-télécharge les 34 Mo du film**. Chez un hébergeur qui
+laisse poser `max-age=31536000, immutable` sur les images (Cloudflare Pages,
+Netlify, Vercel — gratuits à cette échelle), la deuxième visite serait
+quasiment instantanée. C'est probablement le plus gros gain restant, et il ne
+demande aucune ligne de code.
+
+Deux autres points, mineurs : GitHub Pages ne sert qu'en gzip (22 ko pour la
+page) là où brotli donnerait environ 17 ko ; et les images AVIF sont servies
+avec l'en-tête `content-type: image/jpeg` — le navigateur reconnaît le format
+aux octets, donc ça marche, mais ça interdit toute négociation de format et
+n'importe quel intermédiaire qui « optimiserait les JPEG » les casserait.
+
+**Les adresses absolues.** Les six URL déclarées dans les balises pointent vers
+l'hébergement provisoire. Le jour du nom de domaine, il faut les reprendre —
+une adresse canonique fausse fait indexer la mauvaise page.
+
+**Trois informations toujours attendues du client**, sans lesquelles les
+mentions légales restent incomplètes : le directeur de la publication (deux
+dirigeants au registre, ça ne se devine pas), l'hébergeur retenu, et si
+« une vingtaine » désigne les camions ou les salariés — le registre annonce
+11 à 19 salariés en 2023.
