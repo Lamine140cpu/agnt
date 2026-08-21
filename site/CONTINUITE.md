@@ -19,6 +19,28 @@ mettent en scène — voir **[Les passages](#les-passages)**.
 
 ---
 
+## La 4K native, et la fin de l'agrandissement
+
+La première série est sortie en 720p, puis a été agrandie en 4K par un outil
+tiers. C'était une erreur, et elle se mesure : à taille égale, une image du
+site de référence porte une variance de laplacien de 65, les nôtres de 13.
+Cinq fois moins de détail. Un agrandisseur ne restitue rien — il fabrique un
+détail plausible, et sur du feuillage ou de la pierre cela donne cet aspect
+lisse et cireux qu'aucun réglage de livraison ne rattrape.
+
+Veo sort en 4K native. Le réglage suffit, et il supprime tout un maillon de la
+chaîne : plus d'agrandisseur, donc plus de détail inventé, plus de décalage de
+cadence à corriger, plus d'outro à découper.
+
+UN SEUL FORMAT, 16:9. Les six prompts l'ont toujours demandé ; si la première
+série est sortie moitié en vertical, c'est que le format de sortie de Flow
+était réglé sur portrait. En 16:9 et en 4K, la version téléphone se fabrique
+par recadrage centré et fait encore 1215x2160 — le double de ce qu'affiche la
+toile d'un téléphone. Il n'y a donc plus deux séries à générer, mais une
+seule, à condition de composer pour les deux : d'où la consigne CADRE ajoutée
+à chaque plan, qui réserve le tiers central au sujet.
+
+
 ## Les deux partis pris
 
 ### Personne à l'écran
@@ -253,7 +275,9 @@ CAMÉRA. Objectif 24 mm, f/5.6, ISO 100, sur rail motorisé parfaitement stabili
 
 LUMIÈRE. Fin d'après-midi. Lumière naturelle chaude entrant par la baie, en biais, posant de longs rectangles lumineux sur le sol en pierre. Aucune lampe allumée. Ombres douces et longues. Exposition et balance des blancs VERROUILLÉES du début à la fin : aucune variation de luminosité, de contraste ou de teinte, y compris quand la baie très claire remplit le cadre.
 
-RENDU. Prise de vue réelle, film d'architecture, qualité commerciale. Colorimétrie neutre et fidèle, contraste doux, hautes lumières de la baie légèrement soutenues comme sur une vraie photographie. Grain photographique très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, aucune compression agressive.
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : tout ce qui compte doit y tenir. Les bords gauche et droit ne portent que du décor, jamais le sujet.
+
+RENDU. Prise de vue réelle, film d'architecture, qualité commerciale. Colorimétrie neutre et fidèle, contraste doux, hautes lumières de la baie légèrement soutenues comme sur une vraie photographie. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, aucune compression agressive.
 
 INTERDIT. Coupe, changement de plan, fondu, transition, saut, rotation de caméra, panoramique, zoom, tremblement, accélération, ralentissement, flou de mouvement, flou de bougé, variation d'exposition, personne, silhouette, main, animal, reflet d'équipe, texte, chiffre, logo, marque, enseigne, filigrane, signature, rideau qui bouge, feuillage agité, fumée, vapeur, poussière, particules, rendu 3D, image de synthèse, aspect jeu vidéo, couleurs saturées, HDR excessif.
 ```
@@ -275,7 +299,9 @@ CAMÉRA. Objectif 24 mm, f/5.6, ISO 100, sur rail motorisé stabilisé, axe stri
 
 LUMIÈRE. Soleil rasant de fin de journée, venant de la droite, dorant la pierre et allumant un long reflet étiré sur l'eau immobile. Aucune lampe allumée. Exposition et balance des blancs VERROUILLÉES : aucune variation entre l'intérieur sombre et l'extérieur lumineux au moment du franchissement — l'image ne doit ni s'éclaircir ni s'assombrir en sortant.
 
-RENDU. Prise de vue réelle, film d'architecture, qualité commerciale. Colorimétrie neutre et fidèle, contraste doux, grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé.
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : tout ce qui compte doit y tenir. Les bords gauche et droit ne portent que du décor, jamais le sujet.
+
+RENDU. Prise de vue réelle, film d'architecture, qualité commerciale. Colorimétrie neutre et fidèle, contraste doux, grain très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé.
 
 INTERDIT. Coupe, fondu, transition, rotation de caméra, plongée, zoom, tremblement, changement de vitesse, flou de mouvement, variation d'exposition au passage de la baie, vague, ride, clapot, remous, éclaboussure, reflet qui rampe, personne, silhouette, animal, oiseau, texte, chiffre, logo, marque, filigrane, feuillage agité par le vent, fumée, vapeur, particules, rendu 3D, image de synthèse.
 ```
@@ -359,7 +385,9 @@ CAMÉRA. Objectif 35 mm, f/5.6, ISO 100, sur rail motorisé stabilisé, axe stri
 
 LUMIÈRE. Exactement celle de l'image de départ, sans la modifier, et non celle des photographies de référence : fin de journée, soleil bas et chaud, longues ombres portées en travers de la pierre et du gravier, feuillages dorés. Même direction de lumière, mêmes ombres, même température. Sur la carrosserie, cette lumière rasante court le long du flanc en un long reflet étiré. Le rouge reste franc et lisible, ni orangé par le couchant ni assombri. Aucune ombre dure, aucun reflet ponctuel qui saute. Exposition et balance des blancs VERROUILLÉES du début à la fin.
 
-RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre, contraste doux, noirs profonds mais lisibles. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : rayons de jantes, nid d'abeille de la calandre, grain du gravier.
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : tout ce qui compte doit y tenir. Les bords gauche et droit ne portent que du décor, jamais le sujet.
+
+RENDU. Prise de vue réelle, film publicitaire automobile, qualité commerciale. Colorimétrie neutre, contraste doux, noirs profonds mais lisibles. Grain très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : rayons de jantes, nid d'abeille de la calandre, grain du gravier.
 
 INTERDIT. Coupe, fondu, transition, rotation de caméra, zoom, tremblement, changement de vitesse, flou de mouvement, flou de bougé, voiture qui apparaît, surgit ou entre dans le champ, voiture qui roule ou se gare, décor redessiné ou différent de l'image de départ, cyprès ou jardinières déplacés, véhicule différent de celui des photographies, proportions modifiées, teinte modifiée, jantes inventées, carrosserie trois portes, break, berline, plaque d'immatriculation, roue qui tourne, portière qui s'ouvre, suspension qui travaille, variation d'exposition, personne, silhouette, animal, texte, chiffre, enseigne, filigrane, fumée, poussière soulevée, gerbe, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
 ```
@@ -415,7 +443,9 @@ CAMÉRA. Objectif 24 mm, f/4, ISO 200, sur rail motorisé stabilisé, axe strict
 
 LUMIÈRE. Le jour tombe PENDANT le passage le long du mur, et à aucun autre moment. Avant le mur : plein jour lumineux, ciel bleu franc, pierre chaude, exactement la lumière du plan précédent, inchangée. Après le mur : la nuit est tombée, le ciel est bleu profond au-delà de la terrasse, et la guirlande d'ampoules chaudes éclaire l'intérieur, déjà allumée et rigoureusement constante. Une fois la terrasse atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus. Aucune flamme, aucune bougie allumée, aucune source qui vacille.
 
-RENDU. Prise de vue réelle, film de restaurant haut de gamme, qualité commerciale. Colorimétrie chaude mais fidèle, contraste doux, hautes lumières des ampoules contrôlées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé.
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : tout ce qui compte doit y tenir. Les bords gauche et droit ne portent que du décor, jamais le sujet.
+
+RENDU. Prise de vue réelle, film de restaurant haut de gamme, qualité commerciale. Colorimétrie chaude mais fidèle, contraste doux, hautes lumières des ampoules contrôlées. Grain très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé.
 
 INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, changement de vitesse, arrêt, flou de mouvement, retour dans la cour, voiture visible ou ramenée dans le champ, mur qui s'écarte tout seul, image entièrement noire, variation de lumière avant ou après le mur, personne, silhouette, serveur, main, animal, oiseau, flamme, bougie allumée, ampoule qui vacille, nappe qui bouge, store agité, texte, menu, chiffre, prix, enseigne, logo, marque, étiquette lisible, plaque d'immatriculation, filigrane, fumée, vapeur de plat, particules, rendu 3D, image de synthèse.
 ```
@@ -453,7 +483,9 @@ CAMÉRA. Objectif 24 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strict
 
 LUMIÈRE. La nuit tombe pendant le passage derrière le pilier et non avant : à l'entrée on est encore dans la lumière chaude du restaurant, à la sortie il fait nuit noire et quatre mâts de projecteurs éclairent le terrain d'une lumière blanche franche et rigoureusement constante, qui pose de larges nappes claires sur la pelouse et dessine les bandes de tonte. Ciel noir. Une fois le terrain atteint, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus. Aucun projecteur qui s'allume, s'éteint ou clignote.
 
-RENDU. Prise de vue réelle, film sportif, qualité commerciale. Colorimétrie neutre, verts justes et non saturés, blancs des lignes contrôlés, noirs profonds dans les gradins. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans la texture de la pelouse.
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : tout ce qui compte doit y tenir. Les bords gauche et droit ne portent que du décor, jamais le sujet.
+
+RENDU. Prise de vue réelle, film sportif, qualité commerciale. Colorimétrie neutre, verts justes et non saturés, blancs des lignes contrôlés, noirs profonds dans les gradins. Grain très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans la texture de la pelouse.
 
 INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, effet de volet, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, flou de mouvement, retour dans le restaurant, table ou voiture ramenée dans le champ, pilier qui s'écarte tout seul, image entièrement noire, projecteur qui clignote, ballon qui roule ou bouge, filet agité, personne, joueur, silhouette, arbitre, animal, oiseau, maillot, numéro, texte, chiffre, score, panneau publicitaire, enseigne, logo, marque, filigrane, fumée, fumigène, poussière, particules, rendu 3D, image de synthèse, aspect jeu vidéo.
 ```
@@ -507,7 +539,9 @@ CAMÉRA. Objectif 50 mm, f/4, ISO 400, sur rail motorisé stabilisé, axe strict
 
 LUMIÈRE. La lumière change PENDANT le passage le long du pilier, et à aucun autre moment. Avant : la lumière chaude et tamisée de la salle, exactement celle du plan précédent, inchangée. Après : l'éclairage d'une cuisine, blanc neutre, franc et régulier, venant du haut, sans ombre dure. Une fois la cuisine atteinte, l'exposition et la balance des blancs sont VERROUILLÉES et ne bougent plus.
 
-RENDU. Prise de vue réelle, film culinaire haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : graines de sésame, croûte du steak, grain du pain.
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : tout ce qui compte doit y tenir. Les bords gauche et droit ne portent que du décor, jamais le sujet.
+
+RENDU. Prise de vue réelle, film culinaire haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées. Grain très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : graines de sésame, croûte du steak, grain du pain.
 
 INTERDIT. Coupe, fondu au noir, fondu enchaîné, transition ajoutée, rotation de caméra, panoramique, zoom, changement de hauteur, tremblement, accélération, ralentissement, flou de mouvement, pilier qui s'écarte tout seul, retour dans la salle, table ou chaise ramenée dans le champ, texte, carte, menu lisible, caractère, chiffre, prix, image entièrement noire, personne, main, cuisinier, animal, flamme, vapeur, fumée, buée, gouttes qui coulent, particules, plastique, couleurs fluorescentes, enseigne, logo, marque, filigrane, rendu 3D, image de synthèse.
 ```
@@ -545,7 +579,9 @@ CAMÉRA. Objectif 50 mm, f/8, ISO 400, sur pied, rigoureusement fixe. Tout est n
 
 LUMIÈRE. Exactement celle du plan précédent, inchangée : éclairage de cuisine blanc neutre venant du haut, franc et régulier, sans ombre dure. Chaque couche détachée porte sa propre ombre douce, cohérente avec cette source. Exposition et balance des blancs VERROUILLÉES du début à la fin.
 
-RENDU. Prise de vue réelle, photographie culinaire professionnelle en lévitation, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées. Grain très fin. 24 images par seconde, 8 secondes, format 16:9 horizontal, résolution 1920x1080 minimum, débit élevé, netteté jusque dans les textures fines : graines de sésame, mie du pain, croûte du steak, graines de la tomate.
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : tout ce qui compte doit y tenir. Les bords gauche et droit ne portent que du décor, jamais le sujet.
+
+RENDU. Prise de vue réelle, photographie culinaire professionnelle en lévitation, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées. Grain très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : graines de sésame, mie du pain, croûte du steak, graines de la tomate.
 
 INTERDIT. Coupe, fondu, transition ajoutée, mouvement de caméra, rotation, panoramique, zoom, tremblement, flou de mouvement, couche qui tourne sur elle-même, couche qui se déforme ou change de taille, couche qui sort du cadre, explosion, projection, éclat, écartement saccadé ou à vitesse variable, support, fil, socle, vapeur, fumée, buée, sauce qui coule ou goutte, jus qui tombe, miette qui vole, particules, variation d'exposition, personne, main, animal, texte, chiffre, étiquette, logo, marque, filigrane, plastique, couleurs fluorescentes, rendu 3D, image de synthèse.
 ```
