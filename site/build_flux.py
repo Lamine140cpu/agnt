@@ -160,7 +160,12 @@ def main():
         shutil.rmtree(OUT, ignore_errors=True)
         os.makedirs(OUT)
     elif SEULE:
-        shutil.rmtree(os.path.join(OUT, "assets", "film", SEULE), ignore_errors=True)
+        # Même piège que pour l'écriture : le dossier porte le nom de la SOURCE,
+        # pas celui de la clé. Effacer d'après la clé ne supprimait rien, et la
+        # création butait ensuite sur un dossier déjà là.
+        shutil.rmtree(os.path.join(OUT, "assets", "film",
+                                   os.path.basename(SERIES[SEULE]["dossier"])),
+                      ignore_errors=True)
     elif not os.path.isdir(OUT):
         sys.exit(f"« page » suppose une construction existante : {OUT} est absent")
 
