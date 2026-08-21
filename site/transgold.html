@@ -344,16 +344,102 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    ambre souligné, il saute aux yeux à la relecture comme au client. */
 [data-a-completer]{color:var(--ambre);border-bottom:1px dashed var(--ambre);
   font-style:italic}
+
+/* ==================================================================== LE MENU
+
+   Une page de trente écrans sans menu est une page où l'on ne trouve rien. Le
+   visiteur d'un site de transporteur ne vient pas admirer un camion : il vient
+   savoir s'il peut faire enlever une palette jeudi, et à quel prix. Il lui faut
+   donc un chemin direct vers le numéro, à tout moment.
+
+   La barre est FIXE et non collante : elle ne disparaît jamais, y compris
+   pendant le film. Elle reste discrète — fond translucide, filet d'un pixel —
+   pour ne pas manger l'image.
+
+   `mix-blend-mode: difference` a été retiré de l'en-tête : il rendait le texte
+   illisible sur les plages claires du film, et surtout il empêchait toute
+   interaction. Un menu qu'on ne peut pas cliquer n'est pas un menu. */
+.tete{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;
+  justify-content:space-between;align-items:center;gap:16px;
+  padding:14px var(--marge);font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--gris);
+  pointer-events:auto;mix-blend-mode:normal;
+  background:linear-gradient(180deg,rgba(10,12,14,.92),rgba(10,12,14,.55) 70%,transparent);
+  backdrop-filter:saturate(140%) blur(6px);-webkit-backdrop-filter:saturate(140%) blur(6px)}
+.tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
+.tete a{color:inherit;text-decoration:none}
+
+/* Les sections visées par le menu se décalent de la hauteur de l'en-tête,
+   sinon leur première ligne atterrit DERRIÈRE lui — mesuré : la section
+   arrivait à 0 px du haut, donc sous une barre de cinquante pixels. */
+[id]{scroll-margin-top:96px}
+@media (max-width:899px){[id]{scroll-margin-top:118px}}
+
+/* Le menu ne disparaît pas sur téléphone : il passe sur une seconde ligne,
+   défilable à l'horizontale. Un site de transporteur consulté depuis un quai
+   ou une cabine l'est surtout au téléphone — c'est là qu'il faut pouvoir
+   atteindre les garanties et le contact, pas seulement sur un bureau. */
+.menu{display:flex;gap:26px;align-items:center;overflow-x:auto;
+  scrollbar-width:none;-ms-overflow-style:none}
+.menu::-webkit-scrollbar{display:none}
+@media (max-width:899px){
+  .tete{flex-wrap:wrap;row-gap:10px;padding-bottom:10px}
+  .tete > a:first-child{order:1}
+  .tel{order:2}
+  .menu{order:3;flex:1 0 100%;gap:18px;font-size:10px;letter-spacing:.14em;
+    padding-bottom:2px}
+}
+.menu a{position:relative;padding:4px 0;transition:color .25s ease}
+.menu a:hover{color:var(--os)}
+.menu a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:var(--ambre);transform:scaleX(0);transform-origin:left;
+  transition:transform .25s ease}
+.menu a:hover::after{transform:scaleX(1)}
+
+/* Le bouton d'appel. Sur téléphone il porte le numéro entier : c'est l'action
+   la plus utile de tout le site, et la cacher derrière un menu déroulant
+   serait une faute. */
+.tel{display:inline-flex;align-items:center;gap:9px;padding:9px 16px;
+  border:1px solid var(--ambre);border-radius:2px;color:var(--ambre);
+  letter-spacing:.16em;white-space:nowrap;transition:background .25s ease,color .25s ease}
+.tel:hover{background:var(--ambre);color:var(--noir)}
+.tel i{width:6px;height:6px;border-radius:50%;background:var(--ambre);
+  flex:0 0 auto;transition:background .25s ease}
+.tel:hover i{background:var(--noir)}
+.tel span{display:none}
+@media (min-width:520px){.tel span{display:inline}}
+
+/* -------------------------------------------------------------- le contact
+   Deux colonnes sur écran large : ce qu'on écrit à gauche, ce qu'on compose à
+   droite. Sur téléphone elles s'empilent, le numéro d'abord. */
+.coord{display:grid;gap:34px;margin-top:28px}
+@media (min-width:820px){.coord{grid-template-columns:1fr 1fr;gap:48px}}
+.coord dt{font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--sourd);margin:0 0 6px}
+.coord dd{margin:0 0 22px;color:var(--os);line-height:1.75}
+.coord dd a{color:var(--ambre);text-decoration:none;border-bottom:1px solid transparent;
+  transition:border-color .25s ease}
+.coord dd a:hover{border-bottom-color:var(--ambre)}
 </style>
 </head>
 <body>
 
 <canvas id="toile"></canvas>
 
-<header class="tete"><b>Trans Gold</b><span>Transport &amp; logistique · Depuis 2017</span></header>
+<header class="tete">
+  <a href="#top"><b>Trans Gold</b></a>
+  <nav class="menu">
+    <a href="#metiers">Prestations</a>
+    <a href="#procede">Comment ça marche</a>
+    <a href="#garanties">Garanties</a>
+    <a href="#maison">Qui nous sommes</a>
+    <a href="#parler">Contact</a>
+  </nav>
+  <a class="tel" href="tel:+33660926646"><i></i><span>+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</span></a>
+</header>
 
 <main>
-<div id="prologue">
+<div id="prologue"><span id="top"></span>
 
   <!-- Six actes, six plans, une seule livraison racontée de bout en bout.
        Ce qui est écrit ici ne dit jamais plus que ce qu'on sait : deux
@@ -458,10 +544,23 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
      À partir d'ici les sections recouvrent la toile : le film est fini, on
      passe à ce qui se lit. -->
 
+<!-- ================================================== LA SUITE, OPAQUE
+
+     Ce conteneur n'est pas décoratif, il fait DEUX choses indispensables :
+     il place les sections au-dessus de la toile fixe du film (z-index 4
+     contre 1), et c'est lui que l'observateur d'apparition interroge pour
+     révéler les blocs « pose », qui naissent à opacité zéro.
+
+     Sans lui, la moitié basse du site est invisible ET derrière l'image.
+     Défaut introduit en remplaçant le contenu de la vitrine et rattrapé à la
+     capture d'écran : le clic du menu menait au bon endroit, mais on n'y
+     voyait que le film. -->
+<div id="suite">
+
   <section class="bloc bande" id="metiers">
     <div class="chapitre">
       <div>
-        <p class="eti pose"><b>VII</b> · Ce qu’on transporte</p>
+        <p class="eti pose"><b>VI</b> · Ce qu’on transporte</p>
         <p class="titre t-xl pose" style="margin-top:18px">Du fret,<br>
           pas une <span class="ital">spécialité.</span></p>
       </div>
@@ -492,7 +591,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="bloc bande regle" id="procede">
     <div class="chapitre">
       <div>
-        <p class="eti pose"><b>VIII</b> · Comment ça se passe</p>
+        <p class="eti pose"><b>VII</b> · Comment ça se passe</p>
         <p class="titre t-xl pose" style="margin-top:18px">Un appel,<br>
           une <span class="ital">réponse.</span></p>
       </div>
@@ -520,7 +619,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   <section class="bloc bande regle" id="garanties">
     <div class="chapitre">
       <div>
-        <p class="eti pose"><b>IX</b> · Ce que vous pouvez vérifier</p>
+        <p class="eti pose"><b>VIII</b> · Ce que vous pouvez vérifier</p>
         <p class="titre t-xl pose" style="margin-top:18px">Avant de confier<br>
           une <span class="ital">palette.</span></p>
       </div>
@@ -546,6 +645,37 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
     </div>
   </section>
 
+  <section class="bloc bande regle" id="maison">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose"><b>IX</b> · Qui nous sommes</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Aulnay,<br>
+          porte de <span class="ital">l’Europe.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Trans Gold Marchandises est une société de transport
+          routier créée en 2017 et établie à Aulnay-sous-Bois, en
+          Seine-Saint-Denis.</p>
+        <p class="corps pose" style="margin-top:18px">L’adresse n’est pas un
+          détail : on est à quelques minutes de l’A1 et de l’A3, à un quart
+          d’heure de Roissy, aux portes de Paris et de la première zone
+          logistique de France. Un enlèvement en Île-de-France se cale dans la
+          journée, et un départ vers le nord ou l’est de l’Europe ne commence
+          pas par deux heures de périphérique.</p>
+        <div class="grille pose">
+          <div><p class="eti">Depuis 2017</p><p class="corps">Huit ans
+            d’exploitation continue.</p></div>
+          <div><p class="eti">Seine-Saint-Denis</p><p class="corps">Aulnay-sous-Bois,
+            au cœur du réseau autoroutier francilien.</p></div>
+          <div><p class="eti">Deux gabarits</p><p class="corps">Semi-remorque
+            fourgon et porteur à hayon.</p></div>
+          <div><p class="eti">France &amp; Europe</p><p class="corps">Porte à
+            porte, sans rupture de charge.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="bloc bande regle" id="parler">
     <div class="chapitre centre">
       <div>
@@ -558,7 +688,18 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
           l’arrivée, la date. Cinq informations et on sait vous répondre.</p>
         <p class="pose"><a class="appel" href="tel:+33660926646">
           +33 6 60 92 66 46 <span>→</span></a></p>
-        <p class="sous pose">Transport de marchandises &amp; logistique · Depuis 2017</p>
+        <dl class="coord pose">
+          <div>
+            <dt>Adresse</dt>
+            <dd>Trans Gold Marchandises<br>45 rue Jean Charcot<br>93600 Aulnay-sous-Bois<br>France</dd>
+          </div>
+          <div>
+            <dt>Téléphone</dt>
+            <dd><a href="tel:+33660926646">+33 6 60 92 66 46</a></dd>
+            <dt>Activité</dt>
+            <dd>Transport routier de fret interurbain<br>France &amp; Europe · Depuis 2017</dd>
+          </div>
+        </dl>
       </div>
     </div>
   </section>
@@ -598,6 +739,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
     </div>
   </footer>
 
+</div>
 </main>
 
 <div class="voile" id="voile">
