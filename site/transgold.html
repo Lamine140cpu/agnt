@@ -338,6 +338,12 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   transition:width .3s ease}
 .voile .pct{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--os);
   font-variant-numeric:tabular-nums}
+
+/* Les champs encore vides des mentions légales se signalent d'eux-mêmes.
+   Un « à compléter » en gris passe inaperçu et finit publié tel quel ; en
+   ambre souligné, il saute aux yeux à la relecture comme au client. */
+[data-a-completer]{color:var(--ambre);border-bottom:1px dashed var(--ambre);
+  font-style:italic}
 </style>
 </head>
 <body>
@@ -557,11 +563,38 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
     </div>
   </section>
 
+  <!-- Mentions légales : ce n'est pas une convention mais une obligation.
+       Un site professionnel français doit porter la raison sociale, la forme
+       juridique, le SIRET, le siège, le responsable de publication et
+       l'hébergeur. Données vérifiées au registre national des entreprises
+       (SIREN 831321112), pas recopiées d'un document du client. -->
+  <section class="bloc bande regle" id="mentions">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose">Mentions légales</p>
+      </div>
+      <div>
+        <p class="sous pose"><strong>TRANS GOLD MARCHANDISES</strong> — société par
+          actions simplifiée (SAS).<br>
+          Siège social : 45 rue Jean Charcot, 93600 Aulnay-sous-Bois, France.<br>
+          SIREN 831&nbsp;321&nbsp;112 · SIRET du siège 831&nbsp;321&nbsp;112&nbsp;00029.<br>
+          Code APE 49.41A — transports routiers de fret interurbains.<br>
+          Société immatriculée le 31 juillet 2017.<br>
+          Téléphone : <a href="tel:+33660926646">+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</a>.<br>
+          Directeur de la publication : <span data-a-completer>à compléter</span>.<br>
+          Hébergeur : <span data-a-completer>à compléter</span>.</p>
+        <p class="sous pose">Les photographies et séquences présentées sur ce site
+          illustrent l’activité de transport ; les véhicules figurés portent la
+          livrée de la société.</p>
+      </div>
+    </div>
+  </section>
+
   <footer class="bande">
     <div class="pied">
-      <span>© 2026 Trans Gold</span>
-      <span>Transport &amp; logistique</span>
-      <span>+33 6 60 92 66 46</span>
+      <span>© 2026 Trans Gold Marchandises</span>
+      <span>Aulnay-sous-Bois · SIREN 831 321 112</span>
+      <span><a href="tel:+33660926646">+33 6 60 92 66 46</a></span>
     </div>
   </footer>
 
