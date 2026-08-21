@@ -921,7 +921,39 @@ function auPlusProche(i){
 }
 
 let posee = -1;
-function fondu(pos){
+/* ------------------------------------------------ SE POSER SUR UNE IMAGE
+
+   Le fondu enchaîné existe pour masquer le pas entre deux images pendant le
+   mouvement. À L'ARRÊT il devient un défaut : la page tient un mélange à
+   parts égales de deux vues distantes de trente-trois pixels de travelling,
+   et le résultat est un DÉDOUBLEMENT — un bord de lettre en devient deux.
+   Vérifié sur le logo d'un client : le « D » sort franc sur une image seule
+   et fantomatique sur le mélange.
+
+   On mesure donc la vitesse, en images par trame, et l'on ramène la position
+   affichée vers l'image entière la plus proche à mesure qu'elle tombe. Au
+   repos l'accroche vaut un : une seule image est posée, sans aucun mélange.
+   Au-delà du seuil elle vaut zéro et le fondu reprend tous ses droits.
+
+   Le seuil est en images par trame et non en pixels par seconde, pour rester
+   juste quelle que soit la densité de la séquence : un quart d'image par
+   trame, soit une quinzaine d'images par seconde, ce qui correspond à un
+   défilement lent et délibéré. Au-dessus, l'oeil ne distingue plus le
+   dédoublement de toute façon.
+
+   L'accroche est lissée dans le temps, sinon elle vacillerait entre deux
+   trames et l'image tressauterait au lieu de se poser. */
+const SEUIL_ACCROCHE = 0.25;
+let posPrec = -1, accroche = 0;
+
+function fondu(brut){
+  if (posPrec >= 0) {
+    const vitesse = abs(brut - posPrec);
+    const vise = vitesse >= SEUIL_ACCROCHE ? 0 : 1 - vitesse / SEUIL_ACCROCHE;
+    accroche += (vise - accroche) * 0.25;
+  }
+  posPrec = brut;
+  const pos = brut + (Math.round(brut) - brut) * accroche;
   const bas = borne(Math.floor(pos), 0, SEQ.images - 1);
   const haut = borne(bas + 1, 0, SEQ.images - 1);
   const t = pos - bas;
@@ -932,6 +964,7 @@ function fondu(pos){
   const b = cache.get(haut);
   if (b && cache.has(bas) && t > 0.01) { ctx.globalAlpha = t; poser(b); ctx.globalAlpha = 1; }
   posee = pos;
+  window.__ACCROCHE = accroche;
   dessinee = -1;
   /* Point d'observation. `posee` vit dans cette fermeture, donc de l'extérieur
      rien ne permet de savoir si l'image affichée AVANCE réellement pendant un
