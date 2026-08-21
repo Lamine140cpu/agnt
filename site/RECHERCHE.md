@@ -104,6 +104,97 @@ absorber. **Le chargeur suit.** Il n'y a rien à corriger de ce côté.
 
 ---
 
+---
+
+# Vérification de la piste n°1 du rapport de recherche
+
+Le rapport approfondi désigne comme premier levier une chose que je n'avais pas
+nommée : **un seul fichier AVIF en séquence, lu image par image avec
+`ImageDecoder` de WebCodecs**. Compression inter-image ET accès indexé. Il avait
+raison de pousser : ma conclusion « la vidéo ne rapporte que 15 % » était trop
+pessimiste parce que j'avais testé **VP9**, pas **AV1**, et à qualité non
+appariée.
+
+Mesuré ici sur 160 images 1920 × 1080, séquence AVIF produite par `avifenc`
+(libavif 1.0.4, `-k 12 -q 62 -s 6`), lue dans Chromium :
+
+| | poids | PSNR contre la source |
+|---|---|---|
+| 160 fichiers AVIF séparés (en service) | 7,41 Mo — 47,4 ko/image | 37,36 dB |
+| 1 séquence AVIF | **4,64 Mo — 29,7 ko/image** | **38,99 dB** |
+
+**−37 % de poids ET 1,6 dB de mieux.** Projeté sur le plan large complet :
+34 Mo → **22,9 Mo**.
+
+Le décodage aussi est plus rapide, ce qui est contre-intuitif :
+
+| | coût par image |
+|---|---|
+| fichiers AVIF séparés (décodage intra complet) | 62,8 ms |
+| séquence AVIF, lecture **avant** continue | **29,2 ms** |
+| séquence AVIF, saut au hasard | 65,2 ms |
+| séquence AVIF, **marche arrière** image par image | **208,8 ms** |
+
+## Le piège que le rapport n'a pas vu : la marche arrière
+
+208 ms par image en remontant. C'est la nature même du codage inter-image : pour
+rendre l'image N il faut avoir décodé depuis l'image-clé précédente, donc chaque
+pas en arrière refait toute la marche. Un visiteur qui remonte la page — ce que
+tout le monde fait — verrait la page tomber à 5 images par seconde.
+
+Le profil image par image montre aussi que **Chromium garde un cache interne** :
+une image récemment décodée revient en 0,1 ms. Mais la taille de ce cache n'est
+pas réglable, donc on ne peut pas s'appuyer dessus.
+
+**La parade est structurelle, pas un réglage** : décoder par **bloc de GOP**
+entier et garder les douze images dans notre propre fenêtre, au lieu de demander
+une image à la fois. La marche arrière à l'intérieur d'un bloc déjà décodé
+devient gratuite, et le coût amorti retombe au niveau de la lecture avant.
+
+## Le second piège : un seul fichier, c'est un seul téléchargement
+
+Aujourd'hui la page affiche quelque chose après seize images, soit ~700 ko. Avec
+un fichier unique de 23 Mo, plus rien ne s'affiche tant que les octets ne sont
+pas là. `ImageDecoder` accepte un flux, mais on ne peut décoder que ce qui est
+arrivé.
+
+**Découper la séquence en segments** d'environ 120 images (une dizaine de
+fichiers) conserve la compression inter-image, rend le premier écran aussi
+rapide qu'aujourd'hui, et borne la marche à faire depuis l'image-clé.
+
+## Ce que ça donnerait
+
+Séquence en segments de 120 images, GOP 12, décodage par bloc :
+
+- **−33 % de poids** à qualité supérieure ;
+- **décodage deux fois plus rapide** en lecture avant ;
+- marche arrière ramenée au coût de la lecture avant par le cache de blocs ;
+- dix fichiers au lieu de 791 — un cache trivial et dix requêtes.
+
+Le coût : réécriture du chargeur (la fenêtre glissante raisonne en blocs et non
+plus en images) et une dépendance à `ImageDecoder`, avec repli sur les fichiers
+séparés pour les navigateurs qui ne l'exposent pas.
+
+## Là où je ne suis pas d'accord avec le rapport
+
+**L'interpolation d'images côté client contredit son propre § 13.** Le § 13
+explique — à juste titre — que notre fondu entre images voisines fait déjà
+office de flou de mouvement et permet de baisser la cadence. Si c'est vrai,
+alors synthétiser les images intermédiaires avec un réseau de neurones ne
+rapporte presque rien de plus qu'un fondu qui, lui, est gratuit. À cela s'ajoute
+que l'interpolation doit produire l'image **avant** qu'on en ait besoin, alors
+que le défilement est bidirectionnel et saute — c'est exactement le cas où elle
+est le plus en retard.
+
+**Le § 15 raisonne sur des statistiques génériques**, pas sur notre page. Le
+numéro de téléphone est déjà dans une barre fixe visible en permanence, le film
+ne bloque pas le premier rendu, et la page affiche quelque chose après 700 ko.
+La recommandation de fond — ne jamais faire attendre le contenu utile — est
+juste, mais elle est déjà appliquée. Ce qui reste vrai et non fait : baisser la
+cadence de 30 à 24 images par seconde, et mesurer le LCP réel en conditions 4G.
+
+---
+
 # Les pistes examinées et écartées
 
 ## 4. Remplacer la suite d'images par une vidéo — écarté
