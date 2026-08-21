@@ -1225,8 +1225,9 @@ function fondu(brut){
   window.__POSEE = cache.has(bas) ? bas : -1;
 }
 
-/* Ce que mesure une image du film, connu dès le premier décodage. */
-let filmL = 0, filmH = 0;
+/* Ce que mesure une image du film, connu dès le premier décodage, et le
+   facteur de réduction que la mesure de fluidité fera varier. */
+let filmL = 0, filmH = 0, echelle = 1;
 
 function redimensionner(){
   /* Sur un écran étroit on plafonne à 1,5 au lieu de 2. Une toile de 390 px
@@ -1256,12 +1257,26 @@ function redimensionner(){
      La règle est donc simple : la densité retenue est la plus grande qui
      laisse encore l'image COUVRIR la toile sans être agrandie. Le facteur de
      couverture vaut alors exactement 1, et `drawImage` recopie au lieu de
-     rééchantillonner. On ne descend jamais sous 1 — une toile plus grossière
-     que l'écran serait floue, ce qui est le défaut qu'on cherche à éviter. */
+     rééchantillonner.
+
+     ET ON NE POSE AUCUN PLANCHER À 1. C'était le reste du défaut, et il
+     touchait précisément les écrans de bureau. Une fenêtre de 2560 px de large
+     donne un rapport juste de 0,75 ; un plancher à 1 le remontait à 1, donc une
+     toile de 2560 x 1440, donc un agrandissement, donc les 184 ms. Mesuré :
+     6 images par seconde sur un écran 1440p, 10 sur un 1440p à 125 %. Tout
+     écran plus large que le film retombait dans le trou qu'on croyait bouché.
+
+     Une toile plus petite que la fenêtre n'est pas un défaut : l'élément est
+     étiré par la FEUILLE DE STYLE, donc l'agrandissement est fait par le
+     compositeur du navigateur — sur la carte graphique, et une seule fois par
+     trame au lieu d'une fois par image dessinée. On ne perd rien : les pixels
+     en trop étaient inventés de toute façon, l'information s'arrête à 1920.
+     Le plancher réel est intrinsèque — la toile ne descend jamais sous la
+     définition du film. */
   const juste = (filmL && filmH)
     ? min(filmL / innerWidth, filmH / innerHeight)
     : plafond;
-  const dpr = max(1, min(devicePixelRatio || 1, plafond, juste));
+  const dpr = min(devicePixelRatio || 1, plafond, juste) * echelle;
 
   canvas.width = round(innerWidth * dpr);
   canvas.height = round(innerHeight * dpr);
@@ -1271,15 +1286,13 @@ function redimensionner(){
   /* La toile perd tous ses réglages quand on change sa taille : à replacer
      ici, jamais une seule fois au démarrage.
 
-     « high » emploie un filtre à plusieurs passes. Il ne se justifie que
-     lorsqu'on agrandit vraiment — un écran plus large que le film, ce qui
-     n'arrive plus qu'à la série étroite sur une fenêtre large. Partout
-     ailleurs il coûte cinq fois le dessin pour une différence qu'aucun œil
-     ne relève sur une image qui bouge. */
-  const agrandit = (filmL && filmH)
-    && max(canvas.width / filmL, canvas.height / filmH) > 1.01;
+     « high » emploie un filtre à plusieurs passes, et il ne se justifierait
+     qu'en agrandissant. Or la toile ne dépasse plus jamais la définition du
+     film : il n'y a plus d'agrandissement à filtrer ici, seulement une copie
+     ou une légère réduction. « high » ne coûterait donc que du temps — et
+     c'est lui qui faisait tomber les écrans larges à six images par seconde. */
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = agrandit ? 'high' : 'low';
+  ctx.imageSmoothingQuality = 'low';
 
   if (posee >= 0) fondu(posee); else if (dessinee >= 0) dessiner(dessinee);
 }
@@ -1333,16 +1346,35 @@ let vise = 0, courant = 0, dernier = performance.now();
    inertie propre que le système gère mieux que nous — c'est aussi le réglage
    par défaut de Lenis, la bibliothèque qu'ils emploient. Et rien du tout si le
    visiteur a demandé moins de mouvement : on ne s'interpose pas dans le
-   défilement de quelqu'un qui a explicitement dit non. */
-const molette = !lent && matchMedia('(hover: hover) and (pointer: fine)').matches;
+   défilement de quelqu'un qui a explicitement dit non.
+
+   `?molette=0` dans l'adresse coupe le lissage et rend la molette au
+   navigateur. C'est le seul moyen de trancher une question de RESSENTI sans
+   être devant la machine : les deux versions se comparent en rechargeant. */
+const _arg = new URLSearchParams(location.search).get('molette');
+const molette = _arg !== '0' && !lent
+  && matchMedia('(hover: hover) and (pointer: fine)').matches;
 let cibleY = scrollY, lisseY = scrollY;
+
+/* La hauteur de la page, mesurée UNE fois.
+
+   Elle était lue dans le gestionnaire de molette. `scrollHeight` force le
+   navigateur à recalculer la mise en page de toute la page — trente écrans,
+   des dizaines de sections — et cela à CHAQUE cran de molette, c'est-à-dire
+   plusieurs fois par seconde pendant qu'on défile, sur le fil principal, juste
+   à côté du dessin du film. C'est la seule dépense de tout le lecteur qui ne
+   touchait que le PC : le tactile ne passe jamais par là. */
+let basDePage = 0;
+const mesurerHauteur = () => { basDePage = max(document.body.scrollHeight - innerHeight, 0); };
+mesurerHauteur();
+addEventListener('resize', mesurerHauteur, { passive: true });
+addEventListener('load', mesurerHauteur);
 
 if (molette) {
   addEventListener('wheel', (e) => {
     if (e.ctrlKey) return;                    // le zoom du navigateur reste au navigateur
     e.preventDefault();
-    const bas = max(document.body.scrollHeight - innerHeight, 0);
-    cibleY = borne(cibleY + e.deltaY * (e.deltaMode === 1 ? 18 : 1), 0, bas);
+    cibleY = borne(cibleY + e.deltaY * (e.deltaMode === 1 ? 18 : 1), 0, basDePage);
   }, { passive: false });
   /* Clavier, barre de défilement, ancres : tout ce qui déplace la page sans
      passer par la molette doit ramener la cible, sinon elle tirerait la page
@@ -1370,7 +1402,106 @@ function boucle(now){
      économise deux tracés. */
   if (abs(courant - posee) > 0.05) fondu(courant);
   acteCourant();
+  jauger(now, abs(vise - courant) > 0.05);
   requestAnimationFrame(boucle);
+}
+
+/* ------------------------------------------------- la toile qui s'auto-règle
+
+   Tout ce qui précède suppose qu'on sait ce que coûte un dessin sur la machine
+   du visiteur. On ne le sait pas. Un écran 1440p ou 4K oblige forcément à
+   agrandir la dernière étape — le film s'arrête à 1920 — et selon que cet
+   agrandissement tombe sur une carte graphique ou sur le processeur, il est
+   gratuit ou il coûte tout. Mesuré ici, sans carte graphique, sur une fenêtre
+   de 2560 px : 60 images par seconde sans agrandissement, 21 avec.
+
+   Plutôt que de deviner le matériel, on MESURE le résultat. Si le rendu tient
+   moins de quarante-cinq images par seconde pendant que ça défile, on réduit
+   la toile d'un cran ; si la marge revient, on la rend. Le visiteur d'une
+   machine rapide garde la pleine définition, celui d'une machine lente garde
+   la fluidité — et personne n'a à choisir à sa place.
+
+   On ne juge QUE pendant le mouvement : à l'arrêt le navigateur ralentit de
+   lui-même, et prendre ça pour de la lenteur ferait rétrécir la toile sans
+   raison. */
+let tPrec = 0, durees = [], tDernierReglage = 0, essai = null, rendu = '', dernierMedian = 0;
+
+function jauger(now, enMouvement){
+  if (!enMouvement) { tPrec = 0; durees.length = 0; return; }
+  if (tPrec) durees.push(now - tPrec);
+  tPrec = now;
+  if (durees.length < 40) return;
+
+  durees.sort((a, b) => a - b);
+  const median = dernierMedian = durees[durees.length >> 1];
+  durees.length = 0;
+
+  /* 1,5 s entre deux décisions : retailler la toile efface son contenu et se
+     voit. Mieux vaut un réglage sûr que trois hésitations. */
+  if (now - tDernierReglage < 1500) return;
+
+  /* ON VÉRIFIE QUE RÉDUIRE SERT À QUELQUE CHOSE.
+
+     Première version : dès que ça ramait, on rétrécissait. Mesuré sur une
+     fenêtre de 2560 px, la toile est tombée de 1920 x 1080 à 1002 x 564 — donc
+     nettement plus floue — et la cadence n'a pas bougé d'une image : 21 par
+     seconde avant, 21 après. Le coût n'était pas le dessin, c'était le
+     compositeur qui repeint la fenêtre entière, et celui-là ne dépend pas de
+     la taille de la toile.
+
+     Une dégradation qui ne rapporte rien est une dégradation pure. On garde
+     donc la mesure d'avant, et si le cran suivant n'améliore pas d'au moins
+     un dixième, on revient en arrière et on cesse d'essayer. Mieux vaut une
+     image nette à vingt images par seconde qu'une image floue à vingt. */
+  if (essai) {
+    const gagne = median < essai.avant * 0.9;
+    if (!gagne) { echelle = essai.echelle; redimensionner(); rendu = 'stable'; }
+    essai = null;
+    tDernierReglage = now;
+    return;
+  }
+  if (rendu === 'stable') return;
+
+  if (median > 22 && echelle > 0.5) {                                      // < 45 i/s
+    essai = { echelle, avant: median };
+    echelle = max(0.5, echelle * 0.85);
+  } else if (median < 13 && echelle < 1) {                                 // de la marge
+    echelle = min(1, echelle * 1.12);
+  } else return;
+
+  tDernierReglage = now;
+  redimensionner();
+}
+
+/* ------------------------------------------------------------- le témoin
+
+   `?diag=1` affiche ce que la page mesure d'elle-même, sur la machine du
+   visiteur. Rien de tout cela n'est devinable à distance : le conteneur qui a
+   servi à régler ce lecteur n'a pas de carte graphique, et il plafonne donc à
+   vingt images par seconde sur toute fenêtre plus large que le film, quelle
+   que soit la taille de la toile. Impossible de savoir depuis ici si un PC
+   donné souffre du dessin, du compositeur, du décodeur ou du lissage.
+
+   Le témoin répond à la place : il donne la fenêtre, la toile, la densité, le
+   temps médian d'une trame pendant le défilement, et le retard du décodeur.
+   Ces cinq nombres suffisent à désigner le coupable. */
+if (new URLSearchParams(location.search).get('diag') === '1') {
+  const t = document.createElement('pre');
+  t.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;margin:0;'
+    + 'padding:9px 12px;background:rgba(0,0,0,.82);color:#7fe;font:11px/1.6 ui-monospace,monospace;'
+    + 'border:1px solid #7fe4;border-radius:3px;pointer-events:none;white-space:pre';
+  document.body.appendChild(t);
+  setInterval(() => {
+    const m = dernierMedian;
+    t.textContent =
+      `fenêtre    ${innerWidth} x ${innerHeight}   densité ${(devicePixelRatio||1).toFixed(2)}\n` +
+      `toile      ${canvas.width} x ${canvas.height}   échelle ${echelle.toFixed(2)}\n` +
+      `film       ${filmL} x ${filmH}   lissage ${ctx.imageSmoothingQuality}\n` +
+      `trame      ${m ? m.toFixed(1) + ' ms  (' + Math.round(1000/m) + ' i/s)' : '—'}\n` +
+      `décodeur   retard ${(window.__POSEE >= 0 ? abs(window.__POSEE - window.__VOULUE) : -1).toFixed(2)} image` +
+      `   ${cache.size} en cache\n` +
+      `molette    ${molette ? 'lissée' : 'native'}`;
+  }, 250);
 }
 
 /* L'apparition des blocs de la suite. Une seule fois : on cesse d'observer
