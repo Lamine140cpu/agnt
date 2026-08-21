@@ -83,8 +83,14 @@ import numpy as np
 from PIL import Image
 
 SITE = os.path.dirname(os.path.abspath(__file__))
-SOURCE = os.path.join(SITE, "ultra-motion.html")
-OUT = os.path.join(SITE, "dist", "flux")
+
+# Un client se construit avec le même moteur et le même code : seuls la page
+# source, le dossier de sortie et les dossiers d'images changent. C'est la
+# preuve que la chaîne est réutilisable — si construire un second site
+# demandait de dupliquer ce fichier, elle ne le serait pas.
+CLIENT = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("client=")), None)
+SOURCE = os.path.join(SITE, f"{CLIENT}.html" if CLIENT else "ultra-motion.html")
+OUT = os.path.join(SITE, "dist", CLIENT if CLIENT else "flux")
 
 
 def _drapeau(nom, defaut):
@@ -116,9 +122,14 @@ SEULE = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("serie=")
 # Densité voulue, en pixels de défilement par image. C'est ELLE qu'on choisit ;
 # le nombre d'images en découle.
 PAR_IMAGE = _drapeau("parimage=", 33)
+# Les CLÉS restent « accueil » et « accueil-etroit » : ce sont les noms que le
+# lecteur emploie pour choisir sa série selon la forme de l'écran, et il n'a
+# pas à savoir de quel client il s'agit. Seuls les DOSSIERS changent.
+_pref = CLIENT if CLIENT else "accueil"
+_etroit = f"{CLIENT}-etroit" if CLIENT else "accueil-etroit"
 SERIES = {
-    "accueil":        dict(dossier="assets/film/accueil",        largeur=_drapeau("large=", 1920)),
-    "accueil-etroit": dict(dossier="assets/film/accueil-etroit", largeur=_drapeau("etroit=", 720)),
+    "accueil":        dict(dossier=f"assets/film/{_pref}",   largeur=_drapeau("large=", 1920)),
+    "accueil-etroit": dict(dossier=f"assets/film/{_etroit}", largeur=_drapeau("etroit=", 720)),
 }
 # Les courses mesurées dans un navigateur. Ce sont elles qui, divisées par la
 # densité voulue, donnent le nombre d'images à livrer.
@@ -195,8 +206,13 @@ def main():
         # porte déjà le bon compte — ce qui est le cas dès que le disque et le
         # fichier unique s'accordent — la substitution est un non-changement,
         # et le test criait à l'échec sur une opération parfaitement réussie.
+        # Le motif se construit sur le DOSSIER, pas sur la clé de série : la
+        # page d'un client écrit « assets/film/transgold/f » là où la vitrine
+        # écrit « assets/film/accueil/f », alors que la clé vaut « accueil »
+        # dans les deux cas. Chercher la clé ne trouverait rien chez le client.
+        dossier = os.path.basename(SERIES[nom]["dossier"])
         src, combien = re.subn(
-            rf"(chemin: *'assets/film/{re.escape(nom)}/f', *images: *)\d+",
+            rf"(chemin: *'assets/film/{re.escape(dossier)}/f', *images: *)\d+",
             rf"\g<1>{n}", src)
         if combien != 1:
             sys.exit(f"compte de {nom} : {combien} correspondance(s) dans la page "
