@@ -75,8 +75,12 @@ SERIE = _reste[2] if len(_reste) > 2 else "large"
 # « accueil » est le prologue de la vitrine du studio : même cadrage que
 # « large », mais un dossier à part, pour que les deux séquences puissent
 # coexister sans que l'une écrase l'autre.
+# « transgold » : le premier client. Dossiers à part, pour que sa séquence et
+# celle de la vitrine coexistent sans qu'aucune n'écrase l'autre — les deux
+# doivent rester livrables en même temps.
 FORMATS = {"large": 16 / 9, "etroit": 9 / 16,
-           "accueil": 16 / 9, "accueil-etroit": 9 / 16}
+           "accueil": 16 / 9, "accueil-etroit": 9 / 16,
+           "transgold": 16 / 9, "transgold-etroit": 9 / 16}
 if SERIE not in FORMATS:
     sys.exit(f"série inconnue : {SERIE} — attendu : {', '.join(FORMATS)}")
 CIBLE = FORMATS[SERIE]
