@@ -642,6 +642,60 @@ INTERDIT. Coupe, fondu, transition ajoutée, mouvement de caméra, rotation, pan
 
 ---
 
+---
+
+# Plan 7 — La fermeture
+
+**Ce plan ne sert pas à montrer quelque chose de plus. Il sert à finir.**
+
+Le film ne couvre que le prologue ; en dessous, le site continue en sections
+noires et opaques qui recouvrent la toile. Sans ce plan, la dernière image du
+burger — claire, en lumière de cuisine — est masquée d'un coup par ce noir.
+La couture se voit à chaque descente.
+
+On emploie donc une dernière fois **le passage** : une masse sombre qui vient
+occuper le cadre. Sauf qu'ici elle ne masque pas un raccord, elle rejoint la
+couleur du site. Le film ne s'arrête pas, il se referme.
+
+**Un passage physique, pas un fondu.** La règle ne change pas pour la fin : un
+fondu au noir est un effet, et un effet ne se remonte pas proprement quand le
+visiteur repart en arrière. Une porte qui se referme, si.
+
+**La dernière image n'est pas noire.** Il reste une fente de lumière au
+centre. Un noir uniforme sur les trente dernières images donnerait une
+séquence qui paraît figée en fin de course — le visiteur croirait la page
+cassée. Une fente qui se referme dit clairement que c'est fini, et elle laisse
+au nom de la marque un fond propre sur lequel se poser.
+
+**Et il se rouvre.** C'est le seul plan dont la réversibilité se voit
+vraiment : en remontant, la porte se rouvre sur la cuisine. C'est la
+démonstration littérale du principe qui tient tout le film.
+
+```
+L'image jointe est la première image de ce plan. Reprends exactement la même cuisine, le même burger, la même lumière, et ne bouge rien avant que le mouvement ne commence.
+
+Un seul plan continu de huit secondes, sans aucune coupe, dans lequel deux vantaux sombres se referment lentement devant la scène.
+
+MOUVEMENT. Le plan se déroule en deux temps enchaînés, sans jamais s'arrêter ni changer de vitesse.
+
+Premier temps, environ une seconde : rien ne bouge. La caméra est rigoureusement fixe, le burger reste exactement dans la position de l'image de départ, couches séparées et suspendues, parfaitement immobiles. Cette seconde d'immobilité est indispensable : c'est elle qui raccorde au plan précédent.
+
+Deuxième temps, environ sept secondes : deux vantaux noir mat entrent dans le cadre, l'un par la gauche, l'autre par la droite, et se referment l'un vers l'autre à vitesse rigoureusement constante, en translation horizontale pure. Ils sont parfaitement verticaux, à bords nets, et se déplacent sans osciller ni accélérer. La scène reste visible entre eux, de plus en plus étroite. À la dernière image, il ne subsiste qu'une fente verticale lumineuse au centre exact du cadre, large d'environ un vingtième de l'image, à travers laquelle on aperçoit encore la planche et une partie du burger. Les vantaux ne se touchent pas : la fente reste ouverte. La caméra ne bouge à aucun moment : aucune avance, aucun recul, aucune rotation, aucun panoramique, aucun zoom, aucun tremblement. Le burger ne bouge pas non plus : ses couches restent figées dans la même position pendant les huit secondes.
+
+SUJET. Au centre, la scène du plan précédent, inchangée : le burger aux couches séparées et suspendues au-dessus d'une planche en chêne huilé, dans une cuisine professionnelle en inox. De part et d'autre, deux vantaux pleins en métal noir mat, sans poignée, sans charnière visible, sans hublot, sans grille, sans inscription, sans numéro, sans pictogramme. Leur surface est unie et légèrement satinée, elle accroche discrètement la lumière de la cuisine sur son bord intérieur. Leurs arêtes verticales sont franches et parfaitement droites. AUCUNE PERSONNE, aucune main, aucun bras, rien qui pousse les vantaux : ils se referment seuls, sans mécanisme visible. Aucune étiquette, aucune marque, aucun texte nulle part.
+
+CAMÉRA. Objectif 50 mm, f/8, ISO 200, sur pied, rigoureusement fixe. Axe strictement horizontal, verticales parfaitement redressées, sujet centré. Nette de bout en bout. Obturateur très rapide, 1/1000 s : chaque image parfaitement nette, y compris les bords des vantaux en mouvement, sans le moindre filé.
+
+LUMIÈRE. Exactement celle du plan précédent, inchangée : éclairage de cuisine blanc neutre venant du haut, franc et régulier. Les vantaux ne portent aucune ombre sur le burger et ne modifient pas son éclairage : la scène centrale conserve la même exposition du début à la fin, seule sa largeur visible diminue. Aucune lumière ne s'éteint, aucune ne s'allume, aucune ne baisse. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+
+CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le site montre ce plan en entier sur ordinateur, mais sur téléphone il n'en garde qu'une bande verticale centrale : le burger et la fente finale doivent y tenir. Les vantaux occupent les bords, ce qui est exactement leur rôle.
+
+RENDU. Prise de vue réelle, film culinaire haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, couleurs justes et non sursaturées, noir des vantaux profond mais conservant sa matière satinée. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : graines de sésame, mie du pain, satiné du métal, arête des vantaux.
+
+INTERDIT. Coupe, changement de plan, fondu, fondu au noir, transition, saut, mouvement de caméra, rotation, panoramique, zoom, tremblement, accélération, ralentissement, flou de mouvement, filé sur les bords des vantaux, variation d'exposition, extinction de lumière, baisse de lumière, ombre portée par les vantaux sur le burger, vantaux qui se touchent, fente qui se ferme entièrement, image entièrement noire, burger qui bouge, couches qui se rapprochent ou s'écartent, personne, main, bras, mécanisme, vérin, rail, charnière, poignée, hublot, grille, texte, chiffre, symbole, logo, marque, filigrane, fumée, vapeur, particules, rendu 3D, image de synthèse, aspect jeu vidéo, couleurs saturées, HDR excessif.
+```
+
+
 # Juger, avant de me les envoyer
 
 Regardez chaque plan **deux fois** :
