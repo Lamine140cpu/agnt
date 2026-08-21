@@ -10,37 +10,41 @@ distance, le dernier kilomètre, la palette posée.
 
 ---
 
-## LA RÈGLE QUI COMMANDE TOUT : LES CAMIONS SORTENT BLANCS
+## LA LIVRÉE EST GÉNÉRÉE, ET C'EST UN CHOIX ASSUMÉ
 
-Les images fournies par le client sont **générées**, et le logo y est déjà
-déformé — une vignette porte « TRAN$ GOLD », avec un S changé en dollar, et
-la ligne « MARCHANDISES » y est illisible. Un modèle ne sait pas écrire : il
-dessine quelque chose qui ressemble à du texte.
+Deux méthodes étaient possibles. Elles sont notées ici pour mémoire, parce que
+si un défaut apparaît plus tard on saura d'où il vient.
 
-Livrer à Trans Gold une page où leur nom est mal orthographié sur leur propre
-camion serait la faute la plus visible possible. On ne demande donc **jamais**
-au modèle de produire la livrée.
+**La méthode écartée : camions blancs, logo composé après coup.** Les
+véhicules sortent entièrement blancs, et le logo vectoriel est posé par calcul
+géométrique sur les surfaces planes. Avantage : le logo est identique sur les
+1 440 images, net et correctement orthographié. Inconvénient : du travail en
+plus, et elle exige le fichier vectoriel.
 
-**Les véhicules sont générés entièrement blancs, lisses, sans une seule
-inscription. Le logo est composé par-dessus, après coup, depuis leur fichier
-vectoriel.**
+**La méthode retenue : la livrée est générée avec le reste.** Le modèle
+travaille à partir des images de référence du client, donc il RECOPIE le logo
+au lieu de l'inventer — ce qui est très différent d'une génération à partir de
+texte seul, et rend la première image fidèle.
 
-Ce n'est pas un contournement, c'est la méthode juste :
+Le risque connu porte sur la SUITE des images. Un modèle redessine le logo à
+chaque image, et rien ne garantit qu'il le redessine identique : les petites
+lignes de texte peuvent se déformer d'une image à l'autre. Sur une vidéo lue à
+trente images par seconde cela ne se voit pas ; sur un site qui s'arrête sur
+une image et la tient, cela peut se voir. Les images de référence fournies
+portent déjà « TRAN$ GOLD » sur une vignette.
 
-  — la caisse d'un fourgon est une **surface plane** ; y poser un logo est une
-    opération géométrique exacte, pas une invention ;
-  — le fichier vectoriel est net à n'importe quelle taille et correctement
-    orthographié, ce qu'aucun modèle ne garantira jamais ;
-  — et c'est leur identité réelle qui apparaît, pas une approximation.
+**Ce qu'il faut donc vérifier dès le premier plan rendu**, avant d'en générer
+cinq autres : extraire les images 1, 60, 120, 180 et 240, les poser côte à
+côte, et regarder si le logo est le même sur les cinq. Dix secondes de
+contrôle qui évitent de découvrir le problème à la livraison.
 
-Comme toujours, **ce qui doit être absent se décrit dans SUJET,
-positivement** : on n'écrit pas « pas de logo », on écrit « caisse blanche
-entièrement lisse et unie ». Leçon payée trois fois — le badge de la Golf, la
-plaque d'immatriculation, puis l'écran du tableau de bord.
+Si la livrée tient, il n'y a rien à faire de plus. Si elle dérive, la méthode
+écartée reste disponible, et seul le temps de génération aura été perdu.
 
-Même chose pour les emblèmes de constructeur : une étoile Mercedes ou un
-losange Renault déformé est aussi laid qu'un nom mal écrit. **Calandres
-lisses.** Le client vend son service, pas la marque de son châssis.
+**Les plaques d'immatriculation, elles, restent vides dans tous les cas.** Ce
+n'est pas une question de style : un numéro inventé par un modèle a de bonnes
+chances de correspondre à un véhicule réel appartenant à quelqu'un d'autre.
+On décrit donc des emplacements lisses et unis — un véhicule de présentation.
 
 ## UN SEUL CAMION À L'ÉCRAN, TOUJOURS
 
@@ -111,13 +115,21 @@ la surface qui portera le logo l'est aussi, et la composition ultérieure n'a
 presque rien à suivre.
 
 ```
+IMAGES JOINTES — deux rôles distincts, à ne pas confondre.
+
+La première image jointe est L'IMAGE DE DÉPART de ce plan : elle donne le lieu, le cadrage, la hauteur de caméra et la lumière. Le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
+
+Les autres images jointes sont les RÉFÉRENCES DE LA LIVRÉE. Elles ne donnent ni le décor, ni le cadrage, ni la lumière : elles servent uniquement à reproduire fidèlement le marquage du véhicule — la marque circulaire, ses couleurs, sa typographie, sa position sur la caisse. Reproduis-la exactement telle qu'elle apparaît sur ces images, sans rien redessiner, sans rien styliser, sans rien réinterpréter.
+
 Un seul plan continu de huit secondes, sans aucune coupe, qui accompagne un ensemble routier seul sur une autoroute, à l'aube.
 
 MOUVEMENT. La caméra se déplace latéralement à la vitesse EXACTE du camion, à son niveau, sur un axe parallèle à la route : le camion reste donc rigoureusement immobile dans le cadre, tandis que le paysage, la glissière et le bitume défilent derrière lui de la droite vers la gauche, à vitesse rigoureusement constante. En plus de ce mouvement d'accompagnement, la caméra se rapproche très lentement et en ligne droite : à la première image on voit l'ensemble entier de trois quarts avant, à la dernière on est plus près, cadré sur la cabine et le début de la caisse. Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement, aucune variation de vitesse. Les roues tournent, la route défile, rien d'autre ne bouge.
 
-SUJET. Un ensemble routier moderne : tracteur à cabine haute avec couchette, attelé à une semi-remorque fourgon à parois lisses. CARROSSERIE ET CAISSE ENTIÈREMENT BLANCHES, LISSES ET UNIES : la peinture est une surface pleine, sans inscription, sans logo, sans numéro, sans bande de couleur, sans autocollant, sans marquage d'aucune sorte. La calandre du tracteur est LISSE : grille pleine, sans emblème, sans étoile, sans losange, sans sigle. Les emplacements de plaque d'immatriculation, devant comme derrière, sont LISSES, VIDES ET UNIS : pas de plaque, pas de support, aucun caractère. Vitres teintées, rétroviseurs noirs, jantes en acier claires, pneus propres. Phares allumés, blancs et constants. Feux de gabarit orange allumés le long du pavillon. AUCUNE PERSONNE, aucune silhouette dans la cabine, aucun autre véhicule sur la route.
+SUJET. Un ensemble routier moderne : tracteur à cabine haute avec couchette, attelé à une semi-remorque fourgon à parois lisses. La caisse porte la LIVRÉE décrite plus bas, conforme aux images de référence. Le reste de la carrosserie est blanc et lisse. Les emplacements de plaque d'immatriculation, devant comme derrière, sont LISSES, VIDES ET UNIS : pas de plaque, pas de support, aucun caractère. Vitres teintées, rétroviseurs noirs, jantes en acier claires, pneus propres. Phares allumés, blancs et constants. Feux de gabarit orange allumés le long du pavillon. AUCUNE PERSONNE, aucune silhouette dans la cabine, aucun autre véhicule sur la route.
 
 DÉCOR. Une autoroute à deux voies, bitume sombre et régulier, marquage blanc net, glissière métallique. De part et d'autre, des collines douces et des champs, végétation d'automne. Ciel de fin de nuit : bleu profond au zénith, virant à l'orange pâle sur l'horizon. Aucun panneau, aucune sortie, aucun péage, aucun bâtiment, aucun texte lisible nulle part.
+
+LIVRÉE. Le marquage de Trans Gold, exactement celui des images de référence jointes, sur une caisse blanche. Au centre du flanc, une grande marque circulaire : un globe terrestre bleu et blanc, encerclé par deux arcs épais — l'un bleu montant à gauche, l'autre rouge descendant à droite — prolongés à droite par trois traits obliques en fuite. Devant le globe, la silhouette blanche et grise d'un ensemble routier vu de trois quarts avant. Sous le globe, le mot TRANS GOLD en grandes capitales dorées à ombre portée ; en dessous, le mot MARCHANDISES en capitales grises fines encadrées de deux filets horizontaux ; en dessous encore, la ligne TRANSPORT DE MARCHANDISES & LOGISTIQUE en très petites capitales ; enfin, en bas, la mention DEPUIS 2017 sur deux lignes. L'orthographe est EXACTEMENT celle-ci, lettre pour lettre, sur toutes les images du plan sans exception : TRANS GOLD, MARCHANDISES, TRANSPORT DE MARCHANDISES & LOGISTIQUE, DEPUIS 2017. Aucune lettre ne change de forme, aucune ne disparaît, aucune ne s'ajoute d'une image à l'autre. Une version réduite de la même marque figure sur la portière de la cabine. Le reste de la carrosserie est blanc, lisse et uni.
 
 CAMÉRA. Objectif 50 mm, f/5.6, ISO 400, sur véhicule travelling parfaitement stabilisé, axe strictement horizontal à deux mètres du sol, verticales parfaitement redressées. Nette de bout en bout, y compris sur le paysage qui défile. Obturateur très rapide, 1/1000 s : chaque image parfaitement nette, AUCUN FILÉ sur le décor, aucun flou de roue, aucun flou de bougé. Le mouvement doit se lire dans l'écart entre deux images, jamais dans le flou d'une seule.
 
@@ -127,7 +139,7 @@ CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Le
 
 RENDU. Prise de vue réelle, film publicitaire automobile haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, contraste doux, blancs de la carrosserie tenus et non brûlés, noirs des pneus lisibles. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : grain du bitume, rainures des pneus, arêtes de la caisse.
 
-INTERDIT. Coupe, changement de plan, fondu, transition, rotation de caméra, panoramique, zoom, tremblement, accélération, ralentissement, flou de mouvement, filé sur le décor, flou de roue, texte, chiffre, lettre, logo, emblème, étoile, losange, sigle, marque, plaque d'immatriculation, autocollant, bande de couleur, marquage, panneau, enseigne, filigrane, deuxième véhicule, voiture, camion, personne, silhouette, chauffeur, animal, fumée, vapeur d'échappement, projection d'eau, poussière, particules, pluie, brouillard, rendu 3D, image de synthèse, aspect jeu vidéo, couleurs saturées, HDR excessif.
+INTERDIT. Coupe, changement de plan, fondu, transition, rotation de caméra, panoramique, zoom, tremblement, accélération, ralentissement, flou de mouvement, filé sur le décor, flou de roue, caractère déformé, lettre inventée, lettre manquante, orthographe modifiée, marquage différent des images de référence, marque redessinée ou stylisée, plaque d'immatriculation, panneau, enseigne, filigrane, deuxième véhicule, voiture, camion, personne, silhouette, chauffeur, animal, fumée, vapeur d'échappement, projection d'eau, poussière, particules, pluie, brouillard, rendu 3D, image de synthèse, aspect jeu vidéo, couleurs saturées, HDR excessif.
 ```
 
 ---
@@ -142,15 +154,23 @@ conditions qui rendent la composition ultérieure exacte plutôt
 qu'approximative.
 
 ```
+IMAGES JOINTES — deux rôles distincts.
+
+La première est L'IMAGE DE DÉPART : le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
+
+Les autres sont les RÉFÉRENCES DE LA LIVRÉE, à rejoindre à CHAQUE plan sans exception. Elles ne donnent ni le décor, ni le cadrage, ni la lumière : elles servent uniquement à maintenir le marquage identique d'un plan au suivant — même marque, mêmes couleurs, même typographie, même orthographe. Sans elles, le marquage dérive un peu plus à chaque génération et le sixième plan ne ressemble plus au premier.
+
 L'image jointe est la première image de ce plan. Reprends exactement le même camion, la même route, la même lumière, et poursuis le mouvement sans le moindre à-coup.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui longe le flanc d'une semi-remorque en roulant.
 
 MOUVEMENT. La caméra continue d'accompagner le camion à sa vitesse exacte, à son niveau : le camion reste immobile dans le cadre et le paysage défile derrière lui, de la droite vers la gauche, à vitesse rigoureusement constante. La caméra glisse en outre le long du véhicule, de l'avant vers l'arrière, en translation latérale pure et à vitesse rigoureusement constante : à la première image on est cadré sur la cabine, à la dernière on est parvenu à l'arrière de la remorque, dont les portes fermées occupent la droite du cadre et se rapprochent de l'objectif. Entre les deux, le flanc de la caisse traverse le cadre d'un bord à l'autre, entièrement visible, parfaitement plan et parfaitement net. Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement, aucune variation de vitesse ni de distance.
 
-SUJET. La semi-remorque fourgon du plan précédent, vue de profil, à parois lisses. CAISSE ENTIÈREMENT BLANCHE, LISSE ET UNIE : surface pleine et mate, sans inscription, sans logo, sans numéro, sans bande de couleur, sans autocollant, sans marquage d'aucune sorte. Les seuls reliefs sont ceux du véhicule : le bandeau de protection latéral, les trois essieux, les jantes claires, le passage de roue, la barre anti-encastrement. À l'arrière, deux portes battantes fermées, à cadre métallique et charnières apparentes, blanches et lisses elles aussi. Les emplacements de plaque sont LISSES, VIDES ET UNIS. AUCUNE PERSONNE, aucun autre véhicule.
+SUJET. La semi-remorque fourgon du plan précédent, vue de profil, à parois lisses. La caisse porte la LIVRÉE décrite plus bas, conforme aux images de référence : la grande marque circulaire occupe le centre du flanc et le traverse avec lui. Les seuls reliefs sont ceux du véhicule : le bandeau de protection latéral, les trois essieux, les jantes claires, le passage de roue, la barre anti-encastrement. À l'arrière, deux portes battantes fermées, à cadre métallique et charnières apparentes, blanches et lisses elles aussi. Les emplacements de plaque sont LISSES, VIDES ET UNIS. AUCUNE PERSONNE, aucun autre véhicule.
 
 DÉCOR. La même autoroute, le même paysage de collines, la même heure. La glissière défile en bas du cadre. Aucun panneau, aucun bâtiment, aucun texte lisible.
+
+LIVRÉE. Le marquage de Trans Gold, exactement celui des images de référence jointes, sur une caisse blanche. Au centre du flanc, une grande marque circulaire : un globe terrestre bleu et blanc, encerclé par deux arcs épais — l'un bleu montant à gauche, l'autre rouge descendant à droite — prolongés à droite par trois traits obliques en fuite. Devant le globe, la silhouette blanche et grise d'un ensemble routier vu de trois quarts avant. Sous le globe, le mot TRANS GOLD en grandes capitales dorées à ombre portée ; en dessous, le mot MARCHANDISES en capitales grises fines encadrées de deux filets horizontaux ; en dessous encore, la ligne TRANSPORT DE MARCHANDISES & LOGISTIQUE en très petites capitales ; enfin, en bas, la mention DEPUIS 2017 sur deux lignes. L'orthographe est EXACTEMENT celle-ci, lettre pour lettre, sur toutes les images du plan sans exception : TRANS GOLD, MARCHANDISES, TRANSPORT DE MARCHANDISES & LOGISTIQUE, DEPUIS 2017. Aucune lettre ne change de forme, aucune ne disparaît, aucune ne s'ajoute d'une image à l'autre. Une version réduite de la même marque figure sur la portière de la cabine. Le reste de la carrosserie est blanc, lisse et uni.
 
 CAMÉRA. Objectif 50 mm, f/5.6, ISO 400, sur véhicule travelling parfaitement stabilisé, axe strictement horizontal, PERPENDICULAIRE au flanc de la remorque, verticales parfaitement redressées. La distance au flanc ne varie pas d'un bout à l'autre du plan : la caisse conserve exactement la même taille dans le cadre. Nette de bout en bout. Obturateur 1/1000 s : chaque image parfaitement nette, AUCUN FILÉ sur le décor, aucun flou de roue.
 
@@ -160,7 +180,7 @@ CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Su
 
 RENDU. Prise de vue réelle, film publicitaire automobile haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, blancs tenus et non brûlés, contraste doux. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : rivets, joints de panneaux, rainures des pneus.
 
-INTERDIT. Coupe, fondu, transition, rotation de caméra, panoramique, zoom, tremblement, variation de distance au flanc, variation de vitesse, flou de mouvement, filé sur le décor, flou de roue, reflet mobile sur la tôle, ombre portée qui traverse la caisse, dégradé de lumière le long du flanc, texte, chiffre, lettre, logo, emblème, marque, plaque d'immatriculation, autocollant, bande de couleur, marquage, panneau, filigrane, deuxième véhicule, personne, silhouette, animal, fumée, vapeur, projection, poussière, particules, rendu 3D, image de synthèse.
+INTERDIT. Coupe, fondu, transition, rotation de caméra, panoramique, zoom, tremblement, variation de distance au flanc, variation de vitesse, flou de mouvement, filé sur le décor, flou de roue, reflet mobile sur la tôle, ombre portée qui traverse la caisse, dégradé de lumière le long du flanc, caractère déformé, lettre inventée, lettre manquante, orthographe modifiée, marquage différent des images de référence, marque redessinée ou stylisée, plaque d'immatriculation, panneau, filigrane, deuxième véhicule, personne, silhouette, animal, fumée, vapeur, projection, poussière, particules, rendu 3D, image de synthèse.
 ```
 
 ---
@@ -219,6 +239,12 @@ besoin ni d'un panneau, ni d'une frontière, ni d'une carte animée, tous
 illisibles et tous des clichés.
 
 ```
+IMAGES JOINTES — deux rôles distincts.
+
+La première est L'IMAGE DE DÉPART : le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
+
+Les autres sont les RÉFÉRENCES DE LA LIVRÉE, à rejoindre à CHAQUE plan sans exception. Elles ne donnent ni le décor, ni le cadrage, ni la lumière : elles servent uniquement à maintenir le marquage identique d'un plan au suivant — même marque, mêmes couleurs, même typographie, même orthographe. Sans elles, le marquage dérive un peu plus à chaque génération et le sixième plan ne ressemble plus au premier.
+
 L'image jointe est la première image de ce plan. Reprends exactement la même remorque et le même chargement, et poursuis le mouvement sans le moindre à-coup.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui ressort d'une semi-remorque sur une plateforme logistique, de nuit.
@@ -234,6 +260,8 @@ Troisième temps, le reste du plan : le montant se dégage et découvre une plat
 Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement.
 
 SUJET. Une plateforme logistique moderne, la nuit. Bâtiment bas et long en bardage métallique clair, une rangée de portes de quai sectionnelles fermées, numérotées par des chiffres ILLISIBLES ET EFFACÉS — surfaces unies, sans caractère. Bourrelets d'étanchéité noirs au-dessus de chaque porte. Tablier de béton lisse et propre, marquages au sol effacés et unis. Éclairage par mâts en tête de parking, lumière blanche et régulière, halos doux. Au premier plan, l'arrière de la semi-remorque blanche, portes ouvertes, reculée contre un quai. AUCUN AUTRE VÉHICULE, aucune remorque, aucun tracteur, aucun chariot. AUCUNE PERSONNE. Aucune enseigne, aucun panneau, aucun texte, aucun chiffre, aucun logo nulle part.
+
+LIVRÉE. Le marquage de Trans Gold, exactement celui des images de référence jointes, sur une caisse blanche. Au centre du flanc, une grande marque circulaire : un globe terrestre bleu et blanc, encerclé par deux arcs épais — l'un bleu montant à gauche, l'autre rouge descendant à droite — prolongés à droite par trois traits obliques en fuite. Devant le globe, la silhouette blanche et grise d'un ensemble routier vu de trois quarts avant. Sous le globe, le mot TRANS GOLD en grandes capitales dorées à ombre portée ; en dessous, le mot MARCHANDISES en capitales grises fines encadrées de deux filets horizontaux ; en dessous encore, la ligne TRANSPORT DE MARCHANDISES & LOGISTIQUE en très petites capitales ; enfin, en bas, la mention DEPUIS 2017 sur deux lignes. L'orthographe est EXACTEMENT celle-ci, lettre pour lettre, sur toutes les images du plan sans exception : TRANS GOLD, MARCHANDISES, TRANSPORT DE MARCHANDISES & LOGISTIQUE, DEPUIS 2017. Aucune lettre ne change de forme, aucune ne disparaît, aucune ne s'ajoute d'une image à l'autre. Une version réduite de la même marque figure sur la portière de la cabine. Le reste de la carrosserie est blanc, lisse et uni.
 
 CAMÉRA. Objectif 24 mm, f/4, ISO 1600, sur rail motorisé parfaitement stabilisé, axe strictement horizontal, verticales parfaitement redressées. Nette de bout en bout. Obturateur très rapide, 1/1000 s : chaque image parfaitement nette, sans le moindre flou de bougé.
 
@@ -257,6 +285,12 @@ transporteur généraliste doit tenir, et la seule façon de la montrer est de
 changer de camion — ce que le passage sur le pilier autorise sans coupe.
 
 ```
+IMAGES JOINTES — deux rôles distincts.
+
+La première est L'IMAGE DE DÉPART : le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
+
+Les autres sont les RÉFÉRENCES DE LA LIVRÉE, à rejoindre à CHAQUE plan sans exception. Elles ne donnent ni le décor, ni le cadrage, ni la lumière : elles servent uniquement à maintenir le marquage identique d'un plan au suivant — même marque, mêmes couleurs, même typographie, même orthographe. Sans elles, le marquage dérive un peu plus à chaque génération et le sixième plan ne ressemble plus au premier.
+
 L'image jointe est la première image de ce plan. Reprends exactement la même nuit et la même lumière, et poursuis le mouvement sans le moindre à-coup.
 
 Un seul plan continu de huit secondes, sans aucune coupe, qui longe un pilier de béton et découvre un camion porteur à l'arrêt devant un commerce.
@@ -271,9 +305,11 @@ Troisième temps, le reste du plan : le pilier se dégage par la droite et déco
 
 Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement.
 
-SUJET. Un camion porteur à caisse fourgon, de gabarit moyen, cabine courte. CARROSSERIE ET CAISSE ENTIÈREMENT BLANCHES, LISSES ET UNIES : surface pleine et mate, sans inscription, sans logo, sans numéro, sans bande de couleur, sans autocollant, sans marquage. La calandre est LISSE : grille pleine, sans emblème, sans sigle. Les emplacements de plaque sont LISSES, VIDES ET UNIS. À l'arrière, un hayon élévateur en aluminium brossé, replié verticalement contre les portes, et un marchepied. Vitres teintées, rétroviseurs noirs, jantes claires. Feux de position allumés, constants. AUCUNE PERSONNE dans la cabine ni sur le trottoir. AUCUN AUTRE VÉHICULE en circulation ou stationné.
+SUJET. Un camion porteur à caisse fourgon, de gabarit moyen, cabine courte. La caisse porte la LIVRÉE décrite plus bas, conforme aux images de référence, à l'échelle du porteur. Le reste de la carrosserie est blanc et lisse. Les emplacements de plaque sont LISSES, VIDES ET UNIS. À l'arrière, un hayon élévateur en aluminium brossé, replié verticalement contre les portes, et un marchepied. Vitres teintées, rétroviseurs noirs, jantes claires. Feux de position allumés, constants. AUCUNE PERSONNE dans la cabine ni sur le trottoir. AUCUN AUTRE VÉHICULE en circulation ou stationné.
 
 DÉCOR. Une rue de ville européenne au petit matin, immeubles de pierre claire de trois ou quatre étages, trottoir large et propre, bordure en granit. La vitrine d'un commerce fermé, rideau métallique baissé, surface unie sans inscription. Quelques arbres d'alignement aux branches nues. Chaussée en enrobé sombre et propre. Aucune enseigne, aucun panneau, aucun texte, aucun chiffre, aucun logo, aucune affiche, aucune plaque de rue.
+
+LIVRÉE. Le marquage de Trans Gold, exactement celui des images de référence jointes, sur une caisse blanche. Au centre du flanc, une grande marque circulaire : un globe terrestre bleu et blanc, encerclé par deux arcs épais — l'un bleu montant à gauche, l'autre rouge descendant à droite — prolongés à droite par trois traits obliques en fuite. Devant le globe, la silhouette blanche et grise d'un ensemble routier vu de trois quarts avant. Sous le globe, le mot TRANS GOLD en grandes capitales dorées à ombre portée ; en dessous, le mot MARCHANDISES en capitales grises fines encadrées de deux filets horizontaux ; en dessous encore, la ligne TRANSPORT DE MARCHANDISES & LOGISTIQUE en très petites capitales ; enfin, en bas, la mention DEPUIS 2017 sur deux lignes. L'orthographe est EXACTEMENT celle-ci, lettre pour lettre, sur toutes les images du plan sans exception : TRANS GOLD, MARCHANDISES, TRANSPORT DE MARCHANDISES & LOGISTIQUE, DEPUIS 2017. Aucune lettre ne change de forme, aucune ne disparaît, aucune ne s'ajoute d'une image à l'autre. Une version réduite de la même marque figure sur la portière de la cabine. Le reste de la carrosserie est blanc, lisse et uni.
 
 CAMÉRA. Objectif 35 mm, f/5.6, ISO 800, sur rail motorisé parfaitement stabilisé, axe strictement horizontal à un mètre soixante du sol, verticales parfaitement redressées. Nette de bout en bout, y compris le grain du béton du pilier au moment où il frôle l'objectif. Obturateur très rapide, 1/1000 s : chaque image parfaitement nette, sans le moindre flou de bougé.
 
@@ -283,7 +319,7 @@ CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Su
 
 RENDU. Prise de vue réelle, film publicitaire automobile haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, blancs de la caisse tenus, pierre des façades juste. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : grain du béton, brossage du hayon, joints du trottoir.
 
-INTERDIT. Coupe, fondu, fondu au noir, transition ajoutée, rotation de caméra, panoramique, zoom, tremblement, variation de vitesse, flou de mouvement, pilier qui s'écarte tout seul, image entièrement noire, deuxième véhicule, voiture, scooter, vélo, personne, silhouette, chauffeur, passant, animal, oiseau, texte, chiffre, plaque de rue, enseigne, affiche, panneau, vitrine éclairée, logo, emblème, marque, filigrane, fumée, vapeur, poussière, particules, pluie, flaque, rendu 3D, image de synthèse.
+INTERDIT. Coupe, fondu, fondu au noir, transition ajoutée, rotation de caméra, panoramique, zoom, tremblement, variation de vitesse, flou de mouvement, pilier qui s'écarte tout seul, image entièrement noire, deuxième véhicule, voiture, scooter, vélo, personne, silhouette, chauffeur, passant, animal, oiseau, caractère déformé, lettre inventée, orthographe modifiée, marquage différent des images de référence, plaque de rue, enseigne, affiche, panneau, vitrine éclairée, plaque d'immatriculation, filigrane, fumée, vapeur, poussière, particules, pluie, flaque, rendu 3D, image de synthèse.
 ```
 
 ---
@@ -300,6 +336,12 @@ Le hayon qui descend est réversible : il remonte quand on remonte. C'est le
 dernier mouvement, et le seul du plan.
 
 ```
+IMAGES JOINTES — deux rôles distincts.
+
+La première est L'IMAGE DE DÉPART : le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
+
+Les autres sont les RÉFÉRENCES DE LA LIVRÉE, à rejoindre à CHAQUE plan sans exception. Elles ne donnent ni le décor, ni le cadrage, ni la lumière : elles servent uniquement à maintenir le marquage identique d'un plan au suivant — même marque, mêmes couleurs, même typographie, même orthographe. Sans elles, le marquage dérive un peu plus à chaque génération et le sixième plan ne ressemble plus au premier.
+
 L'image jointe est la première image de ce plan. Reprends exactement le même camion, la même rue, la même lumière, et poursuis le mouvement sans le moindre à-coup.
 
 Un seul plan continu de huit secondes, sans aucune coupe, où un hayon élévateur descend et dépose une palette sur le trottoir.
@@ -312,9 +354,11 @@ Deuxième temps, environ six secondes : le hayon descend en translation vertical
 
 Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement.
 
-SUJET. Une palette de bois clair portant une charge d'environ un mètre de haut, entièrement enveloppée de film étirable transparent légèrement bleuté dont on distingue les tours superposés et les plis. La charge est neutre et anonyme : cartons bruns sans impression, aucune étiquette, aucun code, aucun texte, aucun pictogramme, aucune couleur d'entreprise. Sous elle, un hayon élévateur en aluminium brossé, plateau nervuré, bords rabattables. Derrière, l'arrière du camion porteur, caisse BLANCHE ENTIÈREMENT LISSE ET UNIE, portes fermées, sans inscription ni marquage, emplacement de plaque LISSE ET VIDE. AUCUNE PERSONNE, aucune main, aucun cariste, aucun transpalette.
+SUJET. Une palette de bois clair portant une charge d'environ un mètre de haut, entièrement enveloppée de film étirable transparent légèrement bleuté dont on distingue les tours superposés et les plis. La charge est neutre et anonyme : cartons bruns sans impression, aucune étiquette, aucun code, aucun texte, aucun pictogramme, aucune couleur d'entreprise. Sous elle, un hayon élévateur en aluminium brossé, plateau nervuré, bords rabattables. Derrière, l'arrière du camion porteur, caisse blanche portant la LIVRÉE décrite plus bas sur ses portes fermées, conforme aux images de référence, emplacement de plaque LISSE ET VIDE. AUCUNE PERSONNE, aucune main, aucun cariste, aucun transpalette.
 
 DÉCOR. Le trottoir et la rue du plan précédent, inchangés. Bordure en granit, enrobé sombre, façades de pierre claire à l'arrière-plan, hors de mise au point. Aucune enseigne, aucun texte, aucun passant.
+
+LIVRÉE. Le marquage de Trans Gold, exactement celui des images de référence jointes, sur une caisse blanche. Au centre du flanc, une grande marque circulaire : un globe terrestre bleu et blanc, encerclé par deux arcs épais — l'un bleu montant à gauche, l'autre rouge descendant à droite — prolongés à droite par trois traits obliques en fuite. Devant le globe, la silhouette blanche et grise d'un ensemble routier vu de trois quarts avant. Sous le globe, le mot TRANS GOLD en grandes capitales dorées à ombre portée ; en dessous, le mot MARCHANDISES en capitales grises fines encadrées de deux filets horizontaux ; en dessous encore, la ligne TRANSPORT DE MARCHANDISES & LOGISTIQUE en très petites capitales ; enfin, en bas, la mention DEPUIS 2017 sur deux lignes. L'orthographe est EXACTEMENT celle-ci, lettre pour lettre, sur toutes les images du plan sans exception : TRANS GOLD, MARCHANDISES, TRANSPORT DE MARCHANDISES & LOGISTIQUE, DEPUIS 2017. Aucune lettre ne change de forme, aucune ne disparaît, aucune ne s'ajoute d'une image à l'autre. Une version réduite de la même marque figure sur la portière de la cabine. Le reste de la carrosserie est blanc, lisse et uni.
 
 CAMÉRA. Objectif 50 mm, f/4, ISO 800, sur rail motorisé parfaitement stabilisé, axe strictement horizontal du début à la fin, verticales parfaitement redressées. Nette sur la palette de bout en bout. Obturateur très rapide, 1/1000 s : chaque image parfaitement nette, y compris pendant la descente du hayon, sans le moindre flou de bougé.
 
@@ -324,7 +368,7 @@ CADRE. Le sujet essentiel reste dans le TIERS CENTRAL de l'image, en largeur. Su
 
 RENDU. Prise de vue réelle, film industriel haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, brun des cartons juste et non saturé, blancs de la caisse tenus. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : trame et plis du film étirable, cannelure des cartons, veine du bois de la palette, nervures du plateau.
 
-INTERDIT. Coupe, fondu, transition ajoutée, rotation de caméra, panoramique, zoom, tremblement, variation de vitesse, arrêt, flou de mouvement, palette qui apparaît, qui est chargée ou qui entre dans le champ, palette qui glisse, bascule ou vibre, hayon qui claque, reflet qui court sur le film étirable, variation d'exposition, personne, main, cariste, transpalette, chariot, animal, texte, chiffre, code-barres, étiquette, pictogramme, impression sur carton, logo, marque, filigrane, fumée, vapeur, poussière, particules, rendu 3D, image de synthèse.
+INTERDIT. Coupe, fondu, transition ajoutée, rotation de caméra, panoramique, zoom, tremblement, variation de vitesse, arrêt, flou de mouvement, palette qui apparaît, qui est chargée ou qui entre dans le champ, palette qui glisse, bascule ou vibre, hayon qui claque, reflet qui court sur le film étirable, variation d'exposition, personne, main, cariste, transpalette, chariot, animal, caractère déformé, lettre inventée, orthographe modifiée, marquage différent des images de référence, code-barres, étiquette, pictogramme, impression sur carton, filigrane, fumée, vapeur, poussière, particules, rendu 3D, image de synthèse.
 ```
 
 ---
