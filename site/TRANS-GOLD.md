@@ -340,6 +340,11 @@ caisse au plan 5. Le logo vectoriel y est posé par transformation
 géométrique, image par image. C'est cette étape qui rend le nom du client
 net et correctement orthographié, ce qu'aucun modèle ne garantira.
 
+**Le contact, déjà connu :** +33 6 60 92 66 46. Il vit dans le HTML du site,
+en lien `tel:` cliquable, et **jamais dans une image générée** — un numéro
+dessiné par un modèle serait faux, et un numéro faux sur un site de
+transporteur coûte des appels perdus.
+
 **Ce qu'il faut obtenir du client avant cette étape :**
 
   1. le logo en **vectoriel** — `.svg`, `.ai`, `.eps` ou `.pdf` ;
