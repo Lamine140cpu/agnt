@@ -177,7 +177,14 @@ def main():
         if voulu < len(fichiers):
             idx = np.linspace(0, len(fichiers) - 1, voulu).round().astype(int)
             fichiers = [fichiers[i] for i in idx]
-        cible = os.path.join(OUT, "assets", "film", nom)
+        # Le dossier de sortie porte le nom du dossier SOURCE, pas celui de la
+        # clé de série. Les deux coïncident pour la vitrine — clé « accueil »,
+        # dossier « accueil » — et divergent pour un client : la page demande
+        # « assets/film/transgold/f » alors que la clé vaut « accueil ». Nommer
+        # d'après la clé écrivait donc les images à côté de là où la page les
+        # cherche, et la page se révélait sur une toile vide sans une seule
+        # erreur — le pire mode de défaillance, celui qui ne se signale pas.
+        cible = os.path.join(OUT, "assets", "film", os.path.basename(reg["dossier"]))
         if PAGE_SEULE or (SEULE and nom != SEULE):
             comptes[nom] = len(os.listdir(cible))
             print(f"  {nom:15s} {comptes[nom]:4d} images déjà encodées")
