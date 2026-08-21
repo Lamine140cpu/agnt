@@ -1291,7 +1291,13 @@ if (new URLSearchParams(location.search).get('diag') === '1') {
       `toile      ${canvas.width} x ${canvas.height}   échelle ${echelle.toFixed(2)}\n` +
       `film       ${filmL} x ${filmH}   lissage ${ctx.imageSmoothingQuality}\n` +
       `trame      ${m ? m.toFixed(1) + ' ms  (' + Math.round(1000/m) + ' i/s)' : '—'}\n` +
-      `décodeur   retard ${(window.__POSEE >= 0 ? abs(window.__POSEE - window.__VOULUE) : -1).toFixed(2)} image` +
+      /* On compare l'image POSÉE à l'image DEMANDÉE, toutes deux entières.
+         La version précédente comparait un entier à la position fractionnaire :
+         à l'arrêt sur l'image 296 la position vaut 296,99, et l'écart affichait
+         « 1 image de retard » alors que l'image montrée était la bonne. Un
+         témoin qui accuse à tort est pire que pas de témoin. */
+      `décodeur   ${window.__POSEE < 0 ? 'IMAGE ABSENTE'
+         : 'retard ' + abs(window.__POSEE - round(window.__VOULUE)) + ' image'}` +
       `   ${cache.size} en cache\n` +
       `molette    ${molette ? 'lissée' : 'native'}`;
   }, 250);
