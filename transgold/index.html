@@ -168,19 +168,41 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    Une seule gouttière, une seule largeur maximale, partout. C'est ce qui tient
    une page longue : le lecteur n'a jamais à retrouver le bord du texte. */
 .bande{max-width:var(--max);margin:0 auto;padding:0 var(--marge)}
-.bloc{padding:clamp(86px,13vh,170px) 0}
+/* `padding` en RACCOURCI écrasait la marge latérale que `.bande` venait de
+   poser : les deux règles s'appliquent au même élément — `class="bloc bande"` —
+   et celle-ci, déclarée après, remettait le côté à zéro. Sur écran large le
+   centrage de `.bande` (max-width 1380 px, marges automatiques) rattrapait
+   l'affaire et personne ne voyait rien ; sur téléphone, où il n'y a rien à
+   centrer, TOUT le bas du site touchait le bord gauche de l'écran. Depuis
+   toujours, et masqué tant que le texte était centré.
+
+   On ne règle donc que le vertical, et la marge latérale survit. */
+.bloc{padding-top:clamp(86px,13vh,170px);padding-bottom:clamp(86px,13vh,170px)}
+/* Les mentions légales n'ont pas à occuper un écran entier. Elles portaient le
+   même souffle que les chapitres — jusqu'à 170 px de respiration en haut et en
+   bas — pour un texte qu'on lit une fois, en diagonale, quand on cherche un
+   SIRET. Elles sont ramenées à leur juste place : moitié moins d'air, et le
+   corps du texte plus petit. */
+.mentions-bas{padding-top:clamp(46px,7vh,86px);padding-bottom:clamp(46px,7vh,86px)}
+.mentions-bas .sous{font-size:13px;line-height:1.85;color:var(--sourd)}
+.mentions-bas .sous strong{color:var(--gris);font-weight:500}
+/* Et une seule colonne. Le chapitre à deux colonnes réservait sept douzièmes
+   de la largeur à l'intitulé « Mentions légales » — soit, sur un écran de
+   1440 px, plus de six cents pixels de vide en regard d'un texte qui, lui,
+   se recassait en douze lignes étroites. Ici l'intitulé se pose au-dessus et
+   le texte occupe la laize, borné à une longueur de ligne lisible. */
+@media (min-width:900px){
+  .mentions-bas .chapitre{grid-template-columns:1fr;gap:20px}
+  .mentions-bas .sous{max-width:96ch}
+}
 .regle{border-top:1px solid var(--ligne)}
 
-/* En-tête et pied fixes, en mono, très discrets : ce sont des repères, pas des
-   éléments de composition. */
-.tete{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;
-  justify-content:space-between;align-items:center;gap:16px;
-  padding:18px var(--marge);font-family:var(--mono);font-size:11px;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--sourd);
-  pointer-events:none;mix-blend-mode:difference}
-.tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
-.tete span{display:none}
-@media (min-width:720px){.tete span{display:inline}}
+/* Ces quatre règles d'en-tête étaient MORTES : une seconde définition de
+   `.tete`, plus bas dans la feuille, les écrasait entièrement — z-index 60
+   contre 40, `mix-blend-mode: normal` contre `difference`. Elles décrivaient
+   l'en-tête d'une version antérieure, celle qu'on ne pouvait pas cliquer.
+   Les garder revenait à laisser dans le fichier une description fausse de ce
+   que fait la page. */
 
 /* ================================================================== LE FILM
    La toile est fixe et couvre l'écran ; le défilement ne la déplace pas, il
@@ -315,6 +337,24 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 
 /* Le reste du site : opaque, il recouvre la toile. */
 #suite{position:relative;z-index:4;background:var(--noir)}
+/* AUCUNE RÈGLE DE COULEUR NE COUVRAIT LES LIENS ORDINAIRES.
+
+   Trois sélecteurs seulement en portaient une — `.tete a`, `.menu a`,
+   `.coord dd a` — et les deux liens téléphoniques du bas n'entrent dans aucun.
+   Ils s'affichaient donc en BLEU SOULIGNÉ, la couleur par défaut du
+   navigateur, dans les mentions légales et dans le pied de page. En ligne,
+   chez le client, sur un site par ailleurs entièrement noir et ambre.
+
+   La règle est posée sur `#suite` et le pied, pas sur `a` en général : le
+   prologue a ses propres traitements et n'a pas à être touché. */
+#suite a:not(.appel),footer a{color:var(--ambre);text-decoration:none;
+  border-bottom:1px solid rgba(184,150,62,.42);
+  transition:border-color .25s ease,color .25s ease}
+#suite a:not(.appel):hover,footer a:hover{border-bottom-color:var(--ambre)}
+/* `:not(.appel)` — sans quoi la règle repeint aussi le bouton d'appel, dont le
+   fond EST l'ambre : le numéro devenait ambre sur ambre, et le bouton un
+   rectangle plein et muet. Corriger une couleur par défaut ne doit pas
+   emporter celle qui était voulue. */
 
 /* La marque, en ouverture. Interlettrage large : un mot de onze signes tenu
    sur toute la largeur se lit comme une enseigne, pas comme un titre. */
@@ -350,10 +390,23 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   .chapitre.inverse > :first-child{order:2}
   .chapitre.inverse > :last-child{order:1;align-self:end}
 }
-.chapitre.centre{grid-template-columns:1fr;justify-items:center;text-align:center;
+/* Le bloc de contact était CENTRÉ — titre, texte, bouton, adresse, tout sur
+   l'axe. C'est la mise en page qui datait le plus : elle appartient aux pages
+   « nous contacter » de 2015, et elle oblige l'oeil à repartir du milieu à
+   chaque ligne. Le reste de la page est aligné à gauche ; le contact le
+   devient aussi, et le numéro cesse de flotter. */
+.chapitre.centre{grid-template-columns:1fr;justify-items:start;text-align:left;
   gap:clamp(18px,2.4vw,30px)}
-.chapitre.centre .corps{margin-left:auto;margin-right:auto}
-@media (min-width:900px){.chapitre.centre{grid-template-columns:1fr}}
+@media (min-width:900px){
+  .chapitre.centre{grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+    gap:clamp(28px,4vw,64px);align-items:start}
+}
+/* Cette règle forçait le bloc de contact sur une seule colonne au-delà de
+   900 px, et elle vient APRÈS celle qui lui en donne deux : elle l'écrasait
+   silencieusement. Elle appartenait à la version centrée, où une colonne
+   unique avait du sens. Le contact étant désormais aligné à gauche, elle n'a
+   plus d'objet — et deux règles contradictoires sur le même sélecteur sont un
+   piège pour la prochaine retouche. */
 
 
 /* Les métiers. Même dispositif que les étapes — des filets, pas des cartes —
@@ -489,7 +542,10 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    ou une cabine l'est surtout au téléphone — c'est là qu'il faut pouvoir
    atteindre les garanties et le contact, pas seulement sur un bureau. */
 .menu{display:flex;gap:26px;align-items:center;overflow-x:auto;
-  scrollbar-width:none;-ms-overflow-style:none}
+  scrollbar-width:none;-ms-overflow-style:none;
+  /* Un fondu au bord droit : la rangée défile, et rien ne le disait. */
+  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);
+  mask-image:linear-gradient(90deg,#000 88%,transparent)}
 .menu::-webkit-scrollbar{display:none}
 @media (max-width:899px){
   .tete{flex-wrap:wrap;row-gap:10px;padding-bottom:10px}
@@ -498,8 +554,16 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   .menu{order:3;flex:1 0 100%;gap:18px;font-size:10px;letter-spacing:.14em;
     padding-bottom:2px}
 }
-.menu a{position:relative;padding:4px 0;transition:color .25s ease}
-.menu a:hover{color:var(--os)}
+/* Pas de retour à la ligne. La rangée défile déjà horizontalement ; sans
+   `nowrap`, chaque intitulé se coupait en trois — « COMMENT / ÇA / MARCHE » —
+   et « CONTACT » sortait de l'écran tronqué en « CONT ». */
+.menu a{position:relative;padding:4px 0;white-space:nowrap;
+  transition:color .25s ease}
+.menu a:hover,.menu a.ici{color:var(--os)}
+/* Le repère de section : le lien de l'endroit où l'on se trouve reste souligné
+   d'ambre. C'est ce qui manque le plus à une page de trente écrans — savoir où
+   l'on est sans avoir à deviner. */
+.menu a.ici::after{transform:scaleX(1)}
 .menu a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
   background:var(--ambre);transform:scaleX(0);transform-origin:left;
   transition:transform .25s ease}
@@ -515,8 +579,14 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .tel i{width:6px;height:6px;border-radius:50%;background:var(--ambre);
   flex:0 0 auto;transition:background .25s ease}
 .tel:hover i{background:var(--noir)}
-.tel span{display:none}
-@media (min-width:520px){.tel span{display:inline}}
+/* LE NUMÉRO NE DISPARAÎT PAS. Sous 520 px il ne restait qu'une pastille
+   ambre muette : sur le site d'un transporteur, appeler est l'action la plus
+   utile de la page, et l'escamoter pour gagner quelques pixels est une faute
+   de fond. On le rétrécit, on ne le cache pas. */
+@media (max-width:519px){
+  .tel{padding:7px 10px;letter-spacing:.04em;font-size:10.5px;gap:7px}
+  .tel i{width:5px;height:5px}
+}
 
 /* -------------------------------------------------------------- le contact
    Deux colonnes sur écran large : ce qu'on écrit à gauche, ce qu'on compose à
@@ -818,7 +888,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
        juridique, le SIRET, le siège, le responsable de publication et
        l'hébergeur. Données vérifiées au registre national des entreprises
        (SIREN 831321112), pas recopiées d'un document du client. -->
-  <section class="bloc bande regle" id="mentions">
+  <section class="bloc bande regle mentions-bas" id="mentions">
     <div class="chapitre">
       <div>
         <p class="eti pose">Mentions légales</p>
@@ -1175,11 +1245,16 @@ function poser(im){
       ctx.drawImage(im, im.width - 1, 0, 1, im.height, x + l - 1, 0, cw - x - l + 1, h);
     }
     ctx.drawImage(im, x, 0, l, h);
+    window.__IMAGE = im;
     return;
   }
   const k = max(cw / im.width, ch / im.height);
   ctx.drawImage(im, (cw - im.width * k) / 2, (ch - im.height * k) / 2,
                 im.width * k, im.height * k);
+  /* L'image posée est publiée : une mise en page peut vouloir y puiser sa
+     couleur. Échantillonner huit pixels sur huit coûte 0,021 ms — c'est
+     mesuré, et c'est trois centièmes du budget d'une trame. */
+  window.__IMAGE = im;
 }
 
 function dessiner(i){
@@ -1611,6 +1686,34 @@ if (new URLSearchParams(location.search).get('diag') === '1') {
       `molette    ${molette ? 'lissée' : 'native'}`;
   }, 250);
 }
+
+/* ------------------------------------------------------- le repère de section
+
+   Sur une page de trente écrans, savoir où l'on se trouve vaut mieux qu'un
+   menu qui ne dit rien. Le lien de la section en vue reste souligné d'ambre.
+
+   Un observateur d'intersection plutôt qu'un calcul à chaque défilement : le
+   navigateur fait le travail hors du fil principal, et la page tourne déjà à
+   soixante images par seconde qu'il ne faut pas dépenser ici. La marge basse
+   de -55 % choisit la section dont le HAUT a franchi le milieu de l'écran,
+   ce qui donne le même verdict que l'oeil. */
+(function repere(){
+  const liens = new Map();
+  for (const a of document.querySelectorAll('.menu a')) {
+    const cible = document.querySelector(a.getAttribute('href'));
+    if (cible) liens.set(cible, a);
+  }
+  if (!liens.size || typeof IntersectionObserver !== 'function') return;
+  let vues = new Set();
+  const oeil = new IntersectionObserver((entrees) => {
+    for (const e of entrees) e.isIntersecting ? vues.add(e.target) : vues.delete(e.target);
+    let gagnant = null;
+    for (const [cible] of liens)
+      if (vues.has(cible)) gagnant = cible;      /* la plus basse des visibles */
+    for (const [cible, a] of liens) a.classList.toggle('ici', cible === gagnant);
+  }, { rootMargin: '0px 0px -55% 0px' });
+  for (const [cible] of liens) oeil.observe(cible);
+})();
 
 /* L'apparition des blocs de la suite. Une seule fois : on cesse d'observer
    après, pour qu'un aller-retour ne fasse pas clignoter la page. */
