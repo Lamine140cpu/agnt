@@ -464,10 +464,47 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .sous{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--sourd)}
 
-.pied{border-top:1px solid var(--ligne);padding:clamp(40px,6vh,64px) 0 clamp(30px,4vh,48px);
-  display:flex;flex-wrap:wrap;gap:20px 40px;justify-content:space-between;align-items:baseline;
-  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--sourd)}
+/* --------------------------------------------------------- le pied de page
+   Une fiche, pas une signature. Quatre blocs libellés — identité, adresse,
+   téléphone et zone, plan du site — puis une ligne légale séparée par un
+   filet. C'est la disposition qu'on retrouve chez tous les transporteurs, et
+   ce n'est pas un hasard : ces quatre renseignements sont exactement ceux
+   qu'un expéditeur cherche quand il descend en bas d'une page.
+
+   Le tout est en `grid` à colonnes minimales : les blocs se replient d'eux-
+   mêmes en deux colonnes sur tablette et en une sur téléphone, sans point de
+   rupture à maintenir. */
+.pied{border-top:1px solid var(--ligne);
+  padding-top:clamp(48px,7vh,80px);padding-bottom:clamp(28px,4vh,44px)}
+.fiche{display:grid;gap:clamp(30px,4vw,52px);
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+/* L'identité tient deux places quand il y en a assez : sa phrase se lit mal
+   sur trois mots de large. */
+@media (min-width:900px){.fiche{grid-template-columns:1.6fr 1fr 1fr 1fr}}
+.pied-nom{margin:0;font-family:var(--mono);font-size:12px;font-weight:500;
+  letter-spacing:.28em;text-transform:uppercase;color:var(--os)}
+.fiche-marque .pied-txt{margin-top:14px;max-width:34ch}
+.pied-eti{margin:0 0 10px;font-family:var(--mono);font-size:10px;font-weight:500;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--sourd)}
+.pied-txt{margin:0;font-size:13.5px;line-height:1.75;color:var(--gris)}
+.pied-plan{list-style:none;margin:0;padding:0;display:grid;gap:8px;
+  font-size:13.5px;line-height:1.5}
+/* Le plan du site n'est PAS une liste de liens à souligner. Six libellés
+   d'affilée repeints en ambre et soulignés font un bloc de couleur qui pèse
+   plus que le contact lui-même. Ils restent gris et s'éclaircissent au
+   passage ; l'ambre est gardé pour ce qui appelle une action — le numéro et
+   les mentions légales.
+
+   Sélecteur préfixé par `#suite` à dessein : la règle générale des liens du
+   bas porte un identifiant, et une classe seule ne l'emporterait pas. Déjà
+   payé une fois sur `.appel`. */
+#suite .pied-plan a{color:var(--gris);border-bottom-color:transparent}
+#suite .pied-plan a:hover{color:var(--os);border-bottom-color:var(--ligne)}
+.pied-bas{margin-top:clamp(38px,5vh,64px);padding-top:22px;
+  border-top:1px solid var(--ligne);
+  display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:space-between;
+  align-items:baseline;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--sourd)}
 
 /* L'apparition. Une seule, discrète, et coupée net si le visiteur a demandé
    moins de mouvement — auquel cas tout est visible d'emblée. */
@@ -542,17 +579,30 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    ou une cabine l'est surtout au téléphone — c'est là qu'il faut pouvoir
    atteindre les garanties et le contact, pas seulement sur un bureau. */
 .menu{display:flex;gap:26px;align-items:center;overflow-x:auto;
-  scrollbar-width:none;-ms-overflow-style:none;
-  /* Un fondu au bord droit : la rangée défile, et rien ne le disait. */
-  -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);
-  mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  scrollbar-width:none;-ms-overflow-style:none}
 .menu::-webkit-scrollbar{display:none}
 @media (max-width:899px){
-  .tete{flex-wrap:wrap;row-gap:10px;padding-bottom:10px}
+  /* Sur téléphone l'en-tête tient sur DEUX rangées, et le dégradé — calculé
+     pour une seule — devenait transparent à soixante-dix pour cent de sa
+     hauteur, c'est-à-dire en plein sur la rangée du menu. Le contenu de la
+     page se lisait au travers des intitulés : au bas du site, le nom de la
+     société traversait « LOT & GROUPAGE ». Le fond reste donc franc jusque
+     sous la seconde rangée et ne s'éteint qu'après. */
+  .tete{flex-wrap:wrap;row-gap:10px;padding-bottom:10px;
+    background:linear-gradient(180deg,rgba(10,12,14,.98),rgba(10,12,14,.96) 70%,
+      rgba(10,12,14,.94) 93%,transparent)}
   .tete > a:first-child{order:1}
   .tel{order:2}
   .menu{order:3;flex:1 0 100%;gap:18px;font-size:10px;letter-spacing:.14em;
-    padding-bottom:2px}
+    padding-bottom:2px;
+    /* Un fondu au bord droit : la rangée défile, et rien ne le disait.
+       Il ne vaut QUE là où elle défile. Posé sur toutes les largeurs, il
+       mangeait le dernier intitulé du menu de bureau — « CONTACT » s'y
+       éteignait à moitié alors qu'il n'y avait pas un pixel à faire
+       défiler. Un indice de défilement sur une rangée qui ne défile pas
+       n'est plus un indice, c'est un défaut d'affichage. */
+    -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);
+    mask-image:linear-gradient(90deg,#000 88%,transparent)}
 }
 /* Pas de retour à la ligne. La rangée défile déjà horizontalement ; sans
    `nowrap`, chaque intitulé se coupait en trois — « COMMENT / ÇA / MARCHE » —
@@ -579,6 +629,15 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .tel i{width:6px;height:6px;border-radius:50%;background:var(--ambre);
   flex:0 0 auto;transition:background .25s ease}
 .tel:hover i{background:var(--noir)}
+/* Le mot porte l'action, le numéro porte le moyen. Le premier est en pleine
+   couleur, le second d'un ton en dessous, séparé par un filet : sans cette
+   hiérarchie les deux se lisent comme une seule chaîne de caractères et le
+   bouton redevient un simple numéro. */
+.tel b{font-weight:500;color:var(--ambre);letter-spacing:.2em}
+.tel span{padding-left:9px;border-left:1px solid rgba(184,150,62,.4);
+  opacity:.82;transition:opacity .25s ease}
+.tel:hover b,.tel:hover span{color:var(--noir)}
+.tel:hover span{border-left-color:rgba(10,12,14,.35);opacity:1}
 /* LE NUMÉRO NE DISPARAÎT PAS. Sous 520 px il ne restait qu'une pastille
    ambre muette : sur le site d'un transporteur, appeler est l'action la plus
    utile de la page, et l'escamoter pour gagner quelques pixels est une faute
@@ -586,6 +645,10 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 @media (max-width:519px){
   .tel{padding:7px 10px;letter-spacing:.04em;font-size:10.5px;gap:7px}
   .tel i{width:5px;height:5px}
+  /* Sur téléphone c'est le mot qui s'efface, jamais le numéro : le doigt est
+     déjà sur le bouton, il lui faut le moyen d'appeler, pas son intitulé. */
+  .tel b{display:none}
+  .tel span{padding-left:0;border-left:0}
 }
 
 /* -------------------------------------------------------------- le contact
@@ -607,14 +670,25 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 
 <header class="tete">
   <a href="#top"><b>Trans Gold</b></a>
+  <!-- Les intitulés reprennent ceux des transporteurs français, qui ne disent
+       jamais « prestations » : ils nomment le service — lot, groupage,
+       enlèvement, livraison — parce que c'est le mot que l'expéditeur tape et
+       cherche. « Comment ça marche » est un titre de logiciel, pas de
+       transport. Chaque libellé doit rester exact : il désigne ce que la
+       section contient vraiment, sinon le repère de section ment. -->
   <nav class="menu">
-    <a href="#metiers">Prestations</a>
-    <a href="#procede">Comment ça marche</a>
+    <a href="#metiers">Lot &amp; groupage</a>
+    <a href="#procede">Enlèvement &amp; livraison</a>
     <a href="#garanties">Garanties</a>
-    <a href="#maison">Qui nous sommes</a>
+    <a href="#maison">L’entreprise</a>
     <a href="#parler">Contact</a>
   </nav>
-  <a class="tel" href="tel:+33660926646"><i></i><span>+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</span></a>
+  <!-- Le bouton de tête des sites de transport porte toujours la même
+       promesse : le devis. Ici le devis EST l'appel — il n'y a pas de
+       formulaire, on décrit et on répond — alors le bouton le dit, et le
+       numéro reste écrit à côté plutôt que caché derrière une page de
+       formulaire. -->
+  <a class="tel" href="tel:+33660926646"><i></i><b>Devis</b><span>+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</span></a>
 </header>
 
 <main>
@@ -910,11 +984,50 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
     </div>
   </section>
 
-  <footer class="bande">
-    <div class="pied">
+  <!-- Le pied de page d'un transporteur n'est pas une signature, c'est une
+       fiche. Sur les sites de la profession on y retrouve toujours les mêmes
+       quatre choses : l'adresse du siège, le téléphone, la zone desservie, et
+       un plan du site qui redonne accès à tout depuis le bas — parce qu'un
+       visiteur qui a lu jusqu'ici ne veut pas remonter trente écrans pour
+       trouver les garanties. La ligne légale ferme la fiche avec ce qu'un
+       expéditeur vérifie avant de confier une palette : SIREN, SIRET, code
+       d'activité. Rien d'inventé : ni courriel, ni horaires, ni numéro de
+       licence, ni réseau social, tant que ces informations ne sont pas
+       confirmées par le client. Un pied de page qui affirme faux est pire
+       qu'un pied de page court. -->
+  <footer class="bande pied">
+    <div class="fiche">
+      <div class="fiche-marque">
+        <p class="pied-nom">Trans Gold Marchandises</p>
+        <p class="pied-txt">Transport routier de fret interurbain.<br>
+          Lot complet, groupage, palettes — sans rupture de charge.</p>
+      </div>
+      <div>
+        <p class="pied-eti">Adresse</p>
+        <p class="pied-txt">45 rue Jean Charcot<br>93600 Aulnay-sous-Bois<br>France</p>
+      </div>
+      <div>
+        <p class="pied-eti">Téléphone</p>
+        <p class="pied-txt"><a href="tel:+33660926646">+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</a></p>
+        <p class="pied-eti" style="margin-top:22px">Zones desservies</p>
+        <p class="pied-txt">France &amp; Europe<br>Enlèvement en Île-de-France</p>
+      </div>
+      <div>
+        <p class="pied-eti">Plan du site</p>
+        <ul class="pied-plan">
+          <li><a href="#top">Accueil</a></li>
+          <li><a href="#metiers">Lot &amp; groupage</a></li>
+          <li><a href="#procede">Enlèvement &amp; livraison</a></li>
+          <li><a href="#garanties">Garanties</a></li>
+          <li><a href="#maison">L’entreprise</a></li>
+          <li><a href="#parler">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pied-bas">
       <span>© 2026 Trans Gold Marchandises</span>
-      <span>Aulnay-sous-Bois · SIREN 831 321 112</span>
-      <span><a href="tel:+33660926646">+33 6 60 92 66 46</a></span>
+      <span>SAS · SIREN 831&nbsp;321&nbsp;112 · SIRET 831&nbsp;321&nbsp;112&nbsp;00029 · APE 49.41A</span>
+      <span><a href="#mentions">Mentions légales</a></span>
     </div>
   </footer>
 
