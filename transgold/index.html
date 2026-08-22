@@ -600,8 +600,22 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   letter-spacing:.2em;text-transform:uppercase;color:var(--gris);
   pointer-events:auto;mix-blend-mode:normal;
   background:linear-gradient(180deg,rgba(5,18,30,.95),rgba(5,18,30,.62) 70%,transparent)}
-.tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
 .tete a{color:inherit;text-decoration:none}
+/* La marque, en deux lignes comme le badge. L'or porte le nom ; il ne se
+   dispute pas le bouton de devis, qui est un contour et non un aplat. */
+.marque-tete{display:inline-flex;flex-direction:column;gap:3px;line-height:1}
+.tete b{color:var(--ambre);font-weight:500;letter-spacing:.34em;font-size:13px}
+/* La seconde ligne du badge, encadrée de ses deux filets. Ils sont dessinés
+   en `flex` et non en bordures : ils doivent s'arrêter au bord du mot, pas
+   au bord du lien, dont la largeur est celle de la ligne du dessus. */
+.marque-tete i{display:flex;align-items:center;gap:7px;font-style:normal;
+  font-size:8px;letter-spacing:.3em;color:var(--gris)}
+.marque-tete i::before,.marque-tete i::after{content:"";height:1px;flex:1 0 8px;
+  background:rgba(184,150,62,.45)}
+@media (max-width:519px){
+  .tete b{font-size:12px;letter-spacing:.26em}
+  .marque-tete i{font-size:7px;letter-spacing:.22em}
+}
 
 /* Les sections visées par le menu se décalent de la hauteur de l'en-tête,
    sinon leur première ligne atterrit DERRIÈRE lui — mesuré : la section
@@ -704,7 +718,27 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 <canvas id="toile"></canvas>
 
 <header class="tete">
-  <a href="#top"><b>Trans Gold</b></a>
+  <!-- La marque reprend la HIÉRARCHIE du badge peint sur les remorques —
+       « TRANS GOLD » en or, « MARCHANDISES » dessous en plus petit, encadré
+       de deux filets — mais en typographie, pas en image.
+
+       Le vrai badge n'existe nulle part dans ce dépôt en fichier : il n'est
+       présent que peint sur les camions du film. Extrait de l'image f0260,
+       la meilleure de la séquence, et ramené aux 44 px de haut d'un en-tête,
+       il devient une bouillie : « MARCHANDISES » et la baseline ne se lisent
+       plus du tout. À pleine résolution c'est une photographie de peinture
+       sur une paroi de remorque — joints de panneau en travers, flou de
+       mouvement, teinte bleutée du crépuscule — et son fond blanc est celui
+       de la remorque, indissociable des blancs du dessin lui-même.
+
+       Le redessiner de mémoire serait pire : ce serait inventer l'identité
+       d'une société réelle. Il faut le fichier du client (SVG, ou PNG à fond
+       transparent) ; en attendant, ces deux lignes disent exactement ce que
+       dit le badge, sans rien affirmer de faux. -->
+  <a class="marque-tete" href="#top">
+    <b>Trans Gold</b>
+    <i>Marchandises</i>
+  </a>
   <!-- Les intitulés reprennent ceux des transporteurs français, qui ne disent
        jamais « prestations » : ils nomment le service — lot, groupage,
        enlèvement, livraison — parce que c'est le mot que l'expéditeur tape et
