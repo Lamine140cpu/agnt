@@ -43,6 +43,14 @@ JEUX = {
     "bord":      ("ultra-bord.css",
                   "?family=Archivo:wght@400;500;600;700"
                   "&family=IBM+Plex+Mono:wght@400;500"),
+    # Refonte totale : une grotesque à chasse variable pour les titres, une
+    # grotesque technique pour le texte, la mono pour tout ce qui est chiffré.
+    # Aucune des quatre directions précédentes n'employait ces caractères — une
+    # refonte de fond commence par là.
+    "terminal":  ("ultra-terminal.css",
+                  "?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800"
+                  "&family=Space+Grotesk:wght@400;500;700"
+                  "&family=IBM+Plex+Mono:wght@400;500"),
     # B — la signalisation : Anton pour les panneaux (condensée, très grasse,
     # c'est la parente directe des caractères de signalisation), Archivo pour
     # le texte courant, la mono pour les bornes.

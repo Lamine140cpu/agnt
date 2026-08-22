@@ -968,11 +968,16 @@ function poser(im){
       ctx.drawImage(im, im.width - 1, 0, 1, im.height, x + l - 1, 0, cw - x - l + 1, h);
     }
     ctx.drawImage(im, x, 0, l, h);
+    window.__IMAGE = im;
     return;
   }
   const k = max(cw / im.width, ch / im.height);
   ctx.drawImage(im, (cw - im.width * k) / 2, (ch - im.height * k) / 2,
                 im.width * k, im.height * k);
+  /* L'image posée est publiée : une mise en page peut vouloir y puiser sa
+     couleur. Échantillonner huit pixels sur huit coûte 0,021 ms — c'est
+     mesuré, et c'est trois centièmes du budget d'une trame. */
+  window.__IMAGE = im;
 }
 
 function dessiner(i){

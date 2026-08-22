@@ -44,6 +44,7 @@ REFONTES = {
     "signal": "transgold-signal.html",   # B — la signalisation
     "plein":  "transgold-plein.html",    # le principe d'origine, poussé
     "hud":    "transgold-hud.html",      # le même format, en poste de pilotage
+    "terminal": "transgold-terminal.html",  # refonte totale : caractères, couleur, course
 }
 
 EXIGENCES = ('id="toile"', 'id="prologue"', 'id="suite"',
