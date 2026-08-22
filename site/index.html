@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ultra Motion</title>
+<meta name="description" content="">
+<style>
+@font-face{
+  font-family:'Anton'; src:url('assets/fonts/anton.woff2') format('woff2');
+  font-weight:400; font-style:normal; font-display:block;
+}
+@font-face{
+  font-family:'Archivo'; src:url('assets/fonts/archivo.woff2') format('woff2');
+  font-weight:100 900; font-style:normal; font-display:block;
+}
+
+:root{
+  --glow:#8B2ED6;
+  /* Thème clair par défaut. Basculer en sombre : data-scene="dark" sur <html>,
+     et THEME = 'dark' dans le script, les deux devant rester d'accord. */
+  --ground:#EFEEF2;
+  --ink:#17151C;
+  --ink-soft:#4A4657;
+  --line:rgba(23,21,28,.16);
+  --line-fort:rgba(23,21,28,.24);
+  --panel:rgba(23,21,28,.05);
+  --scrim-a:rgba(239,238,242,.95);
+  --scrim-b:rgba(239,238,242,.62);
+  --lueur:.40;
+  --grain-op:.07;
+  --display:'Anton','Haettenschweiler','Arial Narrow',sans-serif;
+  --body:'Archivo','Helvetica Neue',Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --gut:clamp(18px,5vw,60px);
+}
+:root[data-scene="dark"]{
+  --ground:#050506;
+  --ink:#F4F2F7;
+  --ink-soft:#A79FB6;
+  --line:rgba(255,255,255,.14);
+  --line-fort:rgba(255,255,255,.20);
+  --panel:rgba(255,255,255,.05);
+  --scrim-a:rgba(5,5,6,.82);
+  --scrim-b:rgba(5,5,6,.45);
+  --lueur:.90;
+  --grain-op:.15;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--body); -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ---------- couches fixes ---------- */
+#glow{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(78% 58% at 50% 38%, var(--glow) 0%, transparent 76%),
+    radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--glow) 42%, transparent) 0%, transparent 70%);
+  opacity:var(--lueur);
+  /* La saturation tombe avant l'opacité : assombrir un orange donne un marron,
+     alors qu'un orange désaturé passe par le gris puis par le noir. */
+  filter:blur(18px) saturate(var(--glow-sat, 1));
+  transition:background 1s ease;
+}
+#webgl{position:fixed; inset:0; z-index:1; display:block; width:100%; height:100%}
+#grain{
+  position:fixed; inset:0; z-index:2; pointer-events:none; opacity:var(--grain-op);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- habillage fixe ---------- */
+.chrome{position:fixed; z-index:6}
+.bar{
+  top:0; left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px var(--gut);
+  font-family:var(--mono); font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.mark{font-family:var(--display); font-size:22px; letter-spacing:.03em; color:var(--ink); text-transform:uppercase}
+.mark i{font-style:normal; color:var(--glow); transition:color 1s ease}
+
+.dock{right:clamp(10px,2.2vw,24px); top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:9px}
+.dock button{
+  width:40px; height:40px; border-radius:50%;
+  border:1px solid var(--line); background:var(--panel);
+  backdrop-filter:blur(6px); color:var(--ink-soft); cursor:pointer;
+  display:grid; place-items:center; font-family:var(--mono); font-size:9px;
+  transition:border-color .25s ease, color .25s ease, background .25s ease;
+}
+.dock button:hover,.dock button[aria-current="true"]{border-color:var(--glow); color:var(--ink); background:var(--panel)}
+.dock button:focus-visible{outline:2px solid var(--glow); outline-offset:3px}
+
+.rail{left:50%; transform:translateX(-50%); bottom:22px; width:min(240px,44vw); height:2px; background:var(--line-fort); border-radius:2px}
+.rail span{display:block; height:100%; width:0; border-radius:2px; background:var(--glow); transition:width .2s linear, background 1s ease}
+.hint{
+  left:0; right:0; bottom:38px; text-align:center;
+  font-family:var(--mono); font-size:9px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--ink-soft); transition:opacity .4s ease;
+}
+@media (max-width:640px){ .dock{display:none} }
+
+/* ---------- actes : le texte défile par-dessus la scène ---------- */
+main{position:relative; z-index:4}
+.act{
+  min-height:100vh;
+  display:flex; flex-direction:column; justify-content:flex-end;
+  padding:0 var(--gut) clamp(96px,15vh,180px);
+  text-align:center;
+  pointer-events:none;
+}
+.act > *{pointer-events:auto; position:relative}
+.act::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:46vh;
+  background:linear-gradient(to top, var(--scrim-a), var(--scrim-b) 42%, transparent);
+  pointer-events:none; z-index:-1;
+}
+.act-read::after{display:none}
+.act-dive::after{display:none}
+.act h2{
+  font-family:var(--display); font-weight:400; text-transform:uppercase;
+  font-size:clamp(2.2rem,7vw,4.6rem); line-height:.9; margin:0; text-wrap:balance;
+}
+/* Le texte n'accompagne pas la canette : il entre une demi-seconde après
+   qu'elle s'est posée. La référence montre ce second temps — l'agitation y
+   remonte entre 780 et 1000 ms, une fois le mouvement principal amorti. */
+.act[data-flavour] h2,
+.act[data-flavour] p.lede,
+.act-arg .chip{
+  opacity:0; transform:translateY(16px);
+  transition:opacity .34s ease, transform .34s cubic-bezier(.22,1,.36,1);
+}
+.act.posed h2{transition-delay:.50s}
+.act.posed p.lede{transition-delay:.60s}
+.act.posed .chip{transition-delay:.70s}
+.act.posed h2,
+.act.posed p.lede,
+.act.posed .chip{opacity:1; transform:none}
+.act p.lede{
+  margin:14px auto 0; max-width:36ch;
+  font-size:clamp(14px,1.6vw,17px); color:var(--ink-soft); line-height:1.55;
+}
+
+/* acte d'ouverture : rien à lire, la scène parle */
+.act-intro{justify-content:flex-end}   /* le titre passe sous la canette, pas dessus */
+.act-intro h1{
+  font-family:var(--display); font-weight:400; text-transform:uppercase;
+  font-size:clamp(2.6rem,9vw,6rem); line-height:.86; margin:0; text-wrap:balance;
+}
+.act-intro .sub{margin-top:18px; color:var(--ink-soft); font-size:clamp(14px,1.7vw,18px)}
+
+/* bénéfices : la puce barrée, calée en bas comme sur la référence */
+.act-arg{justify-content:flex-end}
+/* Rien n'est écrit par-dessus la canette : le texte imprimé se suffit. Titre,
+   accroche et mention barrée restent dans le document, hors du champ visuel,
+   pour le référencement et les lecteurs d'écran. */
+.act-arg h2, .act-arg p.lede, .act-arg .chip{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip-path:inset(50%); white-space:nowrap;
+}
+.chip{
+  display:inline-flex; align-items:center; gap:12px;
+  margin:22px auto 0; padding:10px 18px 10px 10px;
+  border-radius:999px; background:rgba(255,255,255,.94); color:#15121B;
+  font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+}
+.chip b{
+  width:26px; height:26px; border-radius:50%;
+  background:#15121B; color:#fff; display:grid; place-items:center; font-size:13px;
+}
+.chip s{text-decoration:line-through; text-decoration-thickness:2px; opacity:.75}
+
+/* FAQ et newsletter : fond assombri pour rester lisibles */
+.act-read{
+  justify-content:center; text-align:left;
+  padding-block:clamp(80px,12vh,140px);
+  background:linear-gradient(to bottom, transparent, var(--scrim-a) 16%, var(--scrim-a) 84%, transparent);
+}
+.act-read .wrap{width:100%; max-width:760px; margin-inline:auto}
+.act-read h2{text-align:left}
+
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{
+  list-style:none; cursor:pointer; position:relative;
+  padding:18px 44px 18px 0; font-size:clamp(15px,2vw,18px); font-weight:600;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{
+  content:"+"; position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  font-family:var(--display); font-size:24px; color:var(--glow); transition:color 1s ease;
+}
+.faq details[open] summary::after{content:"–"}
+.faq details[open] summary{color:var(--glow); transition:color 1s ease}
+.faq p{padding:0 44px 20px 0; color:var(--ink-soft); font-size:15px; line-height:1.6; max-width:62ch}
+
+form{display:flex; flex-wrap:wrap; gap:10px; margin-top:24px}
+input[type=email]{
+  flex:1 1 240px; font:inherit; font-size:16px; padding:14px 18px;
+  border-radius:999px; border:1px solid var(--line-fort);
+  background:var(--panel); color:var(--ink);
+}
+input[type=email]::placeholder{color:var(--ink-soft)}
+form button{
+  border:none; border-radius:999px; padding:14px 28px;
+  background:var(--glow); color:#fff; font:inherit; font-weight:600; cursor:pointer;
+  transition:background 1s ease, transform .12s ease;
+}
+form button:hover{transform:translateY(-1px)}
+.form-msg{margin-top:12px; min-height:1.3em; font-size:14px; color:var(--ink-soft)}
+.small{margin-top:16px; font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--ink-soft); line-height:1.9}
+.small a{color:inherit}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms !important; animation-duration:.001ms !important}
+}
+</style>
+</head>
+<body>
+
+<div id="glow"></div>
+<canvas id="webgl"></canvas>
+<div id="grain"></div>
+
+<div class="chrome bar">
+  <span id="baseline"></span>
+  <span class="mark" id="mark"></span>
+  <span id="menuLabel"></span>
+</div>
+<nav class="chrome dock" id="dock" aria-label="Saveurs"></nav>
+<div class="chrome rail"><span id="bar"></span></div>
+<div class="chrome hint" id="hint"></div>
+
+<main id="scene"><!-- les actes sont construits depuis site.config.js --></main>
+
+<script type="module">
+import * as THREE from './vendor/three.module.min.js';
+import { CONFIG } from './site.config.js';
+
+/* ============================================================================
+   La page est un plateau unique. Le scroll ne déplace jamais directement la
+   caméra ni les canettes : il échantillonne une piste de valeurs CIBLES, que
+   la boucle de rendu rattrape par interpolation. Le retard produit l'inertie,
+   et le parallaxe souris peut s'y additionner sans conflit.
+   ============================================================================ */
+
+const FLAVOURS = CONFIG.items;
+
+const ARGS = CONFIG.claims;
+
+/* 'label' : artworks risographiques, typographie tracée au code.
+   'wrap'  : artworks de packaging complets, utilisés tels quels. */
+const ARTWORK = CONFIG.artwork;
+const CLAIR = CONFIG.theme !== 'dark';
+if (!CLAIR) document.documentElement.dataset.scene = 'dark';
+
+const CAN_H = CONFIG.object.height;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Découpage du scroll. Chaque acte occupe un écran ; ces bornes sont des
+   fractions de la course totale, calculées à partir du nombre de sections. */
+const ACTS = { intro:1, flavours:FLAVOURS.length, dive:1, args:ARGS.length, read:2 };
+const TOTAL = ACTS.intro + ACTS.flavours + ACTS.args + ACTS.read;
+const P = (n) => n / TOTAL;
+const T_FLAV0 = P(ACTS.intro);
+const T_FLAVE = P(ACTS.intro + ACTS.flavours);
+const T_ARGS0 = P(ACTS.intro + ACTS.flavours + ACTS.dive);   // la plongée a son propre écran
+const T_ARGSE = P(ACTS.intro + ACTS.flavours + ACTS.dive + ACTS.args);
+
+/* Position de chaque argument sur la canette, en unités monde. Le manchon
+   d'étiquette est centré sur LABEL_C et haut de LABEL_H ; composeSpec dessine
+   le bloc i à la hauteur relative 0,145 + 0,225·i. Caméra et texture lisent
+   donc la même formule, elles ne peuvent pas se désaccorder. */
+const LABEL_C = CONFIG.object.label.center - CAN_H / 2;
+const LABEL_H = CONFIG.object.label.height;
+/* Un argument par quart de tour, tous à mi-hauteur. Empilés verticalement ils
+   tenaient tous dans le cadre à la fois — 13 cm de canette ne suffisent pas à
+   les séparer. La canette pivote donc pour présenter celui qu'on lit.
+   Le manchon étant tourné de -π/2, la coordonnée u qui fait face à la caméra
+   vaut 0,25 - θ/2π ; d'où la rotation qui amène l'argument i de face. */
+const argU = (i) => (i + 0.5) / ARGS.length;   // un argument par secteur, quel qu'en soit le nombre
+const argSpin = (i) => 2 * Math.PI * (0.25 - argU(i));
+
+/* Piste de plans. Chaque entrée est un instant du scroll et l'état de la
+   scène à cet instant ; le reste est interpolé. */
+const SHOTS = [
+  { at: 0.000,          camY: 0.55, camZ: 11.5, look: -0.10, fov: 22, spread: 2.10, scale: 0.74, tilt: 0.05, veil: 1.0, spin: argSpin(0) },
+  { at: T_FLAV0 * 0.75, camY: 0.30, camZ:  8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
+  { at: T_FLAVE,        camY: 0.30, camZ:  8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
+  { at: T_FLAVE + P(0.30), camY: 0.30, camZ: 8.0, look: -0.34, fov: 20, spread: 1.62, scale: 0.90, tilt: 0.055, veil: 1.0, spin: argSpin(0) },
+  // plongée : on arrive au pied de la canette, premier argument
+  { at: T_ARGS0,        camY: LABEL_C, camZ: 2.35, look: LABEL_C, fov: 20, spread: 5.0, scale: 1.0, tilt: 0.0, veil: 0.0, spin: argSpin(0) },
+];
+// un arrêt par argument : la caméra remonte d'un bloc au suivant et s'y pose
+for (let i = 1; i < ARGS.length; i++) {
+  SHOTS.push({
+    at: T_ARGS0 + (i / (ARGS.length - 1)) * (T_ARGSE - T_ARGS0),
+    camY: LABEL_C, camZ: 2.35, look: LABEL_C,
+    fov: 20, spread: 5.0, scale: 1.0, tilt: 0.0, veil: 0.0, spin: argSpin(i),
+  });
+}
+SHOTS.push(
+  { at: T_ARGSE + P(0.5), camY: 0.34, camZ:  9.2, look: -0.14, fov: 20, spread: 1.90, scale: 0.80, tilt: 0.06, veil: 1.0, spin: argSpin(ARGS.length - 1) },
+  { at: 1.000,            camY: 0.34, camZ: 10.5, look: -0.14, fov: 20, spread: 1.90, scale: 0.74, tilt: 0.06, veil: 1.0, spin: argSpin(ARGS.length - 1) },
+);
+const KEYS = ['camY','camZ','look','fov','spread','scale','tilt','veil','spin'];
+
+const ease = (t) => t * t * (3 - 2 * t);
+function sampleShots(p){
+  let i = 0;
+  while (i < SHOTS.length - 2 && p > SHOTS[i + 1].at) i++;
+  const a = SHOTS[i], b = SHOTS[i + 1];
+  const span = Math.max(b.at - a.at, 1e-6);
+  const t = ease(Math.min(Math.max((p - a.at) / span, 0), 1));
+  const out = {};
+  for (const k of KEYS) out[k] = a[k] + (b[k] - a[k]) * t;
+  return out;
+}
+
+/* ---------------------------------------------------------------------------
+   Construction de la page. Aucun contenu n'est écrit dans le document : tout
+   vient de la configuration, ce qui permet de décrire un nouveau site sans
+   toucher au moteur.
+   --------------------------------------------------------------------------- */
+function construirePage(){
+  const d = document;
+  const html = d.documentElement;
+  html.lang = CONFIG.meta.lang || 'fr';
+  d.title = CONFIG.meta.title || '';
+  const desc = d.querySelector('meta[name="description"]');
+  if (desc) desc.content = CONFIG.meta.description || '';
+
+  const b = CONFIG.brand;
+  d.getElementById('baseline').textContent = b.baseline || '';
+  d.getElementById('menuLabel').textContent = b.menu || '';
+  const accent = b.accent && b.name.endsWith(b.accent);
+  d.getElementById('mark').innerHTML = accent
+    ? `${b.name.slice(0, -b.accent.length)}<i>${b.accent}</i>`
+    : b.name;
+  d.getElementById('hint').textContent = CONFIG.intro.hint || '';
+
+  const acte = (classe, dedans, attrs = {}) => {
+    const el = d.createElement('section');
+    el.className = 'act ' + classe;
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    el.innerHTML = dedans;
+    return el;
+  };
+  const echapper = (t) => String(t).replace(/[&<>]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]));
+
+  const main = d.getElementById('scene');
+  main.textContent = '';
+
+  main.append(acte('act-intro',
+    `<h1>${CONFIG.intro.title}</h1><p class="sub">${echapper(CONFIG.intro.sub)}</p>`));
+
+  CONFIG.items.forEach((f, i) => main.append(acte('',
+    `<h2>${echapper(f.name)}</h2><p class="lede">${echapper(f.tagline)}</p>`,
+    { 'data-flavour': i })));
+
+  main.append(acte('act-dive', '', { 'aria-hidden': 'true' }));
+
+  CONFIG.claims.forEach((a) => main.append(acte('act-arg',
+    `<h2>${echapper(a.title)}</h2><p class="lede">${echapper(a.body)}</p>` +
+    `<span class="chip"><b>×</b><s>${echapper(a.crossed)}</s></span>`)));
+
+  main.append(acte('act-read',
+    `<div class="wrap"><h2>${echapper(CONFIG.faq.title)}</h2><div class="faq" style="margin-top:26px">` +
+    CONFIG.faq.items.map((q, i) =>
+      `<details${i === 0 ? ' open' : ''}><summary>${echapper(q.q)}</summary><p>${echapper(q.a)}</p></details>`
+    ).join('') + '</div></div>'));
+
+  const s = CONFIG.signup;
+  main.append(acte('act-read',
+    `<div class="wrap"><h2>${echapper(s.title)}</h2>` +
+    `<p class="lede" style="margin-left:0">${echapper(s.lede)}</p>` +
+    `<form id="newsForm" novalidate><input type="email" id="email" placeholder="${echapper(s.placeholder)}" ` +
+    `autocomplete="email" aria-label="Adresse e-mail" required>` +
+    `<button type="submit">${echapper(s.button)}</button></form>` +
+    `<p class="form-msg" id="formMsg" role="status" aria-live="polite"></p>` +
+    `<p class="small">${s.legal}</p></div>`));
+}
+construirePage();
+
+const canvas = document.getElementById('webgl');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true, powerPreference:'high-performance' });
+} catch (e) {
+  document.getElementById('hint').textContent = 'WebGL indisponible sur cet appareil';
+}
+if (renderer) boot();
+
+async function boot(){
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // six canettes, leurs reflets et six passes d'écran : au-delà on perd les 60 images
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = CLAIR ? 1.18 : 1.05;
+  /* Sans ombre portée, un objet flotte : c'est le premier signal de synthèse,
+     avant même la matière. Une seule source projette, ce qui suffit ici. */
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(20, innerWidth / innerHeight, 0.1, 100);
+
+  /* ---- environnement : HDRI encodée en RGBE ---------------------------- */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  function loadEnvironment(url){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const W = img.width, H = img.height / 2;
+        const c = document.createElement('canvas');
+        c.width = img.width; c.height = img.height;
+        const x = c.getContext('2d', { willReadFrequently:true });
+        x.drawImage(img, 0, 0);
+        const px = x.getImageData(0, 0, img.width, img.height).data;
+        const expo = W * H * 4;
+        const data = new Float32Array(W * H * 4);
+        for (let y = 0; y < H; y++) {
+          const src = (H - 1 - y) * W;              // une DataTexture n'applique pas flipY
+          for (let xi = 0; xi < W; xi++) {
+            const i = src + xi, o = (y * W + xi) * 4;
+            const e = px[expo + i * 4];
+            const s = e ? Math.pow(2, e - 128) / 256 : 0;
+            data[o] = px[i*4] * s; data[o+1] = px[i*4+1] * s; data[o+2] = px[i*4+2] * s; data[o+3] = 1;
+          }
+        }
+        const tex = new THREE.DataTexture(data, W, H, THREE.RGBAFormat, THREE.FloatType);
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        tex.needsUpdate = true;
+        resolve(tex);
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
+  loadEnvironment(CONFIG.environment).then((tex) => {
+    if (!tex) return;
+    scene.environment = pmrem.fromEquirectangular(tex).texture;
+    scene.environmentRotation = new THREE.Euler(0, -1.15, 0);
+    scene.environmentIntensity = CLAIR ? 1.45 : 1.05;
+    tex.dispose();
+  });
+
+  scene.add(new THREE.AmbientLight(0xffffff, CLAIR ? 0.62 : 0.32));
+  const key  = new THREE.DirectionalLight(0xffffff, 1.15); key.position.set(2.2, 3.2, 3.4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -3; key.shadow.camera.right = 3;
+  key.shadow.camera.top = 3;   key.shadow.camera.bottom = -3;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 14;
+  key.shadow.bias = -0.0012;
+  key.shadow.radius = 3;
+  const fill = new THREE.DirectionalLight(0xffffff, 1.1); fill.position.set(0, 0.6, 6);
+  const back = new THREE.DirectionalLight(0xffffff, 0.7); back.position.set(-2.6, 1.2, -2.2);
+  scene.add(key, fill, back);
+
+  /* ---- géométrie ------------------------------------------------------- */
+  const profile = CONFIG.object.profile;
+  const lathe = new THREE.LatheGeometry(profile.map(([x,y]) => new THREE.Vector2(x, y - CAN_H/2)), 96);
+  lathe.computeVertexNormals();
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const tabGeo    = new THREE.TorusGeometry(0.062, 0.009, 12, 40);
+  const rivetGeo  = new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14);
+  const sleeveGeo = new THREE.CylinderGeometry(CONFIG.object.label.radius, CONFIG.object.label.radius, LABEL_H, 96, 1, true);
+  /* ---- fini du métal ---------------------------------------------------
+     Deux images fournies servent de relief : le grain d'aluminium, très peu
+     contrasté, et la condensation. On en tire une carte de rugosité et une
+     carte de normales. Les gouttes sont lissées et légèrement bombées, le
+     grain ne fait que troubler le reflet. */
+  function chargerRelief(url){
+    return new Promise((res) => {
+      const img = new Image();
+      img.onload = () => {
+        const S = 1024;
+        const c = document.createElement('canvas'); c.width = c.height = S;
+        const x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(img, 0, 0, S, S);
+        res(x.getImageData(0, 0, S, S).data);
+      };
+      img.onerror = () => res(null);
+      img.src = url;
+    });
+  }
+
+  const [grain, gouttes] = await Promise.all([
+    chargerRelief(CONFIG.surface.grain),
+    chargerRelief(CONFIG.surface.droplets),
+  ]);
+
+  function surfaceMaps(){
+    const S = 1024;
+    const hauteur = new Float32Array(S * S);
+    for (let i = 0; i < S * S; i++) {
+      const g = grain   ? grain[i * 4]   : 128;
+      const d = gouttes ? gouttes[i * 4] : 128;
+      // le grain compte peu, les gouttes portent le relief
+      hauteur[i] = ((g - 128) * 0.18 + (d - 128) * 0.85) / 255;
+    }
+    const at = (i, j) => hauteur[(j & (S - 1)) * S + (i & (S - 1))];
+
+    const rc = document.createElement('canvas'); rc.width = rc.height = S;
+    const nc = document.createElement('canvas'); nc.width = nc.height = S;
+    const ri = rc.getContext('2d').createImageData(S, S);
+    const ni = nc.getContext('2d').createImageData(S, S);
+    const force = 5.5;
+
+    for (let j = 0; j < S; j++) {
+      for (let i = 0; i < S; i++) {
+        const o = (j * S + i) * 4;
+        // une goutte est plus lisse que le métal sec : elle abaisse la rugosité
+        const h = at(i, j);
+        const r = Math.max(0, Math.min(255, 132 - h * 210));
+        ri.data[o] = ri.data[o+1] = ri.data[o+2] = r; ri.data[o+3] = 255;
+
+        const dx = (at(i+1, j) - at(i-1, j)) * force;
+        const dy = (at(i, j+1) - at(i, j-1)) * force;
+        const len = Math.hypot(dx, dy, 1);
+        ni.data[o]   = ((-dx/len) * 0.5 + 0.5) * 255;
+        ni.data[o+1] = (( dy/len) * 0.5 + 0.5) * 255;
+        ni.data[o+2] = ((  1/len) * 0.5 + 0.5) * 255;
+        ni.data[o+3] = 255;
+      }
+    }
+    rc.getContext('2d').putImageData(ri, 0, 0);
+    nc.getContext('2d').putImageData(ni, 0, 0);
+
+    const tex = (canvas) => {
+      const t = new THREE.CanvasTexture(canvas);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(2, 1.4);           // à l'échelle d'une canette de 25 cl
+      t.anisotropy = maxAniso;
+      return t;
+    };
+    return { rough: tex(rc), normal: tex(nc) };
+  }
+  const surface = surfaceMaps();
+
+  const alu = new THREE.MeshPhysicalMaterial({
+    color:0xB9BEC7, metalness:1, roughness:0.26, envMapIntensity:0.85,
+    roughnessMap: surface.rough,
+    normalMap: surface.normal, normalScale: new THREE.Vector2(0.18, 0.18),
+    anisotropy: 0.06,
+  });
+
+  /* ---- étiquettes composées au code ------------------------------------ */
+  await document.fonts.ready;
+
+  const W = 2528, H = 1696;
+
+  function base(x, tint, img){
+    x.fillStyle = tint; x.fillRect(0, 0, W, H);
+    if (img) { x.save(); x.globalAlpha = 0.16; x.globalCompositeOperation = 'multiply'; x.drawImage(img, 0, 0, W, H); x.restore(); }
+    const sheen = x.createLinearGradient(0, 0, 0, H);
+    sheen.addColorStop(0.00, 'rgba(255,255,255,0)');
+    sheen.addColorStop(0.42, 'rgba(255,255,255,0.16)');
+    sheen.addColorStop(0.55, 'rgba(255,255,255,0.05)');
+    sheen.addColorStop(1.00, 'rgba(0,0,0,0.28)');
+    x.fillStyle = sheen; x.fillRect(0, 0, W, H);
+  }
+
+  /* Étiquette vitrine : l'artwork de packaging est utilisé tel quel. Seule la
+     mention verticale est reprise — le gabarit « GOÛT [SAVEUR] » n'ayant pas
+     été substitué à la génération, on efface la bande et on la retrace. */
+  function composeFront(wrap, name, tint){
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d');
+
+    if (ARTWORK === 'label') {
+      /* Ces artworks ne portent aucun texte : on compose la typographie. */
+      base(x, tint, wrap);
+      const face = (cx) => {
+        x.save(); x.translate(cx, H * 0.5);
+        x.save();
+        x.transform(1, 0, -0.20, 1, 0, 0);
+        x.textAlign = 'center';
+        x.font = '400 620px Anton, sans-serif';
+        const k = (W * 0.30) / x.measureText(CONFIG.brand.name).width;
+        x.scale(k, k);
+        const g = x.createLinearGradient(0, -420, 0, 260);
+        g.addColorStop(0.00, '#FFFFFF'); g.addColorStop(0.34, '#EDEDF2');
+        g.addColorStop(0.52, '#9EA2AE'); g.addColorStop(0.62, '#FFFFFF');
+        g.addColorStop(1.00, '#C8CCD6');
+        x.fillStyle = g; x.fillText(CONFIG.brand.name, 0, 60);
+        x.restore();
+        x.textAlign = 'center';
+        x.font = '400 150px Anton, sans-serif'; x.letterSpacing = '26px';
+        x.lineWidth = 5; x.strokeStyle = 'rgba(255,255,255,.78)';
+        x.strokeText('ENERGY', 12, 300); x.letterSpacing = '0px';
+        x.fillStyle = 'rgba(255,255,255,.72)';
+        x.font = '400 42px Archivo, sans-serif';
+        x.fillText(CONFIG.brand.mention || '', 0, 392);
+        x.save(); x.translate(-W * 0.135, 0); x.rotate(-Math.PI/2);
+        x.textAlign = 'center'; x.font = '400 78px Anton, sans-serif';
+        x.letterSpacing = '6px'; x.fillStyle = 'rgba(255,255,255,.94)';
+        x.fillText('GOÛT ' + name.toUpperCase(), 0, 0); x.letterSpacing = '0px';
+        x.restore();
+        x.restore();
+      };
+      face(W * 0.25); face(W * 0.75);
+      return finish(c);
+    }
+
+    if (!wrap) { base(x, tint, null); }
+    else {
+      x.drawImage(wrap, 0, 0, W, H);
+      // la bande de gauche est brouillée par un aller-retour en basse
+      // définition : le dégradé et les silhouettes restent, le texte part
+      const bw = Math.round(W * 0.24);
+      const tmp = document.createElement('canvas');
+      tmp.width = 14; tmp.height = Math.round(H / 14);
+      tmp.getContext('2d').drawImage(c, 0, 0, bw, H, 0, 0, tmp.width, tmp.height);
+      x.imageSmoothingQuality = 'high';
+      x.drawImage(tmp, 0, 0, tmp.width, tmp.height, 0, 0, bw, H);
+    }
+
+    x.save();
+    x.translate(W * 0.055, H * 0.5);
+    x.rotate(-Math.PI / 2);
+    x.textAlign = 'center';
+    x.font = '400 30px Archivo, sans-serif';
+    x.letterSpacing = '6px';
+    x.fillStyle = 'rgba(255,255,255,.92)';
+    x.fillText('GOÛT ' + name.toUpperCase(), 0, 0);
+    x.letterSpacing = '0px';
+    x.restore();
+
+    return finish(c);
+  }
+
+  /* Étiquette d'arguments : l'artwork sert de fond, très assombri, et les
+     quatre arguments sont répartis sur le tour, un par quart. */
+  function composeSpec(wrap, tint){
+    const SW = W * 2, SH = H * 2;
+    const c = document.createElement('canvas'); c.width = SW; c.height = SH;
+    const x = c.getContext('2d');
+    x.scale(2, 2);
+    if (wrap) x.drawImage(wrap, 0, 0, W, H); else { x.fillStyle = tint; x.fillRect(0, 0, W, H); }
+    x.fillStyle = 'rgba(8,6,12,.82)'; x.fillRect(0, 0, W, H);
+
+    ARGS.forEach((a, i) => {
+      const cx = W * argU(i);
+      x.save(); x.translate(cx, H * 0.5); x.textAlign = 'center';
+
+      x.fillStyle = '#FFFFFF';
+      x.font = '400 38px Anton, sans-serif'; x.letterSpacing = '1px';
+      x.fillText(a.title, 0, 0);
+
+      x.font = '400 17px Archivo, sans-serif'; x.letterSpacing = '2px';
+      x.fillStyle = 'rgba(255,255,255,.58)';
+      const wCross = x.measureText(a.crossed).width;
+      x.fillText(a.crossed, 0, 26);
+      x.strokeStyle = 'rgba(255,255,255,.58)'; x.lineWidth = 1.6;
+      x.beginPath(); x.moveTo(-wCross/2 - 3, 20); x.lineTo(wCross/2 + 3, 20); x.stroke();
+
+      x.letterSpacing = '0px';
+      x.font = '400 16px Archivo, sans-serif'; x.fillStyle = 'rgba(255,255,255,.80)';
+      x.fillText(a.body, 0, 56);
+      x.restore();
+    });
+    return finish(c);
+  }
+
+  function finish(c){
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
+    return t;
+  }
+
+  const artwork = await Promise.all(FLAVOURS.map((f) => new Promise((res) => {
+    const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null);
+    img.src = `assets/web/${ARTWORK}-${f.key}.jpg`;
+  })));
+  const fronts = FLAVOURS.map((f, i) => composeFront(artwork[i], f.name, f.tint));
+  const specs  = FLAVOURS.map((f, i) => composeSpec(artwork[i], f.tint));
+
+  /* ---- canettes et reflets --------------------------------------------- */
+  const FLOOR_Y = -CAN_H/2 - 0.02;
+  const cans = [];
+  const stage = new THREE.Group();
+  const mirror = new THREE.Group();
+  mirror.scale.y = -1; mirror.position.y = FLOOR_Y * 2;
+
+  FLAVOURS.forEach((f, i) => {
+    const build = () => {
+      const g = new THREE.Group();
+      const corps = new THREE.Mesh(lathe, alu);
+      corps.castShadow = true;
+      g.add(corps);
+      const tab = new THREE.Mesh(tabGeo, alu);
+      tab.rotation.x = -Math.PI/2; tab.scale.set(1, 1.35, 1);
+      tab.position.set(0.045, CAN_H/2 - 0.012, 0);
+      const rivet = new THREE.Mesh(rivetGeo, alu);
+      rivet.position.set(-0.01, CAN_H/2 - 0.010, 0);
+      const mat = new THREE.MeshPhysicalMaterial({
+        map: fronts[i],
+        roughness:0.42, metalness:0.12, envMapIntensity:0.42,
+        roughnessMap: surface.rough,
+        normalMap: surface.normal, normalScale: new THREE.Vector2(0.16, 0.16),
+        clearcoat:0.22, clearcoatRoughness:0.30,
+      });
+      const sleeve = new THREE.Mesh(sleeveGeo, mat);
+      sleeve.position.y = LABEL_C;
+      sleeve.rotation.y = ARTWORK === 'label' ? -Math.PI/2 : Math.PI;   // couture hors du champ dans les deux cas
+      if (CONFIG.object.tab) g.add(tab, rivet);
+      g.add(sleeve);
+      return { group:g, mat };
+    };
+    const real = build(), refl = build();
+    refl.mat.transparent = true; refl.mat.opacity = 0.30;
+    // un sol renvoie une image dégradée, pas une copie : on la salit
+    refl.mat.roughness = 0.78;
+    refl.mat.envMapIntensity = 0.5;
+    stage.add(real.group); mirror.add(refl.group);
+    cans.push({ real:real.group, refl:refl.group, mats:[real.mat, refl.mat] });
+  });
+  scene.add(stage, mirror);
+
+  const fadeCanvas = document.createElement('canvas');
+  fadeCanvas.width = 4; fadeCanvas.height = 256;
+  {
+    const g = fadeCanvas.getContext('2d');
+    const fond = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim();
+    const n = parseInt(fond.slice(1), 16);
+    const rgb = `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+    const grad = g.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, `rgba(${rgb},0)`); grad.addColorStop(0.55, `rgba(${rgb},.88)`); grad.addColorStop(1, `rgba(${rgb},1)`);
+    g.fillStyle = grad; g.fillRect(0, 0, 4, 256);
+  }
+  const veilTex = new THREE.CanvasTexture(fadeCanvas);
+  veilTex.colorSpace = THREE.SRGBColorSpace;
+  const veil = new THREE.Mesh(
+    new THREE.PlaneGeometry(40, 3.2),
+    new THREE.MeshBasicMaterial({ map:veilTex, transparent:true, depthWrite:false })
+  );
+  veil.position.set(0, FLOOR_Y - 1.6, 1.2);
+  scene.add(veil);
+
+  /* Socle : un disque sombre légèrement transparent, pour que le reflet
+     dupliqué en dessous le traverse et se lise comme un poli. */
+  const podium = new THREE.Group();
+  const disc = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.6, 2.6, 0.05, 64),
+    new THREE.MeshPhysicalMaterial({
+      color: CLAIR ? 0xD8D6DE : 0x0B0A10,
+      metalness:0.9, roughness: CLAIR ? 0.22 : 0.16, envMapIntensity:0.8,
+      transparent:true, opacity: CLAIR ? 0.45 : 0.55,
+    })
+  );
+  disc.position.y = FLOOR_Y - 0.025;
+  disc.receiveShadow = true;
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(2.6, 0.018, 8, 72),
+    new THREE.MeshPhysicalMaterial({ color: CLAIR ? 0xA8A6B0 : 0x6E747E, metalness:1, roughness:0.34, envMapIntensity:0.7 })
+  );
+  ring.rotation.x = Math.PI/2; ring.position.y = FLOOR_Y;
+  podium.add(disc, ring);
+  scene.add(podium);
+
+  /* ---- post-traitement : bloom et profondeur de champ -------------------
+     Écrit à la main plutôt qu'avec EffectComposer : les passes officielles
+     sont des modules d'extension, qu'il faudrait vendoriser puis replier dans
+     le build d'un seul fichier. Ici trois cibles de rendu suffisent. */
+  const quad = new THREE.BufferGeometry();
+  quad.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1,-1,0, 3,-1,0, -1,3,0]), 3));
+  quad.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0,0, 2,0, 0,2]), 2));
+  const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const quadMesh = new THREE.Mesh(quad, null);
+  const quadScene = new THREE.Scene(); quadScene.add(quadMesh);
+
+  const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position, 1.0); }';
+  const target = (w, h, depth) => {
+    const t = new THREE.WebGLRenderTarget(Math.max(1, w|0), Math.max(1, h|0), {
+      type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+    });
+    if (depth) {
+      t.depthTexture = new THREE.DepthTexture(Math.max(1, w|0), Math.max(1, h|0));
+      t.depthTexture.type = THREE.UnsignedShortType;
+    }
+    return t;
+  };
+
+  let rtScene, rtHalf, rtBlurA, rtBlurB;
+  function allocate(){
+    /* En pixels physiques, pas en pixels CSS : le canvas dessine à la densité
+       de l'écran. Allouer en CSS revenait à rendre la scène en 1x puis à
+       l'étirer sur un canvas 2 à 3 fois plus fin — d'où le flou. */
+    const pr = renderer.getPixelRatio();
+    const w = innerWidth * pr, h = innerHeight * pr;
+    for (const t of [rtScene, rtHalf, rtBlurA, rtBlurB]) if (t) t.dispose();
+    rtScene = target(w, h, true);
+    rtHalf  = target(w / 2, h / 2, false);
+    rtBlurA = target(w / 4, h / 4, false);
+    rtBlurB = target(w / 4, h / 4, false);
+  }
+  allocate();
+
+  const matBright = new THREE.ShaderMaterial({
+    uniforms:{ tSrc:{value:null}, seuil:{value:0.92} },
+    vertexShader: VERT,
+    fragmentShader: `
+      varying vec2 vUv; uniform sampler2D tSrc; uniform float seuil;
+      void main(){
+        vec3 c = texture2D(tSrc, vUv).rgb;
+        float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        gl_FragColor = vec4(c * smoothstep(seuil, seuil + 0.35, l), 1.0);
+      }`,
+  });
+
+  const matBlur = new THREE.ShaderMaterial({
+    uniforms:{ tSrc:{value:null}, dir:{value:new THREE.Vector2(1,0)}, texel:{value:new THREE.Vector2()} },
+    vertexShader: VERT,
+    fragmentShader: `
+      varying vec2 vUv; uniform sampler2D tSrc; uniform vec2 dir; uniform vec2 texel;
+      void main(){
+        vec2 o = dir * texel;
+        vec4 c = texture2D(tSrc, vUv) * 0.227027;
+        c += (texture2D(tSrc, vUv + o * 1.3846) + texture2D(tSrc, vUv - o * 1.3846)) * 0.316216;
+        c += (texture2D(tSrc, vUv + o * 3.2308) + texture2D(tSrc, vUv - o * 3.2308)) * 0.070270;
+        gl_FragColor = c;
+      }`,
+  });
+
+  const matMix = new THREE.ShaderMaterial({
+    uniforms:{
+      tScene:{value:null}, tFlou:{value:null}, tBloom:{value:null}, tDepth:{value:null},
+      force:{value:0.18}, desat:{value:0.0}, focus:{value:8.0}, plage:{value:3.4}, near:{value:0.1}, far:{value:100.0},
+    },
+    vertexShader: VERT,
+    fragmentShader: `
+      varying vec2 vUv;
+      uniform sampler2D tScene, tFlou, tBloom, tDepth;
+      uniform float force, desat, focus, plage, near, far;
+      float viewZ(float d){ return (near * far) / ((far - near) * d - far); }
+      void main(){
+        vec4 net  = texture2D(tScene, vUv);
+        vec4 flou = texture2D(tFlou,  vUv);
+        vec4 blm  = texture2D(tBloom, vUv);
+        float z = -viewZ(texture2D(tDepth, vUv).x);
+        float coc = clamp(abs(z - focus) / plage, 0.0, 1.0);
+        coc = coc * coc;                       // net plus longtemps autour du plan de mise au point
+        vec3 c = mix(net.rgb, flou.rgb, coc * 0.70);
+        c += blm.rgb * force;
+        // l'alpha est conservé : le dégradé de couleur en CSS doit rester visible
+        /* Assombrir un orange donne un marron : c'est la même couleur. La
+           canette de fin doit donc être désaturée, pas seulement éteinte. */
+        c = mix(c, vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), desat);
+        float a = clamp(mix(net.a, flou.a, coc * 0.70) + blm.a * force, 0.0, 1.0);
+        gl_FragColor = vec4(c, a);
+      }`,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  });
+
+  function draw(material, dest){
+    quadMesh.material = material;
+    renderer.setRenderTarget(dest || null);
+    renderer.render(quadScene, quadCam);
+  }
+
+  function post(){
+    renderer.setRenderTarget(rtScene);
+    renderer.clear();
+    /* Sur fond clair, baisser l'exposition noircirait la canette avant qu'elle
+       ne disparaisse : c'est l'opacité qui l'emporte. Sur fond sombre, l'inverse. */
+    const plein = mode === 'spec' ? 0.62 : 1;   // on ferme d'un diaphragme sur les arguments
+    renderer.toneMappingExposure = (CLAIR ? 1.18 : 1.05) * plein * (CLAIR ? 1 : (1 - sortie) * (1 - sortie));
+    renderer.render(scene, camera);
+
+    matBright.uniforms.tSrc.value = rtScene.texture;
+    draw(matBright, rtHalf);
+
+    matBlur.uniforms.texel.value.set(1 / rtBlurA.width, 1 / rtBlurA.height);
+    matBlur.uniforms.tSrc.value = rtHalf.texture;
+    matBlur.uniforms.dir.value.set(1, 0); draw(matBlur, rtBlurA);
+    matBlur.uniforms.tSrc.value = rtBlurA.texture;
+    matBlur.uniforms.dir.value.set(0, 1); draw(matBlur, rtBlurB);
+
+    // le flou de mise au point réutilise la même chaîne, sur la scène entière
+    matBlur.uniforms.tSrc.value = rtScene.texture;
+    matBlur.uniforms.dir.value.set(1, 0); draw(matBlur, rtBlurA);
+    matBlur.uniforms.tSrc.value = rtBlurA.texture;
+    matBlur.uniforms.dir.value.set(0, 1); draw(matBlur, rtHalf);
+
+    matMix.uniforms.tScene.value = rtScene.texture;
+    matMix.uniforms.tFlou.value  = rtHalf.texture;
+    matMix.uniforms.tBloom.value = rtBlurB.texture;
+    matMix.uniforms.tDepth.value = rtScene.depthTexture;
+    matMix.uniforms.near.value = camera.near;
+    matMix.uniforms.far.value  = camera.far;
+    matMix.uniforms.desat.value = Math.min(1, sortie * 2.2);
+    matMix.uniforms.focus.value = camera.position.z;   // la canette centrale est au plan z = 0
+    draw(matMix, null);
+  }
+
+  /* ---- état ------------------------------------------------------------ */
+  const shot = sampleShots(0);
+  const cur = Object.assign({}, shot);
+  const carousel = { position: 0, target: 0 };
+  const pointer = { x:0, y:0, sx:0, sy:0 };
+  let idle = 0, spinVel = 0, active = -1, mode = 'front', progress = 0, sortie = 0;
+
+  addEventListener('pointermove', (e) => {
+    pointer.x = (e.clientX / innerWidth) * 2 - 1;
+    pointer.y = (e.clientY / innerHeight) * 2 - 1;
+  }, { passive:true });
+
+  function readScroll(){
+    const span = Math.max(document.body.scrollHeight - innerHeight, 1);
+    progress = Math.min(Math.max(scrollY / span, 0), 1);
+    const f = (progress - T_FLAV0) / (T_FLAVE - T_FLAV0);
+    carousel.target = Math.min(Math.max(f, 0), 1) * (FLAVOURS.length - 1);
+    document.getElementById('bar').style.width = (progress * 100) + '%';
+
+    // au-delà des arguments, la 3D s'efface : les sections à lire ont un fond
+    // propre sur la référence, pas une canette derrière
+    /* Baisser l'opacité fait passer une canette orange par le marron avant de
+       disparaître, puisqu'elle se mélange au fond noir. On éteint donc la
+       lumière — l'exposition tombe — et l'opacité ne sert qu'en toute fin. */
+    sortie = Math.min(Math.max((progress - (T_ARGSE + P(0.10))) / P(0.45), 0), 1);
+    document.getElementById('webgl').style.opacity = String(CLAIR ? 1 - sortie : Math.min(1, (1 - sortie) * 3));
+    document.getElementById('glow').style.opacity = String((1 - sortie) * 0.9);
+    document.documentElement.style.setProperty('--glow-sat', String(Math.max(0, 1 - sortie * 2.2)));
+    document.getElementById('hint').style.opacity = scrollY > 40 ? 0 : 1;
+
+    // au-delà de la plongée, la canette montre ses arguments
+    const wanted = progress > T_ARGS0 - P(0.30) && progress < T_ARGSE + P(0.25) ? 'spec' : 'front';
+    if (wanted !== mode) {
+      mode = wanted;
+      cans.forEach((c, i) => c.mats.forEach((m) => { m.map = mode === 'spec' ? specs[i] : fronts[i]; m.needsUpdate = true; }));
+    }
+  }
+  addEventListener('scroll', readScroll, { passive:true });
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));   // six canettes, leurs reflets et six passes d'écran : au-delà on perd les 60 images
+    renderer.setSize(innerWidth, innerHeight, false);
+    allocate();
+    readScroll();
+  }, { passive:true });
+
+  /* ---- rail des saveurs ------------------------------------------------- */
+  const dock = document.getElementById('dock');
+  const acts = [...document.querySelectorAll('.act[data-flavour]')];
+  FLAVOURS.forEach((f, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = String(i + 1).padStart(2, '0');
+    b.setAttribute('aria-label', f.name);
+    b.addEventListener('click', () => {
+      acts[i].scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block:'start' });
+      spinVel += 4;
+    });
+    dock.appendChild(b);
+  });
+  const dockBtns = [...dock.children];
+
+  function setActive(i){
+    if (i === active) return;
+    active = i;
+    document.documentElement.style.setProperty('--glow', FLAVOURS[i].glow);
+    dockBtns.forEach((b, k) => b.setAttribute('aria-current', String(k === i)));
+  }
+
+  /* ---- second temps : on marque l'acte posé quand il tient le centre ----- */
+  const staged = new IntersectionObserver((entries) => {
+    entries.forEach((e) => e.target.classList.toggle('posed', e.isIntersecting));
+  }, { rootMargin: '-38% 0px -38% 0px' });
+  document.querySelectorAll('.act[data-flavour], .act-arg').forEach((el) => staged.observe(el));
+
+  /* ---- newsletter ------------------------------------------------------- */
+  const form = document.getElementById('newsForm');
+  const msg = document.getElementById('formMsg');
+  const email = document.getElementById('email');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email.value.trim())) {
+      msg.textContent = CONFIG.signup.invalid;
+      email.focus(); return;
+    }
+    msg.textContent = CONFIG.signup.done;
+    form.reset();
+  });
+
+  /* ---- boucle ----------------------------------------------------------- */
+  const lerp = (a, b, t) => a + (b - a) * t;
+  let last = performance.now();
+  readScroll();
+  setActive(0);
+
+  renderer.setAnimationLoop((now) => {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    const k = 1 - Math.exp(-5.0 * dt);   // constante de 200 ms, relevée sur la référence
+
+    const want = sampleShots(progress);
+    for (const key of KEYS) cur[key] = lerp(cur[key], want[key], k);
+
+    carousel.position = lerp(carousel.position, carousel.target, k);
+    pointer.sx = lerp(pointer.sx, pointer.x, k);
+    pointer.sy = lerp(pointer.sy, pointer.y, k);
+    // rotation libre ramenée d'un facteur 3 : la référence a un bougé médian de
+    // 1,92 contre 6,24 ici, et c'est cette rotation qui tourne en permanence
+    if (!reduce) { spinVel *= Math.exp(-2.4 * dt); idle += (0.062 + spinVel) * dt; }
+    setActive(Math.max(0, Math.min(FLAVOURS.length - 1, Math.round(carousel.position))));
+
+    cans.forEach((c, i) => {
+      const d = i - carousel.position;
+      const near = Math.max(0, 1 - Math.abs(d));
+      const x = d * cur.spread;
+      const y = -Math.abs(d) * 0.10 + near * 0.06;
+      const z = -Math.abs(d) * 1.0;
+      const s = cur.scale + near * 0.20;
+      const rotY = (mode === 'spec' ? cur.spin : idle + d * 0.55) + (reduce ? 0 : pointer.sx * 0.10 * near);
+      const rotZ = cur.tilt - d * 0.05;
+      const rotX = 0.02 + (reduce ? 0 : pointer.sy * 0.045 * near);
+      for (const g of [c.real, c.refl]) {
+        g.position.set(x, y, z);
+        g.scale.setScalar(s);
+        g.rotation.set(rotX, rotY, rotZ);
+      }
+      c.real.visible = Math.abs(d) < 1.9;
+      c.refl.visible = cur.veil > 0.02 && Math.abs(d) < 1.2;
+      c.mats[1].opacity = 0.10 * cur.veil * Math.max(0, 1 - Math.abs(d) * 0.5);
+    });
+    veil.visible = cur.veil > 0.02;
+    mirror.visible = cur.veil > 0.02;
+
+    camera.fov = cur.fov;
+    camera.updateProjectionMatrix();
+    camera.position.set(
+      (reduce ? 0 : pointer.sx * 0.065),
+      cur.camY + (reduce ? 0 : -pointer.sy * 0.035),
+      cur.camZ
+    );
+    camera.lookAt(0, cur.look, 0);
+
+    post();
+  });
+}
+</script>
+</body>
+</html>

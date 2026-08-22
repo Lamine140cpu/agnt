@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Trans Gold Marchandises — transport routier de marchandises, France et Europe</title>
+<meta name="description" content="Transporteur routier généraliste à Aulnay-sous-Bois (93) depuis 2017. Lot complet, groupage, palettes — France et Europe, sans rupture de charge.">
+<link rel="canonical" href="https://lamine140cpu.github.io/agnt/transgold/bord.html">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#F1EFEA">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Trans Gold Marchandises">
+<meta property="og:title" content="Trans Gold Marchandises — transport routier, France et Europe">
+<meta property="og:description" content="Lot complet, groupage, palettes. Un seul interlocuteur du devis à la livraison. Aulnay-sous-Bois, depuis 2017.">
+<meta property="og:url" content="https://lamine140cpu.github.io/agnt/transgold/bord.html">
+<meta property="og:image" content="https://lamine140cpu.github.io/agnt/transgold/assets/transgold-partage.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://lamine140cpu.github.io/agnt/transgold/assets/transgold-partage.jpg">
+
+<link rel="stylesheet" href="assets/fonts/ultra-bord.css">
+<style>
+/* ============================================================================
+   TRANS GOLD — direction A, « le tableau de bord ».
+
+   Le diagnostic qui a produit cette page tient en deux nombres, mesurés sur la
+   version précédente : le film y occupait 88 % de la hauteur, et tout ce qui
+   vend — ce qu'on transporte, comment ça se passe, les documents, le numéro —
+   tenait dans les 12 % restants. Un acheteur devait défiler vingt-sept mille
+   pixels avant de savoir si on prenait sa palette. Le mouvement n'était pas un
+   atout : c'était un couloir.
+
+   Ici le contenu ne vient plus APRÈS le film, il vit DEDANS. Les six actes du
+   prologue portent chacun un chapitre réel, et le film avance à côté d'eux au
+   lieu de les précéder. La page garde la même course — 6 x 500svh, soit
+   27 000 px — donc la même pellicule : 791 images en paysage et 527 en
+   portrait, environ 34 px de défilement par image. Changer de direction
+   artistique ne doit pas coûter un réencodage.
+
+   Le film est ENCADRÉ, pas en plein écran. C'est ce qui permet un fond clair
+   sans masque ni fondu : le texte a son papier, l'image a son cadre, et les
+   deux ne se battent pas. Mesuré : encadrer ne coûte rien (60 i/s comme en
+   plein écran), là où un masque dégradé coûte 40 % de la cadence. La forme
+   suit la mesure, pas l'inverse.
+
+   Le registre : un relevé d'exploitation. Des chiffres alignés, une grille
+   qu'on voit, une mono partout où il y a un nombre. Montrer la structure,
+   c'est montrer la compétence — et c'est l'exact opposé du registre « maison
+   de luxe » que la version précédente empruntait sans le vouloir. */
+
+:root{
+  --papier:#F1EFEA;      /* le fond : un papier, pas un blanc d'écran */
+  --carte:#FBFAF8;       /* les surfaces soulevées */
+  --encre:#0E1215;       /* le texte, jamais du noir pur */
+  --gris:#6B7480;
+  --sourd:#98A0AA;
+  --trait:#D8D4CC;
+  --bleu:#14396E;        /* le bleu de la livrée : la structure */
+  --rouge:#C0272D;       /* le rouge de la livrée : le signal, rare */
+  --or:#9C7C2E;
+  --marge:clamp(20px,4.2vw,64px);
+  --tete:58px;
+  --sans:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--papier);color:var(--encre);
+  font-family:var(--sans);font-weight:400;font-size:clamp(15px,1.06vw,17px);
+  line-height:1.62;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ------------------------------------------------------------- les briques */
+.eti{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--gris);margin:0}
+.eti b{color:var(--bleu);font-weight:500}
+.titre{font-family:var(--sans);font-weight:600;letter-spacing:-.025em;
+  line-height:1.02;margin:0;color:var(--encre)}
+.t-xl{font-size:clamp(2.1rem,4.6vw,4.1rem)}
+.t-l{font-size:clamp(1.7rem,3.1vw,2.7rem)}
+.corps{margin:0;color:#2A3138;max-width:56ch}
+.sourd{color:var(--gris)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ==================================================================== L'EN-TÊTE
+   Fixe, sur papier, avec un filet d'un pixel. Aucun flou d'arrière-plan : il
+   est recalculé à chaque trame sur toute la largeur, et il coûtait un quart de
+   la cadence pour un effet qu'on ne remarque qu'en le cherchant. */
+.tete{position:fixed;top:0;left:0;right:0;height:var(--tete);z-index:60;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:0 var(--marge);background:var(--papier);
+  border-bottom:1px solid var(--trait)}
+.tete .marque{font-weight:700;letter-spacing:.02em;font-size:15px;
+  text-decoration:none;color:var(--encre);white-space:nowrap}
+.tete .marque i{font-style:normal;color:var(--bleu)}
+.menu{display:none;gap:24px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase}
+@media (min-width:1000px){.menu{display:flex}}
+.menu a{color:var(--gris);text-decoration:none;padding:3px 0;position:relative}
+.menu a:hover{color:var(--encre)}
+.menu a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:var(--bleu);transform:scaleX(0);transform-origin:left;
+  transition:transform .22s ease}
+.menu a:hover::after{transform:scaleX(1)}
+.tel{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;
+  background:var(--bleu);color:#fff;text-decoration:none;border-radius:2px;
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em;white-space:nowrap;
+  font-variant-numeric:tabular-nums;transition:background .2s ease}
+.tel:hover{background:#0E2B54}
+.tel i{width:6px;height:6px;border-radius:50%;background:#7FA8E8;flex:0 0 auto}
+/* Le numéro reste VISIBLE sur téléphone. Le masquer sous 430 px laissait une
+   pastille bleue muette : sur un site de transporteur, appeler est l'action la
+   plus utile de la page, et la cacher pour gagner vingt pixels est une faute
+   de fond, pas un arbitrage de mise en page. */
+@media (max-width:429px){
+  .tel{padding:8px 11px;font-size:11px;letter-spacing:.02em}
+  .tete .marque{font-size:13px}
+}
+
+/* ================================================================== LA SCÈNE
+   Le film, encadré. À droite sur écran large, en bandeau haut sur téléphone.
+   `#toile` n'impose plus sa taille : depuis que le lecteur mesure la boîte que
+   le CSS lui donne, c'est cette règle-ci qui commande. */
+.scene{position:fixed;z-index:1;top:var(--tete);left:0;right:0;
+  height:42svh;background:#0A0C0E;overflow:hidden;
+  border-bottom:1px solid var(--trait)}
+@media (min-width:1000px){
+  .scene{top:var(--tete);bottom:0;left:auto;right:0;width:50vw;height:auto;
+    border-bottom:0;border-left:1px solid var(--trait)}
+}
+#toile{position:absolute;inset:0;width:100%;height:100%;display:block;
+  background:#0A0C0E}
+
+/* Le relevé, posé sur le film. Il avance AVEC lui : c'est ce qui transforme le
+   mouvement en information au lieu d'en faire une ambiance. */
+.releve{position:absolute;left:0;right:0;bottom:0;z-index:2;
+  display:flex;align-items:center;gap:0;flex-wrap:wrap;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:#C9D2DC;
+  background:linear-gradient(transparent,rgba(8,10,12,.86) 42%);
+  padding:26px 14px 11px}
+.releve div{padding:0 14px;border-left:1px solid rgba(201,210,220,.22);
+  flex:1 1 auto;min-width:0}
+.releve div:first-child{border-left:0}
+.releve b{display:block;color:#fff;font-weight:500;letter-spacing:.04em;
+  font-size:12.5px;font-variant-numeric:tabular-nums;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.releve u{display:block;text-decoration:none;color:#8E99A5;font-size:9.5px}
+@media (max-width:560px){.releve div:nth-child(n+3){display:none}}
+
+/* La barre de progression du film : un trait plein, franc, en haut du cadre. */
+.avance{position:absolute;top:0;left:0;height:2px;width:0;z-index:3;
+  background:var(--rouge)}
+
+/* ================================================================== LA COLONNE
+   Le texte occupe la moitié gauche, sur papier. Sur téléphone il passe sous le
+   bandeau du film. */
+#prologue{position:relative;z-index:3;padding-top:calc(42svh + var(--tete))}
+@media (min-width:1000px){
+  #prologue{width:50vw;padding-top:var(--tete)}
+}
+/* La course est celle de la version précédente, au pixel près : six actes de
+   cinq écrans. Le film compte 1 152 images pour 27 000 px, soit 33 px par
+   image — le réglage mesuré comme celui au-delà duquel l'oeil n'achète plus
+   rien et le décodeur paye quand même. Changer cette valeur obligerait à
+   réencoder les deux séries. */
+#prologue section{min-height:500svh;position:relative}
+@media (max-width:820px){#prologue section{min-height:360svh}}
+
+/* Le panneau reste en vue pendant que le film avance sous lui : c'est ce qui
+   fait qu'un acte DURE au lieu de passer. */
+.panneau{position:sticky;top:calc(42svh + var(--tete) + 18px);
+  padding:0 var(--marge) 40px;
+  opacity:0;transform:translateY(12px);
+  transition:opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1)}
+@media (min-width:1000px){
+  .panneau{top:calc(var(--tete) + clamp(24px,6vh,72px));padding-bottom:0}
+}
+#prologue .en-scene .panneau{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .panneau{opacity:1;transform:none;transition:none}
+}
+
+/* Le rail : la ligne du trajet, dans la marge, avec un curseur qui descend
+   avec le film. Un seul nombre pilote l'image, la barre et ce curseur. */
+.rail{position:fixed;left:calc(var(--marge) / 2 - 1px);top:calc(var(--tete) + 40px);
+  bottom:40px;width:1px;background:var(--trait);z-index:2;display:none}
+@media (min-width:1000px){.rail{display:block}}
+.rail i{position:absolute;left:-3px;width:7px;height:7px;border-radius:50%;
+  background:var(--rouge);top:0}
+.rail u{position:absolute;left:-4px;width:9px;height:1px;background:var(--trait)}
+
+/* ------------------------------------------------------- les blocs de contenu */
+.chiffres{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;
+  background:var(--trait);border:1px solid var(--trait);margin-top:26px}
+.chiffres div{background:var(--carte);padding:14px 16px}
+.chiffres dt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gris);margin:0 0 5px}
+.chiffres dd{margin:0;font-family:var(--mono);font-size:clamp(17px,2vw,22px);
+  font-weight:500;font-variant-numeric:tabular-nums;color:var(--encre)}
+.chiffres dd small{font-size:12px;color:var(--gris);font-weight:400}
+
+.lignes{margin:24px 0 0;border-top:1px solid var(--trait)}
+.lignes div{display:grid;grid-template-columns:minmax(0,11ch) 1fr;gap:16px;
+  padding:13px 0;border-bottom:1px solid var(--trait);align-items:baseline}
+@media (min-width:640px){.lignes div{grid-template-columns:minmax(0,16ch) 1fr}}
+.lignes dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--bleu);margin:0}
+.lignes dd{margin:0;color:#2A3138}
+.lignes .non dt{color:var(--rouge)}
+
+.etapes{counter-reset:e;margin-top:24px;padding:0;list-style:none}
+.etapes li{counter-increment:e;display:grid;
+  grid-template-columns:34px 1fr;gap:16px;padding:15px 0;
+  border-top:1px solid var(--trait)}
+.etapes li::before{content:counter(e,decimal-leading-zero);
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--rouge);
+  font-variant-numeric:tabular-nums;padding-top:3px}
+.etapes b{display:block;font-weight:600;margin-bottom:3px}
+.etapes span{color:#2A3138}
+
+.appel{display:inline-flex;align-items:center;gap:12px;margin-top:26px;
+  padding:14px 22px;background:var(--encre);color:#fff;text-decoration:none;
+  font-family:var(--mono);font-size:clamp(15px,1.7vw,19px);letter-spacing:.04em;
+  font-variant-numeric:tabular-nums;border-radius:2px;transition:background .2s ease}
+.appel:hover{background:var(--bleu)}
+
+/* ==================================================================== LA SUITE
+   Ce qui reste après le film : l'adresse, le contact, les mentions. Quatre
+   écrans, pas trente — l'inverse exact de la version précédente. */
+#suite{position:relative;z-index:4;background:var(--papier);
+  border-top:1px solid var(--trait)}
+@media (min-width:1000px){#suite{width:100vw}}
+#suite section{padding:clamp(56px,9vh,110px) var(--marge)}
+#suite section + section{border-top:1px solid var(--trait)}
+.large{max-width:1180px;margin:0 auto}
+.duo{display:grid;gap:32px}
+@media (min-width:900px){.duo{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:56px}}
+
+.pose{opacity:0;transform:translateY(12px);
+  transition:opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1)}
+.pose.vu{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.pose{opacity:1;transform:none;transition:none}}
+
+.coord{display:grid;gap:26px;margin-top:24px}
+@media (min-width:820px){.coord{grid-template-columns:1fr 1fr;gap:40px}}
+.coord dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gris);margin:0 0 6px}
+.coord dd{margin:0 0 20px;line-height:1.7}
+.coord dd a{color:var(--bleu);text-decoration:none;border-bottom:1px solid transparent}
+.coord dd a:hover{border-bottom-color:var(--bleu)}
+[data-a-completer]{background:#FBE9A7;padding:0 5px;border-radius:2px;color:#6A5200}
+
+footer{background:var(--encre);color:#A8B0BA;padding:26px var(--marge)}
+.pied{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 26px;
+  justify-content:space-between;font-family:var(--mono);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase}
+.pied a{color:#fff;text-decoration:none}
+
+[id]{scroll-margin-top:calc(var(--tete) + 12px)}
+@media (max-width:999px){[id]{scroll-margin-top:calc(42svh + var(--tete) + 12px)}}
+
+/* ==================================================================== LE VOILE */
+.voile{position:fixed;inset:0;z-index:90;background:var(--papier);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;transition:opacity .6s ease,visibility 0s .6s}
+.voile.parti{opacity:0;visibility:hidden;pointer-events:none}
+.voile em{font-family:var(--mono);font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--gris);font-style:normal}
+.jauge{width:min(300px,52vw);height:2px;background:var(--trait);overflow:hidden}
+.jauge b{display:block;height:100%;width:0;background:var(--bleu);
+  transition:width .25s ease}
+.pct{font-family:var(--mono);font-size:11px;color:var(--sourd);margin:0;
+  font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<header class="tete">
+  <a class="marque" href="#top">TRANS GOLD <i>▸</i> MARCHANDISES</a>
+  <nav class="menu">
+    <a href="#transporte">Ce qu'on transporte</a>
+    <a href="#procede">Comment ça se passe</a>
+    <a href="#garanties">Garanties</a>
+    <a href="#maison">Qui nous sommes</a>
+    <a href="#parler">Contact</a>
+  </nav>
+  <a class="tel" href="tel:+33660926646"><i></i><span>+33 6 60 92 66 46</span></a>
+</header>
+
+<div class="scene">
+  <canvas id="toile"></canvas>
+  <div class="avance" id="avance"></div>
+  <div class="releve">
+    <div><u>Étape</u><b id="r-etape">Chargement</b></div>
+    <div><u>Position</u><b id="r-pos">Aulnay-sous-Bois</b></div>
+    <div><u>Parcouru</u><b id="r-km">0 km</b></div>
+    <div><u>Rupture de charge</u><b>0</b></div>
+  </div>
+</div>
+
+<div class="rail" id="rail"><i id="curseur"></i></div>
+
+<div id="prologue"><span id="top"></span>
+
+  <section>
+    <div class="panneau">
+      <p class="eti"><b>01</b> · Transport routier de marchandises</p>
+      <h1 class="titre t-xl" style="margin-top:14px">Vos marchandises<br>partent d'ici.</h1>
+      <p class="corps" style="margin-top:20px">Depuis 2017, entre le départ et
+        l'arrivée, un seul interlocuteur — celui qui répond au téléphone est
+        celui qui suit votre lot.</p>
+      <dl class="chiffres">
+        <div><dt>En activité depuis</dt><dd>2017</dd></div>
+        <div><dt>Base</dt><dd>93600 <small>Aulnay</small></dd></div>
+        <div><dt>Accès A1 / A3</dt><dd>4 <small>min</small></dd></div>
+        <div><dt>Roissy CDG</dt><dd>15 <small>min</small></dd></div>
+      </dl>
+      <a class="appel" href="tel:+33660926646">+33 6 60 92 66 46 <span>→</span></a>
+    </div>
+  </section>
+
+  <section id="transporte">
+    <div class="panneau">
+      <p class="eti"><b>02</b> · Ce qu'on transporte</p>
+      <h2 class="titre t-l" style="margin-top:14px">Du fret,<br>pas une spécialité.</h2>
+      <p class="corps" style="margin-top:18px">Trans Gold est un transporteur
+        généraliste. C'est une force pour qui a des besoins irréguliers : une
+        palette cette semaine, un camion complet le mois prochain.</p>
+      <dl class="lignes">
+        <div><dt>Lot complet</dt><dd>Un camion, un client, un trajet. De
+          l'enlèvement à la livraison sans rupture de charge.</dd></div>
+        <div><dt>Groupage</dt><dd>Quelques palettes qui partagent la remorque.
+          Moins cher, à condition d'accepter le calendrier.</dd></div>
+        <div><dt>Palettes</dt><dd>Europe, perdue, spéciale. Filmées et sanglées,
+          hauteurs inégales acceptées.</dd></div>
+        <div class="non"><dt>Ce qu'on ne prend pas</dt><dd>Matières dangereuses,
+          température dirigée, animaux vivants. Le dire est plus utile que de
+          laisser croire.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="materiel">
+    <div class="panneau">
+      <p class="eti"><b>03</b> · Le matériel</p>
+      <h2 class="titre t-l" style="margin-top:14px">Deux gabarits,<br>deux métiers.</h2>
+      <p class="corps" style="margin-top:18px">Une caisse fermée pour la
+        distance, un porteur à hayon pour la ville. Une livraison n'a pas les
+        mêmes contraintes selon qu'elle finit sur un quai ou sur un trottoir.</p>
+      <dl class="lignes">
+        <div><dt>Semi-remorque</dt><dd>Fourgon fermé. Longue distance, quai à
+          quai, chargement par l'arrière.</dd></div>
+        <div><dt>Porteur à hayon</dt><dd>Centre-ville, rue étroite, adresse sans
+          quai. Le hayon remplace le chariot.</dd></div>
+        <div><dt>Arrimage</dt><dd>Sanglé sur rails, filmé, calé. C'est la seule
+          chose qui décide d'un litige, et c'est celle qu'aucun site de
+          transporteur ne montre.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="charge">
+    <div class="panneau">
+      <p class="eti"><b>04</b> · Le principe</p>
+      <h2 class="titre t-l" style="margin-top:14px">Sans rupture<br>de charge.</h2>
+      <p class="corps" style="margin-top:18px">Ce qui est chargé chez vous
+        ressort chez le destinataire, dans la même remorque. Pas de plateforme,
+        pas de re-manipulation, pas de palette qui change de camion à trois
+        heures du matin.</p>
+      <dl class="chiffres">
+        <div><dt>Manipulations</dt><dd>2 <small>chargement + livraison</small></dd></div>
+        <div><dt>Transbordements</dt><dd>0</dd></div>
+        <div><dt>Zone</dt><dd>FR <small>+ Europe</small></dd></div>
+        <div><dt>Porte à porte</dt><dd>Oui</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="procede">
+    <div class="panneau">
+      <p class="eti"><b>05</b> · Comment ça se passe</p>
+      <h2 class="titre t-l" style="margin-top:14px">Un appel,<br>une réponse.</h2>
+      <p class="corps" style="margin-top:18px">Il n'y a pas de portail à remplir
+        ni de numéro de dossier à retenir. Vous appelez, vous décrivez, on vous
+        dit si c'est faisable et à quel prix.</p>
+      <ol class="etapes">
+        <li><span><b>Vous décrivez</b>Ce qui part, d'où, vers où, et quand ça
+          doit arriver. Le poids et le nombre de palettes suffisent pour
+          commencer.</span></li>
+        <li><span><b>On répond</b>Faisable ou non, à quelle date, à quel prix.
+          Une réponse claire vaut mieux qu'un devis qui arrive trop tard.</span></li>
+        <li><span><b>On charge</b>Enlèvement à la date convenue, arrimage,
+          départ. Le même interlocuteur jusqu'à la livraison.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="garanties">
+    <div class="panneau">
+      <p class="eti"><b>06</b> · Ce que vous pouvez vérifier</p>
+      <h2 class="titre t-l" style="margin-top:14px">Avant de confier<br>une palette.</h2>
+      <p class="corps" style="margin-top:18px">Personne ne remet sa marchandise
+        à un transporteur sur parole. Ces documents existent, ils sont à jour, et
+        ils vous sont envoyés avant le premier enlèvement — pas après.</p>
+      <dl class="lignes">
+        <div><dt>Licence</dt><dd>Licence de transport en cours de validité.
+          L'attestation vous est transmise sur simple demande.</dd></div>
+        <div><dt>Assurance</dt><dd>Responsabilité civile professionnelle et
+          marchandises transportées. Attestation fournie avant enlèvement.</dd></div>
+        <div><dt>Interlocuteur</dt><dd>Le même du devis à la livraison. Pas de
+          numéro de dossier, pas de service client, pas de renvoi.</dd></div>
+        <div><dt>Ancienneté</dt><dd>Huit ans d'exploitation continue. Les
+          références clients sont communiquées sur demande.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+</div>
+
+<div id="suite">
+
+  <section id="maison">
+    <div class="large duo">
+      <div>
+        <p class="eti pose"><b>07</b> · Qui nous sommes</p>
+        <h2 class="titre t-l pose" style="margin-top:14px">Aulnay,<br>porte de l'Europe.</h2>
+      </div>
+      <div>
+        <p class="corps pose">Trans Gold Marchandises est une société de
+          transport routier créée en 2017 et établie à Aulnay-sous-Bois, en
+          Seine-Saint-Denis.</p>
+        <p class="corps pose" style="margin-top:16px">L'adresse n'est pas un
+          détail : on est à quelques minutes de l'A1 et de l'A3, à un quart
+          d'heure de Roissy, aux portes de Paris et de la première zone
+          logistique de France. Un enlèvement en Île-de-France se cale dans la
+          journée, et un départ vers le nord ou l'est de l'Europe ne commence
+          pas par deux heures de périphérique.</p>
+        <dl class="chiffres pose">
+          <div><dt>Depuis</dt><dd>2017</dd></div>
+          <div><dt>Département</dt><dd>93 <small>Seine-Saint-Denis</small></dd></div>
+          <div><dt>Gabarits</dt><dd>2</dd></div>
+          <div><dt>Zone</dt><dd>FR <small>+ Europe</small></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section id="parler">
+    <div class="large duo">
+      <div>
+        <p class="eti pose"><b>08</b> · Appeler</p>
+        <h2 class="titre t-l pose" style="margin-top:14px">Dites-nous ce<br>qui doit partir.</h2>
+      </div>
+      <div>
+        <p class="corps pose">Le poids, le nombre de palettes, le départ,
+          l'arrivée, la date. Cinq informations et on sait vous répondre.</p>
+        <p class="pose"><a class="appel" href="tel:+33660926646">+33 6 60 92 66 46 <span>→</span></a></p>
+        <dl class="coord pose">
+          <div>
+            <dt>Adresse</dt>
+            <dd>Trans Gold Marchandises<br>45 rue Jean Charcot<br>93600 Aulnay-sous-Bois<br>France</dd>
+          </div>
+          <div>
+            <dt>Téléphone</dt>
+            <dd><a href="tel:+33660926646">+33 6 60 92 66 46</a></dd>
+            <dt>Activité</dt>
+            <dd>Transport routier de fret interurbain<br>France &amp; Europe · Depuis 2017</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section id="mentions">
+    <div class="large duo">
+      <div><p class="eti pose">Mentions légales</p></div>
+      <div>
+        <p class="corps sourd pose"><strong>TRANS GOLD MARCHANDISES</strong> —
+          société par actions simplifiée (SAS).<br>
+          Siège social : 45 rue Jean Charcot, 93600 Aulnay-sous-Bois, France.<br>
+          SIREN 831&nbsp;321&nbsp;112 · SIRET du siège 831&nbsp;321&nbsp;112&nbsp;00029.<br>
+          Code APE 49.41A — transports routiers de fret interurbains.<br>
+          Société immatriculée le 31 juillet 2017.<br>
+          Téléphone : <a href="tel:+33660926646">+33&nbsp;6&nbsp;60&nbsp;92&nbsp;66&nbsp;46</a>.<br>
+          Directeur de la publication : <span data-a-completer>à compléter</span>.<br>
+          Hébergeur : <span data-a-completer>à compléter</span>.</p>
+        <p class="corps sourd pose" style="margin-top:14px">Les photographies et
+          séquences présentées sur ce site illustrent l'activité de transport ;
+          les véhicules figurés portent la livrée de la société.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="pied">
+    <span>© 2026 Trans Gold Marchandises</span>
+    <span>Aulnay-sous-Bois · SIREN 831 321 112</span>
+    <span><a href="tel:+33660926646">+33 6 60 92 66 46</a></span>
+  </div>
+</footer>
+
+<div class="voile" id="voile">
+  <em id="etape">Composition du mouvement</em>
+  <div class="jauge"><b id="jauge"></b></div>
+  <p class="pct" id="pct">0 %</p>
+</div>
+
+<!--MOTEUR-->
+
+<script>
+/* ============================================================ LE RELEVÉ
+
+   Ce qui transforme le film en information plutôt qu'en ambiance : la barre
+   d'avancement, le curseur du rail et les quatre champs du relevé sont pilotés
+   par LA MÊME progression que le numéro d'image. Un seul nombre, donc aucune
+   désynchronisation possible — c'est la faute qu'on ne pourrait pas rattraper,
+   un relevé qui annonce la frontière pendant qu'on voit encore le quai.
+
+   On lit `window.__VOULUE`, publié par le lecteur, plutôt que de recalculer la
+   progression de son côté : deux calculs de la même chose finissent toujours
+   par diverger. */
+(function releve(){
+  const barre = document.getElementById('avance');
+  const curseur = document.getElementById('curseur');
+  const rail = document.getElementById('rail');
+  const champs = { etape: document.getElementById('r-etape'),
+                   pos: document.getElementById('r-pos'),
+                   km: document.getElementById('r-km') };
+
+  /* Les jalons du trajet. Ce ne sont pas des promesses chiffrées : ce sont les
+     étapes d'un transport, et le kilométrage est celui du trajet MONTRÉ, pas
+     un engagement commercial. */
+  const JALONS = [
+    [0.00, 'Chargement',   'Aulnay-sous-Bois',  0],
+    [0.14, 'Départ',       'Seine-Saint-Denis', 12],
+    [0.32, 'Grand axe',    'A1 · direction nord', 88],
+    [0.55, 'Longue distance', 'Autoroute',      340],
+    [0.76, 'Approche',     'Zone de livraison', 610],
+    [0.92, 'Livraison',    'Destinataire',      648],
+  ];
+
+  let derniere = -1;
+  function poser(){
+    const total = window.__IMAGES || 0;
+    const voulue = window.__VOULUE;
+    if (!total || typeof voulue !== 'number') return;
+    const p = Math.min(Math.max(voulue / (total - 1), 0), 1);
+    if (Math.abs(p - derniere) < 0.0004) return;
+    derniere = p;
+
+    barre.style.width = (p * 100).toFixed(2) + '%';
+    if (rail) curseur.style.top = (p * (rail.clientHeight - 7)).toFixed(1) + 'px';
+
+    let j = JALONS[0];
+    for (const x of JALONS) if (p >= x[0]) j = x;
+    champs.etape.textContent = j[1];
+    champs.pos.textContent = j[2];
+    /* Le kilométrage avance en continu entre deux jalons, sinon il sauterait
+       par paliers et trahirait le procédé. */
+    const i = JALONS.indexOf(j), suivant = JALONS[i + 1];
+    const km = suivant
+      ? j[3] + (suivant[3] - j[3]) * ((p - j[0]) / (suivant[0] - j[0]))
+      : j[3];
+    champs.km.textContent = Math.round(km) + ' km';
+  }
+  (function boucle(){ poser(); requestAnimationFrame(boucle); })();
+})();
+</script>
+</body>
+</html>

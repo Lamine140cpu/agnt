@@ -1,0 +1,8 @@
+site/assets/splats/*.ums
+site/assets/splats/*.splat
+site/assets/mobilier/*/
+!site/assets/mobilier/CREDITS.md
+
+# Les images calculées du film : 28 Mo de JPEG intermédiaires, reproductibles
+# par `node film_rendu.mjs`. Seul le fichier replié est livré.
+site/assets/film/
