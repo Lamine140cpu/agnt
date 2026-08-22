@@ -121,17 +121,29 @@
    n'existe pas. Toutes les couleurs sont donc peintes explicitement — rien
    n'est laissé au fond de l'hôte — mais il n'y a qu'un seul jeu.
 
-   La palette vient de là aussi : le noir n'est pas neutre, il tire sur le bleu
+   La palette vient de là aussi : le fond n'est pas neutre, il tire sur le bleu
    comme un écran éteint ; l'accent est l'ambre d'une lampe inactinique, le
    seul éclairage qu'on tolère à côté d'une pellicule. Il ne sert qu'à deux
    choses — les numéros de chapitre et le seul bouton de la page.
+
+   Ce bleu-là n'est plus une nuance, c'est le parti pris. Relevé sur cinq
+   transporteurs — Dachser #1A3682, STEF #07264A, Geodis, Transaldis #3182CE,
+   Transports Freneau — la profession peint toujours la même paire : un bleu
+   marine profond au sol, un chaud en accent (or, jaune ou orange). Trans Gold
+   avait déjà le chaud, et il n'est pas emprunté : c'est l'or de sa livrée, et
+   Freneau prouve que l'or est pleinement dans les codes du métier. Ce qui
+   manquait était le bleu. Le fond descend donc du noir neutre vers le marine,
+   à luminosité quasi égale — le film doit rester ce qu'on regarde, pas la
+   page — et le pied de page prend le bandeau marine franc que Dachser et STEF
+   posent en bas de toutes leurs pages.
    ============================================================================ */
 :root{
-  --noir:#0A0C0E;        /* le fond, bleuté */
-  --nuit:#12161A;        /* la surface soulevée */
+  --noir:#05121E;        /* le fond : marine sourd, presque éteint */
+  --nuit:#0E1F2F;        /* la surface soulevée */
+  --marine:#07264A;      /* le bleu de bandeau du métier — relevé chez STEF */
   --os:#EDE9E3;          /* blanc chaud, jamais #fff */
-  --gris:#8A8F96;        /* gris froid, accordé au fond */
-  --sourd:#5C626A;       /* gris de second plan */
+  --gris:#8A93A0;        /* gris bleuté, accordé au fond marine */
+  --sourd:#5E6878;       /* gris de second plan */
   --ambre:#B8963E;       /* l'or de la livrée Trans Gold */
   --ligne:rgba(237,233,227,.13);
   --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
@@ -250,12 +262,12 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 #prologue section::before{content:"";position:fixed;inset:0;z-index:-1;
   pointer-events:none;opacity:0;transition:opacity .7s ease}
 #prologue section.en-scene::before{opacity:1}
-.a-g::before{background:linear-gradient(90deg,rgba(10,12,14,.95) 0%,
-  rgba(10,12,14,.88) 26%,rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
-.a-d::before{background:linear-gradient(270deg,rgba(10,12,14,.95) 0%,
-  rgba(10,12,14,.88) 26%,rgba(10,12,14,.5) 48%,rgba(10,12,14,.14) 68%,transparent 84%)}
-.a-c::before{background:linear-gradient(180deg,transparent 18%,rgba(10,12,14,.3) 42%,
-  rgba(10,12,14,.78) 68%,rgba(10,12,14,.94) 100%)}
+.a-g::before{background:linear-gradient(90deg,rgba(5,18,30,.95) 0%,
+  rgba(5,18,30,.88) 26%,rgba(5,18,30,.5) 48%,rgba(5,18,30,.14) 68%,transparent 84%)}
+.a-d::before{background:linear-gradient(270deg,rgba(5,18,30,.95) 0%,
+  rgba(5,18,30,.88) 26%,rgba(5,18,30,.5) 48%,rgba(5,18,30,.14) 68%,transparent 84%)}
+.a-c::before{background:linear-gradient(180deg,transparent 18%,rgba(5,18,30,.3) 42%,
+  rgba(5,18,30,.78) 68%,rgba(5,18,30,.94) 100%)}
 
 /* ------------------------------------------------- la hiérarchie d'un acte
 
@@ -324,7 +336,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 @media (max-width:820px){
   .mot{max-width:none}
   #prologue section::before{background:linear-gradient(transparent 6%,
-    rgba(10,12,14,.45) 34%,rgba(10,12,14,.9) 66%,rgba(10,12,14,.96) 100%)!important}
+    rgba(5,18,30,.45) 34%,rgba(5,18,30,.9) 66%,rgba(5,18,30,.96) 100%)!important}
   .a-d .tenir,.a-c .tenir{align-items:stretch;text-align:left}
   .a-d .defiler{justify-content:flex-start}
   /* Le numéro d'acte suit l'alignement, sinon il reste seul contre le bord
@@ -474,8 +486,31 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    Le tout est en `grid` à colonnes minimales : les blocs se replient d'eux-
    mêmes en deux colonnes sur tablette et en une sur téléphone, sans point de
    rupture à maintenir. */
-.pied{border-top:1px solid var(--ligne);
+/* Le bandeau marine. Chez Dachser comme chez STEF, le pied de page n'est pas
+   la suite de la page : c'est une bande de couleur pleine, d'un bord à
+   l'autre, qui ferme le document. C'est le geste le plus reconnaissable du
+   secteur et le seul endroit de cette page où le bleu peut être franc — le
+   film occupe tout le reste, et l'y peindre le disputerait à l'image.
+
+   La bande doit traverser toute la largeur alors que le contenu reste borné
+   à 1380 px et centré. Les deux rôles sont donc SÉPARÉS : le <footer> porte
+   la couleur et occupe la laize, et un `.bande` intérieur tient le contenu.
+
+   La solution habituelle — un pseudo-élément débordant de `-50vw` de chaque
+   côté — n'a pas été retenue, et ce n'est pas un détail de goût : `100vw`
+   compte la barre de défilement, que la largeur du contenu, elle, ne compte
+   pas. Sur tout navigateur à barre classique — c'est-à-dire sur le PC de
+   bureau du client — le bandeau dépasse d'une quinzaine de pixels et toute
+   la page gagne un défilement horizontal. Le navigateur d'essai d'ici utilise
+   des barres en surimpression et ne peut pas voir le défaut : raison de plus
+   pour ne pas employer le montage. */
+.pied{background:var(--marine);
   padding-top:clamp(48px,7vh,80px);padding-bottom:clamp(28px,4vh,44px)}
+/* Sur le marine, les gris de la page perdent leur contraste : le bleu est
+   plus clair que le fond général, et les libellés de second plan y tombaient
+   à 2,3 contre 1. Les trois tons sont relevés, ici seulement. */
+.pied .pied-eti{color:#93A3B8}
+.pied .pied-txt{color:#C6D2E0}
 .fiche{display:grid;gap:clamp(30px,4vw,52px);
   grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 /* L'identité tient deux places quand il y en a assez : sa phrase se lit mal
@@ -498,13 +533,13 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    Sélecteur préfixé par `#suite` à dessein : la règle générale des liens du
    bas porte un identifiant, et une classe seule ne l'emporterait pas. Déjà
    payé une fois sur `.appel`. */
-#suite .pied-plan a{color:var(--gris);border-bottom-color:transparent}
-#suite .pied-plan a:hover{color:var(--os);border-bottom-color:var(--ligne)}
+#suite .pied-plan a{color:#C6D2E0;border-bottom-color:transparent}
+#suite .pied-plan a:hover{color:var(--os);border-bottom-color:rgba(237,233,227,.3)}
 .pied-bas{margin-top:clamp(38px,5vh,64px);padding-top:22px;
   border-top:1px solid var(--ligne);
   display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:space-between;
   align-items:baseline;font-family:var(--mono);font-size:10.5px;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--sourd)}
+  letter-spacing:.14em;text-transform:uppercase;color:#8C9BB0}
 
 /* L'apparition. Une seule, discrète, et coupée net si le visiteur a demandé
    moins de mouvement — auquel cas tout est visible d'emblée. */
@@ -564,7 +599,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   padding:14px var(--marge);font-family:var(--mono);font-size:11px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--gris);
   pointer-events:auto;mix-blend-mode:normal;
-  background:linear-gradient(180deg,rgba(10,12,14,.95),rgba(10,12,14,.62) 70%,transparent)}
+  background:linear-gradient(180deg,rgba(5,18,30,.95),rgba(5,18,30,.62) 70%,transparent)}
 .tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
 .tete a{color:inherit;text-decoration:none}
 
@@ -589,8 +624,8 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
      société traversait « LOT & GROUPAGE ». Le fond reste donc franc jusque
      sous la seconde rangée et ne s'éteint qu'après. */
   .tete{flex-wrap:wrap;row-gap:10px;padding-bottom:10px;
-    background:linear-gradient(180deg,rgba(10,12,14,.98),rgba(10,12,14,.96) 70%,
-      rgba(10,12,14,.94) 93%,transparent)}
+    background:linear-gradient(180deg,rgba(5,18,30,.98),rgba(5,18,30,.96) 70%,
+      rgba(5,18,30,.94) 93%,transparent)}
   .tete > a:first-child{order:1}
   .tel{order:2}
   .menu{order:3;flex:1 0 100%;gap:18px;font-size:10px;letter-spacing:.14em;
@@ -637,7 +672,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .tel span{padding-left:9px;border-left:1px solid rgba(184,150,62,.4);
   opacity:.82;transition:opacity .25s ease}
 .tel:hover b,.tel:hover span{color:var(--noir)}
-.tel:hover span{border-left-color:rgba(10,12,14,.35);opacity:1}
+.tel:hover span{border-left-color:rgba(5,18,30,.35);opacity:1}
 /* LE NUMÉRO NE DISPARAÎT PAS. Sous 520 px il ne restait qu'une pastille
    ambre muette : sur le site d'un transporteur, appeler est l'action la plus
    utile de la page, et l'escamoter pour gagner quelques pixels est une faute
@@ -995,7 +1030,8 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
        licence, ni réseau social, tant que ces informations ne sont pas
        confirmées par le client. Un pied de page qui affirme faux est pire
        qu'un pied de page court. -->
-  <footer class="bande pied">
+  <footer class="pied">
+    <div class="bande">
     <div class="fiche">
       <div class="fiche-marque">
         <p class="pied-nom">Trans Gold Marchandises</p>
@@ -1028,6 +1064,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
       <span>© 2026 Trans Gold Marchandises</span>
       <span>SAS · SIREN 831&nbsp;321&nbsp;112 · SIRET 831&nbsp;321&nbsp;112&nbsp;00029 · APE 49.41A</span>
       <span><a href="#mentions">Mentions légales</a></span>
+    </div>
     </div>
   </footer>
 
