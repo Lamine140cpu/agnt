@@ -42,6 +42,7 @@ DOSSIER = os.path.join(SITE, "refontes")
 REFONTES = {
     "bord":   "transgold-bord.html",     # A — le tableau de bord
     "signal": "transgold-signal.html",   # B — la signalisation
+    "plein":  "transgold-plein.html",    # le principe d'origine, poussé
 }
 
 EXIGENCES = ('id="toile"', 'id="prologue"', 'id="suite"',
