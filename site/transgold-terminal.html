@@ -70,12 +70,30 @@
   --os:#F2F3F5;
   --gris:#8E96A2;
   --sourd:#5B6470;
-  /* L'ACCENT N'EST PAS UNE CONSTANTE. Il est échantillonné sur l'image du film
-     à chaque instant : bleu ciel au chargement, neutre sur l'autoroute, doré
-     puis orange à l'arrivée. Ces valeurs ne sont qu'un point de départ, le
-     temps que la première image soit décodée. */
-  --vif:#6199E1;
-  --vif-sourd:rgba(97,153,225,.34);
+  /* L'ORANGE DE SÉCURITÉ. Celui des gilets, des cônes, des balises de chantier.
+     Il appartient au métier au même titre que le bleu d'autoroute, il se lit de
+     loin par construction — c'est sa fonction — et aucune des versions
+     précédentes ne s'en approchait : l'or de la livrée, le bleu de la
+     signalisation, le bleu d'encre du tableau de bord.
+
+     CE QUI DEVAIT ÊTRE ICI, ET POURQUOI IL N'Y EST PAS. L'accent devait être
+     échantillonné en direct sur le film : l'interface prenant la couleur de
+     l'heure montrée. Mesuré sur la pellicule réelle, l'idée ne tient pas —
+     le ciel est franchement bleu sur le premier tiers puis délavé, presque
+     blanc, tout le reste du temps. Sur un ciel blanc ce sont quelques unités
+     de chroma résiduelle qui décident de la teinte, et l'accent bascule du
+     bleu au vert d'une image à l'autre. Trois méthodes essayées, saut cumulé
+     entre images voisines :
+
+         pixel le plus saturé du tiers haut   1471   coloré mais erratique
+         moyenne d'une bande de ciel           343   stable mais délavée
+         teinte du ciel, saturation imposée     778   le bruit amplifié
+
+     Une couleur qui papillonne est pire qu'une couleur fixe. Le mécanisme
+     reste disponible — le lecteur publie `window.__IMAGE` — pour un film qui,
+     lui, aurait un vrai trajet de lumière. Celui-ci n'en a pas. */
+  --vif:#FF5A1F;
+  --vif-sourd:rgba(255,90,31,.34);
   --marge:clamp(18px,5vw,68px);
   --tete:52px;
   --titre:"Bricolage Grotesque","Archivo",system-ui,sans-serif;
@@ -1575,61 +1593,5 @@ function acteCourant(){
 })();
 </script>
 
-<script>
-/* ==================================================== LA COULEUR DU TRAJET
-
-   L'accent de toute l'interface — étiquettes, règle, pastilles, bouton d'appel,
-   barre d'avancement — est ÉCHANTILLONNÉ SUR L'IMAGE DU FILM. Il n'y a pas de
-   couleur de marque figée : le site prend celle de l'heure qu'il montre.
-
-   Comment, et pourquoi comme ça :
-
-   — on ne lit que le TIERS SUPÉRIEUR de l'image. C'est là qu'est le ciel, donc
-     la couleur ; le bas est de l'asphalte, gris sur toute la pellicule ;
-   — on garde le pixel le plus SATURÉ, pas la moyenne. Mesuré, la moyenne d'une
-     image entière donne rgb(94,102,115) du début à la fin : un gris-bleu mort.
-     Le pixel le plus saturé, lui, voyage — bleu ciel au chargement, neutre sur
-     l'autoroute, doré puis orange à l'arrivée ;
-   — on remonte la clarté à 225 pour que la teinte reste lisible sur le fond
-     sombre, quelle que soit l'exposition de l'image ;
-   — et on n'y va que trois fois par seconde, avec un lissage : une couleur qui
-     change à chaque trame scintillerait.
-
-   Coût mesuré : 0,021 ms par lecture en 8x8, soit trois centièmes du budget
-   d'une trame à soixante images par seconde. */
-(function couleur(){
-  const c = document.createElement('canvas'); c.width = 12; c.height = 12;
-  const g = c.getContext('2d', { willReadFrequently: true });
-  const racine = document.documentElement;
-  let r = 97, v = 153, b = 225;                     // le point de départ
-
-  function prendre(){
-    const im = window.__IMAGE;
-    if (!im) return;
-    try { g.drawImage(im, 0, 0, im.width, im.height / 3, 0, 0, 12, 12); }
-    catch (e) { return; }                            /* image déjà fermée */
-    const d = g.getImageData(0, 0, 12, 12).data;
-    let meilleur = null;
-    for (let k = 0; k < d.length; k += 4) {
-      const R = d[k], V = d[k+1], B = d[k+2];
-      const mx = Math.max(R, V, B), mn = Math.min(R, V, B);
-      if (!mx) continue;
-      const note = ((mx - mn) / mx) * (mx / 255);
-      if (!meilleur || note > meilleur.note) meilleur = { R, V, B, mx, note };
-    }
-    if (!meilleur) return;
-    const k = 225 / (meilleur.mx || 1);
-    /* Lissage : on se rapproche d'un cinquième à chaque relevé. Une transition
-       CSS ne suffirait pas — c'est la SOURCE qui saute d'une image à l'autre. */
-    r += (Math.min(255, meilleur.R * k) - r) * 0.2;
-    v += (Math.min(255, meilleur.V * k) - v) * 0.2;
-    b += (Math.min(255, meilleur.B * k) - b) * 0.2;
-    const t = `${Math.round(r)},${Math.round(v)},${Math.round(b)}`;
-    racine.style.setProperty('--vif', `rgb(${t})`);
-    racine.style.setProperty('--vif-sourd', `rgba(${t},.34)`);
-  }
-  setInterval(prendre, 330);
-})();
-</script>
 </body>
 </html>
