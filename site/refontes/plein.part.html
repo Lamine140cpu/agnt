@@ -90,9 +90,16 @@ body{margin:0;background:var(--noir);color:var(--os);
 #toile{position:absolute;inset:0;width:100%;height:100%;display:block;
   background:var(--noir)}
 
-/* Le voile. Il ne couvre QUE le bas — là où se pose le texte — et le tout
-   premier centimètre du haut, pour l'en-tête. Entre les deux, l'image est
-   servie telle quelle : c'est là que se trouve le camion. */
+/* Le voile.
+
+   Depuis que la toile est en cadrage « contenir », l'image est calée en HAUT et
+   la place qui reste en bas est déjà le fond de la page : sur un téléphone
+   393 x 852 cette bande fait 153 px, et c'est là que le texte se pose. Le voile
+   ne sert donc plus qu'à faire la jonction — sur les écrans larges la bande est
+   mince (90 px sur 1440 x 900) et le texte remonte sur l'image.
+
+   Il ne couvre que le bas et le tout premier centimètre du haut, pour l'en-tête.
+   Entre les deux, l'image est servie telle quelle, entière, sans rognage. */
 .voile-bas{position:absolute;left:0;right:0;bottom:0;height:64%;z-index:2;
   pointer-events:none;
   background:linear-gradient(transparent,rgba(7,9,11,.52) 42%,rgba(7,9,11,.88))}
@@ -304,7 +311,7 @@ footer{position:relative;z-index:4;background:var(--noir);color:var(--gris);
 </header>
 
 <div class="scene">
-  <canvas id="toile"></canvas>
+  <canvas id="toile" data-cadrage="contenir" data-fond="#07090B"></canvas>
   <div class="voile-haut"></div>
   <div class="voile-bas"></div>
 </div>
