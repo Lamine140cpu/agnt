@@ -69,10 +69,16 @@ def moteur():
     if not os.path.exists(MOTEUR_SOURCE):
         sys.exit(f"{MOTEUR_SOURCE} est introuvable — c'est la source unique")
     code = open(MOTEUR_SOURCE, encoding="utf-8").read()
+    # Les comptes et les DIMENSIONS écrits ici ne sont que des défauts pour le
+    # mode replié : la construction les mesure sur les images livrées et les
+    # remplace. Les poser quand même évite qu'une refonte ouverte sans
+    # construction retombe sur l'ancienne règle de choix de série.
     series = (
         "window.SERIES = {\n"
-        f"  accueil:          {{ chemin: 'assets/film/{FILM}/f',        images: 1152 }},\n"
-        f"  'accueil-etroit': {{ chemin: 'assets/film/{FILM}-etroit/f',  images: 1152 }},\n"
+        f"  accueil:          {{ chemin: 'assets/film/{FILM}/f',        "
+        "images: 1152, largeur: 1920, hauteur: 1080 },\n"
+        f"  'accueil-etroit': {{ chemin: 'assets/film/{FILM}-etroit/f',  "
+        "images: 1152, largeur: 1440, hauteur: 810 },\n"
         "};\n"
     )
     return series + code

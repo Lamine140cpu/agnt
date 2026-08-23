@@ -149,17 +149,17 @@ Mesurer **une fois**, rafraîchir au redimensionnement.
 
 ---
 
-## 5. Le cadrage sur téléphone — l'invariant qu'on ignore toujours
+## 5. Le cadrage sur téléphone — et le piège de la généralisation
 
-Un écran de téléphone fait environ 0,46 de rapport. Un film fait 1,78. En
-cadrage « couvrir » (l'image remplit la toile, le débord est coupé) :
+Un écran de téléphone fait environ 0,46 de rapport. Un film en fait 1,78. En
+cadrage « couvrir » :
 
 ```
 part de la largeur du film visible  =  rapport de la toile / rapport du film
 ```
 
-**Rien d'autre n'entre dans ce calcul.** En particulier, encoder une série
-intermédiaire recadrée n'y change strictement rien :
+Dans un cas — et seulement dans celui-là — encoder une série intermédiaire
+recadrée n'y change **rien** :
 
 | Série intermédiaire | Recadrage du maître | Part visible de celle-ci | **Total** |
 |---|---|---|---|
@@ -168,15 +168,28 @@ intermédiaire recadrée n'y change strictement rien :
 | carrée | 56 % | 46 % | **26 %** |
 | 16:9 (le maître) | 100 % | 26 % | **26 %** |
 
-Ce projet a encodé une série « portrait » pour corriger le cadrage sur
-téléphone. Elle ne pouvait pas le corriger. Elle n'apportait que de la
-**netteté** — plus de pixels dans la zone visible — au prix d'une note dans le
-code qui affirmait, à tort, qu'il s'agissait d'un montage tourné en 9:16. La
-vérification : reconstruire un rognage centré du maître et comparer image par
-image. Écart médian **1,4 sur 255**, c'est-à-dire le bruit de recompression.
-C'était un rognage.
+### La condition qu'on oublie
 
-### Le seul levier : la hauteur donnée à la toile
+**Cet invariant ne vaut que si la série étroite est un RECADRAGE du même
+maître.** Si elle est un vrai montage — des plans composés pour le portrait —
+elle ne montre pas le même cadre, et le calcul ne s'applique plus du tout.
+
+Les deux cas existent, et ils étaient côte à côte dans le même dépôt :
+
+| | série étroite | écart mesuré au recadrage centré reconstruit |
+|---|---|---|
+| le site client | un **recadrage** | 1,4 / 255 — le bruit de recompression JPEG |
+| la vitrine | un **vrai montage** | 43 à 54 / 255 sur les quatre cinquièmes du film |
+
+**La mesure qui tranche** : reconstruire soi-même un rognage centré du maître,
+au format de la série étroite, et comparer image par image. Sous ~5/255 c'est
+un recadrage ; au-delà, un montage. Ne jamais croire le commentaire du code là-
+dessus : celui de ce dépôt affirmait « un vrai montage » pour une série qui
+était un rognage.
+
+### Le levier, quand c'est un recadrage
+
+La hauteur donnée à la toile, rien d'autre :
 
 | Le film occupe | Part du film visible |
 |---|---|
@@ -185,15 +198,53 @@ C'était un rognage.
 | **64 %** | **41 %** |
 | 55 % | 47 % |
 
-Retenu ici : **64 %**, et le texte de l'acte se pose en dessous. Le coût est
-presque nul, parce que le voile qui porte le texte était **déjà** opaque à 90 %
-aux deux tiers de la hauteur : le bas du film était enterré. On cesse
-simplement de le dessiner.
+Retenu sur le site client : **64 %**, le texte de l'acte se posant en dessous.
+Le coût est presque nul, parce que le voile qui porte le texte était **déjà**
+opaque à 90 % aux deux tiers de la hauteur : le bas du film était enterré.
 
-Corollaire : la série basse définition n'est plus un recadrage mais **le maître
-entier, moins large**. On la dimensionne pour que l'image se pose au 1:1 sur la
-toile du téléphone — ici 1440×810 pour une toile de 585×810 pixels d'appareil.
-En dessous elle serait floue ; au-dessus on paierait des octets invisibles.
+**Et ce correctif serait un défaut sur l'autre site.** Là où la série étroite
+est un montage portrait composé pour occuper l'écran entier, lui donner une
+bande de 64 % gâcherait le cadrage voulu. Le manifeste de chaque site doit donc
+noter non seulement ce qu'on lui applique, mais ce qu'on ne lui applique pas.
+
+---
+
+## 5 bis. Choisir la série : la forme d'abord, le poids ensuite
+
+Aucune règle simple ne couvre les deux cas ci-dessus. Celle qui tient :
+
+1. **LA FORME.** Garder les séries dont le rapport est le plus proche de celui
+   de la toile. C'est ce critère qui trouve un montage portrait. Quand deux
+   séries ont le même rapport — le cas du recadrage — elles restent toutes
+   les deux en lice et le second critère tranche.
+2. **LE POIDS.** Parmi elles, la **plus petite qui couvre la toile sans
+   agrandissement**. Agrandir coûte le remplissage, le poste le plus cher du
+   lecteur. Servir plus large que nécessaire double la charge mobile pour un
+   rendu identique. Si aucune ne suffit, la plus grande.
+
+Le rapport se compare **en logarithme** : sans cela, 0,56 et 1,78 face à une
+toile carrée donneraient des écarts de 0,44 et 0,78 alors qu'ils sont à
+distance égale.
+
+### Deux décisions au pixel près s'y sont trompées
+
+Elles méritent d'être connues, parce qu'elles sont du même genre et qu'aucune
+ne produit d'erreur visible :
+
+- **Un rapport arrondi qui décide.** Écrite avec `rapport: 1.778`, la règle
+  calculait `1440 / 1,778 = 809,9` et jugeait une série de 810 px trop courte.
+  Les séries déclarent donc leurs **deux dimensions réelles**, jamais un
+  rapport.
+- **Un ajustement exact qui ne survit pas.** La toile du téléphone fait
+  `64 svh` de 844, soit 540,156 points, donc **810,23** pixels d'appareil : la
+  pellicule de 810, taillée pour ce cas précis, le ratait d'un quart de pixel,
+  et le téléphone recevait celle de 1920 — le double de la charge. **Deux pour
+  cent de tolérance.** Un ajustement au pixel près ne survit ni aux hauteurs de
+  fenêtre variables, ni aux barres du navigateur, ni au zoom.
+
+Et surtout : **une mauvaise série ne se voit pas à l'écran, elle se paye en
+octets.** Le contrôle doit donc être explicite — quelle série est attendue à
+quelle taille — sinon la régression passe.
 
 ---
 
@@ -231,6 +282,7 @@ cessé de décrire la réalité sans que rien ne le signale :
 | course | 15 300 px | 26 100 px | 464 images au lieu de 791, densité 56 au lieu de 33 |
 | qualité | q55 par défaut | q45 en production | pellicule deux tiers plus lourde si quelqu'un construit sans drapeau |
 | série étroite | « un vrai montage » | un rognage centré | le cadrage téléphone qu'on croyait corrigé |
+| compte d'images par série | 527 et 1152 | 791 et 527 | 404 en rafale, film figé au milieu du prologue |
 
 Aucune n'a produit d'erreur. Deux ont produit un **message rassurant et faux**.
 
@@ -246,9 +298,68 @@ Aucune n'a produit d'erreur. Deux ont produit un **message rassurant et faux**.
 4. **Nommer explicitement** le dossier de sortie de chaque série. Ni déduit de
    la clé, ni déduit du dossier source : les deux ont déjà écrit les images à
    côté de là où la page les cherchait.
+5. **Relire ce qu'on vient d'écrire.** Compter les substitutions réussies ne
+   prouve rien : deux substitutions peuvent avoir visé la même ligne. C'est
+   arrivé — le garde-fou comptait « exactement une correspondance » pour
+   chacune des deux séries, et c'était la même. Seule la relecture, série par
+   série, comparée au dossier livré, le dit.
 5. **Ne recopier que les fichiers que la page cite réellement** (repérés par
    expression régulière sur la source), pour ne pas embarquer trois jeux de
    polices dont deux sont inutiles.
+
+---
+
+## 8 bis. Une seule source, jamais une recopie
+
+C'est le défaut structurel de ce genre de projet, et il ne se signale jamais.
+
+Mesuré dans ce dépôt avant correction : **six versions différentes du même
+lecteur** cohabitaient, divergeant de 8 à 13 %. Cinq refontes et la vitrine
+tournaient sans les correctifs de fluidité, de cadrage et de définition. Le
+dépôt le disait déjà de lui-même — « un correctif de fluidité avait dû être
+porté trois fois de suite » — et personne n'en avait tiré la conséquence.
+
+Même chose côté style : sur 90 sélecteurs communs à deux sites, **80 avaient un
+corps identique au caractère près**. Les dix qui divergeaient étaient ceux qui
+doivent — palette, en-tête, pied, hauteur des actes — sauf un : un correctif
+fait d'un côté et jamais reporté, qui laissait **les quatre sections du bas de
+l'autre site à 0 px du bord de l'écran sur téléphone**.
+
+### Ce qui marche
+
+```
+moteur/lecteur.js     le lecteur, inséré à la place de <!--LECTEUR-->
+moteur/socle.css      les règles de structure, insérées à <!--SOCLE-->
+```
+
+**Insérés à la construction, pas chargés par `<script src>` ou `<link>`.** Un
+site client tient sur une seule page : une requête de plus avant que le film ne
+démarre coûterait un aller-retour à chaque visite, pour un cache que personne
+ne réutiliserait. Une source sur le disque, zéro requête en ligne.
+
+Le socle va **en tête** de la feuille du site, qui garde ainsi le dernier mot
+sur tout ce qu'elle redéclare.
+
+### Sortir du code d'une feuille de style change la cascade
+
+Une relecture ne prouve rien là-dessus. La preuve se mesure : **empreinte des
+styles CALCULÉS de chaque élément**, sur plusieurs dizaines de propriétés et
+plusieurs tailles d'écran, avant et après.
+
+Fait ici sur 295 et 199 éléments × 34 propriétés × 3 tailles : une seule
+différence de chaque côté, sur le même élément — un filet **animé**, dont
+l'opacité est échantillonnée au hasard d'une boucle de 2,6 s. Zéro différence
+réelle.
+
+Prévoir ce test AVANT de toucher à une feuille de style partagée. Sans lui, on
+ne peut ni affirmer que le remaniement est neutre, ni savoir ce qu'il a cassé.
+
+### Ce qui doit rester au site
+
+Ce qui est propre à un site, mesuré sur deux : la palette (`:root`), l'en-tête,
+le pied de page, la hauteur des actes, les voiles, le décalage d'ancre. Et
+**tout ce qui vient d'une décision** — un correctif juste pour l'un peut être
+un défaut pour l'autre, comme la bande de 64 svh sur téléphone.
 
 ---
 
@@ -262,7 +373,10 @@ Aucune n'a produit d'erreur. Deux ont produit un **message rassurant et faux**.
 - [ ] `imageSmoothingQuality` à `'low'` hors agrandissement réel.
 - [ ] Débit ≥ 55 images/s, **médiane de trois passages**, à 1440×900 et 390×844.
 - [ ] Aucune image manquante en fin de séquence (vérifier les deux dernières et les deux premières par leur nom de fichier).
-- [ ] Le nombre d'images écrit dans la page est celui du dossier livré.
+- [ ] Le nombre d'images écrit dans la page est celui du dossier livré — **relu dans le fichier écrit**, pas déduit du nombre de substitutions.
+- [ ] **Aucune image réclamée et absente** : parcourir tout le prologue en écoutant les réponses ≥ 400. C'est la signature d'un compte faux, et elle ne se voit qu'au-delà du point où les images cessent d'exister.
+- [ ] **La série servie est celle attendue**, à chaque taille. Une mauvaise série ne se voit pas à l'écran, elle se paye en octets.
+- [ ] La **densité réelle** — course mesurée ÷ images livrées — pas celle qu'annonce la construction.
 
 **La mise en page**
 - [ ] Aucun débordement horizontal : `documentElement.scrollWidth <= clientWidth`, à 1440, 1280, 900, 390 et 360 px.
@@ -270,6 +384,7 @@ Aucune n'a produit d'erreur. Deux ont produit un **message rassurant et faux**.
 - [ ] Aucun intitulé tronqué dans la navigation (`scrollWidth > clientWidth` sur chaque lien).
 - [ ] Les décalages d'ancre dépassent la hauteur réelle de l'en-tête — la mesurer, elle change dès qu'on y met un logo.
 - [ ] Aucun lien resté bleu.
+- [ ] **Marge latérale respectée** : pour chaque bloc et le pied, la position du premier texte. Sous 12 px du bord, c'est un `padding` en raccourci qui a écrasé celui d'une classe posée avant — trouvé DEUX fois ici, et invisible ailleurs que sur téléphone.
 - [ ] Un masque de fondu ne s'applique qu'aux largeurs où la rangée défile vraiment.
 
 **Les couleurs**
