@@ -288,17 +288,46 @@ def main():
         # porte déjà le bon compte — ce qui est le cas dès que le disque et le
         # fichier unique s'accordent — la substitution est un non-changement,
         # et le test criait à l'échec sur une opération parfaitement réussie.
-        # Le motif se construit sur le DOSSIER, pas sur la clé de série : la
-        # page d'un client écrit « assets/film/transgold/f » là où la vitrine
-        # écrit « assets/film/accueil/f », alors que la clé vaut « accueil »
-        # dans les deux cas. Chercher la clé ne trouverait rien chez le client.
-        dossier = os.path.basename(SERIES[nom]["dossier"])
+        # Le motif se construit sur le dossier de SORTIE, celui que la page
+        # écrit — pas sur la clé de série, pas sur le dossier source.
+        #
+        # Pas la clé : la page d'un client écrit « assets/film/transgold/f » là
+        # où la vitrine écrit « assets/film/accueil/f », alors que la clé vaut
+        # « accueil » dans les deux cas. Chercher la clé ne trouverait rien.
+        #
+        # Pas le dossier source : depuis que les deux séries lisent le même
+        # maître, il est identique pour les deux. Les deux motifs visaient donc
+        # la MÊME ligne, la seconde substitution écrasait la première, et la
+        # ligne de l'autre série n'était jamais touchée — elle gardait le
+        # compte du mode replié, 1152 au lieu de 527. Le lecteur répartissait
+        # alors le défilement sur 1152 images dont 625 n'existaient pas : 404
+        # en rafale et film figé au-delà du milieu du prologue, sur téléphone.
+        # Le garde-fou n'a rien vu : il compte les correspondances, or chaque
+        # substitution en trouvait bien exactement une — la même.
+        dossier = SERIES[nom]["sortie"]
         src, combien = re.subn(
             rf"(chemin: *'assets/film/{re.escape(dossier)}/f', *images: *)\d+",
             rf"\g<1>{n}", src)
         if combien != 1:
             sys.exit(f"compte de {nom} : {combien} correspondance(s) dans la page "
                      f"au lieu d'une — lecteur modifié ?")
+
+    # Et on RELIT ce qu'on vient d'écrire, série par série. Compter les
+    # substitutions ne prouve rien sur ce qui est dans le fichier : deux
+    # substitutions réussies peuvent avoir visé la même ligne. Seule la
+    # relecture le dit.
+    for nom, n in comptes.items():
+        ecrit = re.search(
+            rf"chemin: *'assets/film/{re.escape(SERIES[nom]['sortie'])}/f', *images: *(\d+)",
+            src)
+        if not ecrit:
+            sys.exit(f"{nom} : aucune déclaration de série pour "
+                     f"« {SERIES[nom]['sortie']} » dans la page")
+        if int(ecrit.group(1)) != n:
+            sys.exit(f"{nom} : la page annonce {ecrit.group(1)} images, le "
+                     f"dossier en contient {n}. Le lecteur répartirait le "
+                     f"défilement sur un compte faux — images manquantes en "
+                     f"404, ou dernier tiers du film figé.")
 
     # La feuille des fontes reste un fichier à part : elle est mise en cache une
     # fois pour toutes, et 216 Ko dans chaque page seraient 216 Ko à chaque

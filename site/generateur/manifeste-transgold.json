@@ -1,0 +1,84 @@
+{
+  "site": "transgold",
+  "_": "Le contrat du site Trans Gold Marchandises. Chaque valeur porte son origine : « mesure » a été relevée, « choix » a été décidé, « registre » vient d'une source publique citée. Le contrôleur ne vérifie que les mesures — il ne discute pas les choix.",
+
+  "film": {
+    "series": {
+      "accueil": {
+        "_": "La série de bureau. Le maître, pleine largeur.",
+        "dossier": { "valeur": "transgold", "origine": "choix" },
+        "largeur": { "valeur": 1920, "origine": "choix" },
+        "images":  { "valeur": 791, "origine": "mesure" },
+        "rapport": { "valeur": 1.778, "origine": "mesure" },
+        "course":  "1440x900"
+      },
+      "accueil-etroit": {
+        "_": "La série du téléphone. LE MÊME cadre, moins large — surtout pas un recadrage : en cadrage « couvrir » la part du film visible ne dépend que du rapport de la toile et de celui du maître, jamais de la série intermédiaire. 1440x810 pour une toile de 585x810 pixels d'appareil : l'image s'y pose au 1:1, sans agrandissement.",
+        "dossier": { "valeur": "transgold-etroit", "origine": "choix" },
+        "largeur": { "valeur": 1440, "origine": "mesure" },
+        "images":  { "valeur": 527, "origine": "mesure" },
+        "rapport": { "valeur": 1.778, "origine": "mesure" },
+        "course":  "390x844"
+      }
+    },
+    "qualite": {
+      "_": "AVIF q45. Vérifié au kilo-octet près contre le lot publié : l'image f0100 pèse 50,8 Ko, ce que q45 reproduit exactement, quand q55 en fait 85,5. Le défaut du script valait 55 et personne ne construisait avec.",
+      "valeur": 45, "origine": "mesure"
+    },
+    "densite_visee": {
+      "_": "Pixels de défilement par image. À 1000 px/s de molette, 33 donne 30 changements d'image par seconde. Au-delà de 45 ça saute visiblement.",
+      "valeur": 33, "origine": "choix"
+    }
+  },
+
+  "page": {
+    "courses": {
+      "_": "prologue.offsetHeight - innerHeight, relevé dans la page servie. Ces valeurs ont déjà été périmées une fois par le passage des actes de 130 à 170 svh, sans que rien ne le signale.",
+      "1440x900": { "valeur": 26100, "origine": "mesure" },
+      "1280x800": { "valeur": 23200, "origine": "mesure" },
+      "390x844":  { "valeur": 17386, "origine": "mesure" },
+      "360x740":  { "valeur": 15244, "origine": "mesure" }
+    },
+    "ancres": ["metiers", "procede", "garanties", "maison", "parler", "mentions"],
+    "toile_hauteur_telephone": {
+      "_": "Le film prend une bande, pas tout l'écran. C'est le SEUL levier qui change le cadrage sur téléphone : 64 % porte la part visible du film de 26 % à 41 %.",
+      "valeur": "64svh", "origine": "choix"
+    }
+  },
+
+  "seuils": {
+    "_": "Ce en dessous de quoi on ne livre pas.",
+    "images_par_seconde": 55,
+    "densite_max": 40,
+    "contraste_corps": 4.5,
+    "contraste_second_plan": 3.0,
+    "logo_octets_max": 30720,
+    "tailles_a_verifier": ["1440x900", "1280x800@2", "900x800", "390x844@3", "360x740@2"]
+  },
+
+  "client": {
+    "_": "Aucun fait ne se devine. Une valeur nulle est une question ouverte au client, pas un trou à combler au jugé.",
+    "faits": [
+      { "cle": "raison_sociale", "valeur": "Trans Gold Marchandises", "source": "recherche-entreprises.api.gouv.fr" },
+      { "cle": "forme_juridique", "valeur": "SAS", "source": "recherche-entreprises.api.gouv.fr" },
+      { "cle": "siren", "valeur": "831321112", "source": "recherche-entreprises.api.gouv.fr" },
+      { "cle": "siret_siege", "valeur": "83132111200029", "source": "recherche-entreprises.api.gouv.fr" },
+      { "cle": "code_ape", "valeur": "49.41A", "source": "recherche-entreprises.api.gouv.fr" },
+      { "cle": "immatriculation", "valeur": "2017-07-31", "source": "recherche-entreprises.api.gouv.fr" },
+      { "cle": "siege", "valeur": "45 rue Jean Charcot, 93600 Aulnay-sous-Bois", "source": "recherche-entreprises.api.gouv.fr" },
+      { "cle": "telephone", "valeur": "+33660926646", "source": "client" },
+      { "cle": "logo", "valeur": "assets/transgold-logo.png", "source": "fichier fourni par le client" },
+
+      { "cle": "directeur_publication", "valeur": null, "source": null,
+        "_": "Obligation légale. Deux dirigeants au registre : ne pas choisir à leur place." },
+      { "cle": "hebergeur", "valeur": null, "source": null,
+        "_": "Obligation légale. Dépendra de l'hébergement définitif." },
+      { "cle": "taille_flotte", "valeur": null, "source": null,
+        "_": "Le client a dit « une vingtaine » sans préciser camions ou salariés ; le registre annonce 11 à 19 salariés. Tant que ce n'est pas tranché, la page n'avance aucun chiffre." },
+      { "cle": "licence_transport", "valeur": null, "source": null },
+      { "cle": "assurance", "valeur": null, "source": null },
+      { "cle": "courriel", "valeur": null, "source": null },
+      { "cle": "horaires", "valeur": null, "source": null }
+    ]
+  }
+}
