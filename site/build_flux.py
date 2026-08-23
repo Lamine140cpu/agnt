@@ -293,8 +293,32 @@ def lecteur(src):
     return src.replace("<!--LECTEUR-->", "<script>\n" + code + "\n</script>")
 
 
+def socle(src):
+    """Insère le socle de style à la place du marqueur.
+
+    Même raison que pour le lecteur : une seule source. Les quatre-vingts
+    règles qu'il contient étaient recopiées dans chaque site, et le jour où
+    l'une a été corrigée d'un côté, l'autre a gardé le défaut — mesuré, le bas
+    de la vitrine touchait le bord de l'écran sur téléphone.
+
+    Il est posé EN TÊTE de la feuille du site, qui garde donc le dernier mot
+    sur tout ce qu'elle redéclare : la palette, l'en-tête, le pied, la hauteur
+    des actes. Une page sans marqueur passe telle quelle."""
+    if "<!--SOCLE-->" not in src:
+        return src
+    if src.count("<!--SOCLE-->") != 1:
+        sys.exit(f"le marqueur <!--SOCLE--> apparaît {src.count('<!--SOCLE-->')} "
+                 f"fois — il en faut exactement un")
+    chemin = os.path.join(SITE, "moteur", "socle.css")
+    if not os.path.exists(chemin):
+        sys.exit(f"{chemin} est introuvable — c'est la source unique du socle")
+    css = open(chemin, encoding="utf-8").read()
+    print(f"  socle            {len(css)/1024:4.0f} Ko  <- moteur/socle.css")
+    return src.replace("<!--SOCLE-->", css)
+
+
 def main():
-    src = lecteur(open(SOURCE, encoding="utf-8").read())
+    src = socle(lecteur(open(SOURCE, encoding="utf-8").read()))
     if not PAGE_SEULE and not SEULE:
         shutil.rmtree(OUT, ignore_errors=True)
         os.makedirs(OUT)

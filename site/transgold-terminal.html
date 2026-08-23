@@ -906,14 +906,94 @@ const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || null;
    La toile n'a pas encore de taille au moment où ces lignes s'exécutent si le
    CSS ne lui en donne pas ; d'où le repli sur la fenêtre. */
 const _cadre = canvas.getBoundingClientRect();
-/* Les deux séries montrent le même cadre ; seule leur DÉFINITION diffère. Le
-   choix n'est donc plus une affaire de forme mais de nombre de pixels : sous
-   820 px de large, la toile n'a jamais besoin de 1920, et servir la grande
-   série y coûterait 41 Ko l'image au lieu de 23 — le double de la charge
-   mobile pour un rendu identique. */
-const etroit = (_cadre.width || innerWidth) < 820;
-const NOM = (etroit && (!SOURCES || SOURCES['accueil-etroit']))
-  ? 'accueil-etroit' : 'accueil';
+/* LE CHOIX DE SÉRIE — deux critères, dans cet ordre : la forme, puis le poids.
+
+   Aucune règle simple ne suffit, parce que les films ne sont pas tous faits
+   pareil, et c'est mesuré :
+
+     Trans Gold      la série étroite est un RECADRAGE de la large. Écart
+                     médian au rognage centré reconstruit : 1,4 sur 255, soit
+                     le bruit de recompression. Les deux montrent donc le même
+                     cadre, et seule la définition les sépare.
+     la vitrine      la série étroite est un VRAI MONTAGE. Écart 43 à 54 sur
+                     255 sur les quatre cinquièmes du film. Les deux montrent
+                     des images différentes, composées pour leur format.
+
+   Choisir par la largeur de la toile — juste pour le premier — servirait au
+   second une image large là où un montage portrait l'attendait. Choisir par la
+   forme seule — juste pour le second — ferait payer au premier 1920 px pour en
+   afficher 600 sur un téléphone.
+
+   D'où la règle en deux temps :
+
+     1. LA FORME. On garde les séries dont le rapport est le plus proche de
+        celui de la toile. Quand un film a été monté pour le portrait, c'est ce
+        critère qui le trouve ; quand les deux séries ont le même rapport —
+        Trans Gold — elles restent toutes les deux en lice et le second
+        critère tranche.
+
+     2. LE POIDS. Parmi elles, la PLUS PETITE qui couvre la toile sans
+        agrandissement. Agrandir coûte le remplissage, qui est le poste le plus
+        cher du lecteur : 184 ms l'image contre 1,3 en 1:1. Et servir plus
+        large que nécessaire double la charge mobile pour un rendu identique.
+        Si aucune ne suffit, la plus grande — mieux vaut un peu de flou qu'un
+        agrandissement de toile.
+
+   Chaque série déclare ses DEUX dimensions réelles, jamais un rapport. Écrit
+   d'abord avec un rapport arrondi, le second critère se trompait de justesse :
+   1440 / 1,778 donne 809,9, et la série de 810 px de haut était jugée trop
+   courte pour une toile de 810 — le téléphone recevait alors la pellicule de
+   1920, soit le double de la charge mobile. Un arrondi qui décide n'est pas un
+   arrondi.
+
+   Une série qui ne déclare pas ses dimensions reste choisie à l'ancienne, par
+   la largeur de la toile : les pages non migrées continuent de fonctionner. */
+const _cw = _cadre.width || innerWidth;
+const _ch = _cadre.height || innerHeight;
+const _dispo = Object.keys(SEQUENCES)
+  .filter(k => !SOURCES || SOURCES[k]);
+const _decrites = _dispo.filter(k => SEQUENCES[k].largeur && SEQUENCES[k].hauteur);
+
+let NOM;
+if (_decrites.length) {
+  const rc = _cw / _ch;
+  const ecart = k => Math.abs(Math.log((SEQUENCES[k].largeur / SEQUENCES[k].hauteur) / rc));
+  const meilleur = Math.min(..._decrites.map(ecart));
+  /* Le rapport se compare en LOGARITHME : sans cela, deux séries à 0,56 et
+     1,78 face à une toile à 1,0 donneraient des écarts de 0,44 et 0,78, alors
+     qu'elles sont à distance égale — l'une est deux fois plus haute que large,
+     l'autre deux fois plus large que haute. */
+  const memeForme = _decrites.filter(k => ecart(k) <= meilleur + 0.01);
+
+  const plafond = _cw < 820 ? 1.5 : 2;
+  const besoinL = _cw * Math.min(devicePixelRatio || 1, plafond);
+  const besoinH = _ch * Math.min(devicePixelRatio || 1, plafond);
+  /* DEUX POUR CENT DE TOLÉRANCE, et ce n'est pas de la mollesse.
+
+     Sans elle, une pellicule taillée exactement pour la toile la rate d'un
+     quart de pixel. Mesuré : la toile du téléphone fait 64 svh de 844, soit
+     540,156 points, donc 810,23 pixels d'appareil — et la série de 810 px de
+     haut, calculée pour ce cas précis, était jugée trop courte. Le téléphone
+     recevait alors la pellicule de 1920 : le double de la charge mobile, pour
+     un quart de pixel.
+
+     C'est la troisième fois qu'une décision au pixel près se trompe dans ce
+     seul bloc — après le rapport arrondi à 1,778. Un ajustement exact ne
+     survit ni aux hauteurs de fenêtre variables, ni aux barres du navigateur,
+     ni au zoom. Deux pour cent d'agrandissement ne se voient pas ; recevoir la
+     mauvaise série, si. */
+  const couvre = k => SEQUENCES[k].largeur >= besoinL * 0.98 &&
+                      SEQUENCES[k].hauteur >= besoinH * 0.98;
+  const suffisantes = memeForme.filter(couvre);
+  const parmi = suffisantes.length ? suffisantes : memeForme;
+  NOM = parmi.reduce((a, b) =>
+    (suffisantes.length ? SEQUENCES[a].largeur <= SEQUENCES[b].largeur
+                        : SEQUENCES[a].largeur >= SEQUENCES[b].largeur) ? a : b);
+} else {
+  const etroit = _cw < 820;
+  NOM = (etroit && (!SOURCES || SOURCES['accueil-etroit']))
+    ? 'accueil-etroit' : 'accueil';
+}
 const SEQ = SEQUENCES[NOM];
 /* Le compte écrit ci-dessus n'est qu'un défaut pour le mode disque : dès que
    la construction a injecté les images, c'est elle qui a raison. Sans ça, une

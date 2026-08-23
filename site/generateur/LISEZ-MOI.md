@@ -60,10 +60,21 @@ contrôle qui compare des nombres, non.
 
 ```
 manifeste.py              le contrat : structure, origines, cohérence interne
-manifeste-transgold.json  un contrat réel, rempli, avec ses sept questions ouvertes
+manifeste-transgold.json  le contrat du site client, avec ses sept questions ouvertes
+manifeste-vitrine.json    celui de la vitrine — c'est LUI qui a révélé le générique
 mesures.mjs               les relevés dans la page SERVIE (navigateur)
 controleur.py             le verdict : contrat + fichiers + page. Sort en 1 si ça casse.
+
+../moteur/lecteur.js      LE LECTEUR, source unique, inséré à <!--LECTEUR-->
+../moteur/socle.css       les 79 règles de structure, insérées à <!--SOCLE-->
 ```
+
+Le second site a payé sa place : porté sur le contrat, il a montré que la règle
+de choix de série écrite pour le premier était fausse pour lui — ses deux séries
+ne montrent pas le même cadre — et le contrôleur y a trouvé deux défauts vivants
+que personne n'avait vus, dont le bas de page qui touchait le bord de l'écran.
+C'est pourquoi il ne faut PAS construire la cheffe d'orchestre avant d'avoir
+deux exemples : on généraliserait à partir d'un seul.
 
 ## Usage
 

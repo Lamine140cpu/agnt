@@ -152,34 +152,8 @@
   --marge:clamp(22px,6vw,110px);
   --max:1380px;
 }
-*{box-sizing:border-box}
-html{scroll-behavior:auto;-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
-  font-size:clamp(15px,1.05vw,17px);line-height:1.65;-webkit-font-smoothing:antialiased}
-::selection{background:var(--ambre);color:var(--noir)}
-:focus-visible{outline:2px solid var(--ambre);outline-offset:4px;border-radius:2px}
+<!--SOCLE-->
 
-/* ------------------------------------------------------------ la typographie
-   Trois rôles, trois familles. Le serif ne sert QUE aux grandes phrases : dès
-   qu'il descend au niveau du paragraphe il perd son tranchant. Le mono ne sert
-   qu'à ce qui se mesure — numéros, unités, libellés. Entre les deux, la sans
-   porte tout le reste sans se faire remarquer, ce qui est son travail. */
-.titre{font-family:var(--serif);font-weight:400;line-height:.98;letter-spacing:-.015em;
-  text-wrap:balance;margin:0}
-.t-xxl{font-size:clamp(3.1rem,10.5vw,9.5rem)}
-.t-xl{font-size:clamp(2.5rem,6.4vw,5.2rem)}
-.t-l{font-size:clamp(1.9rem,3.4vw,3rem)}
-.ital{font-style:italic}
-.corps{margin:0;color:var(--gris);max-width:62ch}
-.corps strong{color:var(--os);font-weight:500}
-.eti{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.24em;
-  text-transform:uppercase;color:var(--sourd);margin:0}
-.eti b{color:var(--ambre);font-weight:500}
-
-/* --------------------------------------------------------------- la structure
-   Une seule gouttière, une seule largeur maximale, partout. C'est ce qui tient
-   une page longue : le lecteur n'a jamais à retrouver le bord du texte. */
-.bande{max-width:var(--max);margin:0 auto;padding:0 var(--marge)}
 /* `padding` en RACCOURCI écrasait la marge latérale que `.bande` venait de
    poser : les deux règles s'appliquent au même élément — `class="bloc bande"` —
    et celle-ci, déclarée après, remettait le côté à zéro. Sur écran large le
@@ -207,7 +181,6 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   .mentions-bas .chapitre{grid-template-columns:1fr;gap:20px}
   .mentions-bas .sous{max-width:96ch}
 }
-.regle{border-top:1px solid var(--ligne)}
 
 /* Ces quatre règles d'en-tête étaient MORTES : une seconde définition de
    `.tete`, plus bas dans la feuille, les écrasait entièrement — z-index 60
@@ -242,10 +215,6 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 @media (max-width:820px){
   #toile{height:64svh;bottom:auto}
 }
-/* Le voile : fixe, plein écran, strictement horizontal. Un dégradé incliné
-   dans une boîte plus haute que large trace sa propre diagonale, et cette
-   diagonale se voit. Leçon payée sur le film précédent. */
-#prologue{position:relative;z-index:3}
 /* Chaque acte dure TROIS écrans, pas un.
 
    C'est la longueur qui manquait. Le site de référence tient sa descente sur
@@ -258,95 +227,18 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    écrans passent. C'est ce qu'on appelle épingler, et c'est ce qui donne
    l'impression que la caméra avance pendant qu'on lit. */
 #prologue section{min-height:500svh;position:relative;z-index:0}
-.tenir{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;
-  justify-content:flex-end;padding:0 var(--marge) clamp(76px,12vh,150px);
-  max-width:var(--max);margin:0 auto}
 @media (max-width:820px){
   /* Sur un téléphone, trois écrans par acte feraient douze écrans de prologue
      au doigt : c'est long. Deux suffisent, l'écran étant plus haut que large. */
   #prologue section{min-height:360svh}
 }
-
-/* Le voile suit le texte, il n'éclaire pas toujours le même côté.
-
-   Chaque acte porte le sien, fixe et plein écran, éteint par défaut et allumé
-   quand l'acte entre en scène — deux actes qui se croisent produisent donc un
-   fondu, pas une bascule. Un seul voile commun aurait obligé le texte à rester
-   au même endroit toute la descente, ce qui est exactement ce qu'on veut
-   éviter : quatre plans très différents méritent quatre compositions.
-
-   Fixe et strictement horizontal ou vertical : un dégradé incliné dans une
-   boîte plus haute que large trace sa propre diagonale, et cette diagonale se
-   voit. Leçon payée sur le film précédent. */
-#prologue section::before{content:"";position:fixed;inset:0;z-index:-1;
-  pointer-events:none;opacity:0;transition:opacity .7s ease}
-#prologue section.en-scene::before{opacity:1}
 .a-g::before{background:linear-gradient(90deg,rgba(5,18,30,.95) 0%,
   rgba(5,18,30,.88) 26%,rgba(5,18,30,.5) 48%,rgba(5,18,30,.14) 68%,transparent 84%)}
 .a-d::before{background:linear-gradient(270deg,rgba(5,18,30,.95) 0%,
   rgba(5,18,30,.88) 26%,rgba(5,18,30,.5) 48%,rgba(5,18,30,.14) 68%,transparent 84%)}
 .a-c::before{background:linear-gradient(180deg,transparent 18%,rgba(5,18,30,.3) 42%,
   rgba(5,18,30,.78) 68%,rgba(5,18,30,.94) 100%)}
-
-/* ------------------------------------------------- la hiérarchie d'un acte
-
-   Le métier était en onze pixels gris pendant que la phrase d'accroche
-   occupait quatre-vingts pixels. Visuellement, la poésie dominait et le
-   commerce concerné passait pour une note de bas de page — l'inverse de ce
-   qu'une vitrine doit faire.
-
-   L'ordre de lecture est désormais : le numéro d'acte, le MÉTIER en très
-   grand, à qui il s'adresse, puis seulement l'argument. Un agent immobilier
-   sait en une seconde que la page lui parle. */
-.acte-num{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.3em;
-  text-transform:uppercase;color:var(--ambre);margin:0 0 14px;
-  display:flex;align-items:center;gap:14px}
-.acte-num::after{content:"";flex:0 0 clamp(28px,5vw,64px);height:1px;background:var(--ligne)}
-.a-d .acte-num{flex-direction:row-reverse}
-.a-c .acte-num{justify-content:center}
-.a-c .acte-num::after{display:none}
-
-/* Le corps est calé sur le mot le PLUS LONG, pas sur le plus court :
-   « RESTAURATION » compte douze signes et touchait le bord de la colonne à
-   6,2 rem. On descend à 5,4 et on élargit la colonne du prologue — un métier
-   qui déborde du cadre se lit moins bien qu'un métier un peu plus petit. */
-.metier-titre{font-family:var(--serif);font-weight:400;text-transform:uppercase;
-  font-size:clamp(2.4rem,6.2vw,5.4rem);line-height:.94;letter-spacing:-.01em;
-  margin:0;text-wrap:balance}
-#prologue .mot{max-width:min(52ch,46vw)}
 @media (max-width:820px){#prologue .mot{max-width:none}}
-
-/* À qui, nommément. En capitales étroites et espacées : ça se lit comme une
-   liste de destinataires, pas comme une phrase. */
-.cibles{font-family:var(--mono);font-size:clamp(10px,1.05vw,12px);font-weight:500;
-  letter-spacing:.18em;text-transform:uppercase;color:var(--os);
-  margin:16px 0 0;line-height:1.9}
-.cibles em{font-style:normal;color:var(--sourd)}
-
-/* L'offre, en bas du bloc, précédée d'un filet : c'est la seule ligne de
-   l'acte qui promette quelque chose, elle a droit à son propre rang. */
-.offre{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--ambre);margin:22px 0 0;
-  padding-top:16px;border-top:1px solid var(--ligne);display:inline-block}
-
-/* La colonne de texte se range du côté que le voile a éteint. */
-/* Le texte s'efface avec son acte, sinon deux actes se lisent en même temps
-   au moment de la charnière. */
-#prologue .mot{opacity:0;transform:translateY(14px);
-  transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)}
-#prologue .en-scene .mot{opacity:1;transform:none}
-
-.a-g .mot{margin-right:auto}
-.a-d .tenir{align-items:flex-end;text-align:right}
-.a-d .mot{margin-left:auto}
-.a-d .defiler{justify-content:flex-end}
-.a-c .tenir{align-items:center;text-align:center}
-.a-c .mot{margin:0 auto}
-.a-c .corps{margin-left:auto;margin-right:auto}
-
-.mot{max-width:min(46ch,50vw)}
-.mot .corps{margin-top:20px}
-.mot .eti{margin-bottom:26px}
 
 /* Sous 820 px la colonne prend toute la largeur : aucun côté n'est libre, donc
    plus de dégradé latéral. Tout passe par le bas, où le texte est posé — et
@@ -368,9 +260,6 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   .a-d .acte-num,.a-c .acte-num{flex-direction:row;justify-content:flex-start}
   .a-c .acte-num::after{display:block}
 }
-
-/* Le reste du site : opaque, il recouvre la toile. */
-#suite{position:relative;z-index:4;background:var(--noir)}
 /* AUCUNE RÈGLE DE COULEUR NE COUVRAIT LES LIENS ORDINAIRES.
 
    Trois sélecteurs seulement en portaient une — `.tete a`, `.menu a`,
@@ -394,36 +283,10 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    sur toute la largeur se lit comme une enseigne, pas comme un titre. */
 .marque{font-family:var(--serif);font-size:clamp(2.6rem,11.5vw,10rem);line-height:.9;
   letter-spacing:.02em;margin:0 0 6px}
-.defiler{display:flex;align-items:center;gap:12px;margin-top:38px;
-  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--sourd)}
-.defiler i{display:block;width:52px;height:1px;background:var(--sourd);
-  transform-origin:left;animation:tirer 2.6s cubic-bezier(.65,0,.35,1) infinite}
 @keyframes tirer{0%{transform:scaleX(0);opacity:0}
   30%{transform:scaleX(1);opacity:1}70%{transform:scaleX(1);opacity:1}
   100%{transform:scaleX(1);opacity:0}}
-
-/* ============================================================== LES CHAPITRES
-   Le numéro romain n'est pas un ornement : la page décrit une chaîne de
-   production, et une chaîne a un ordre. I précède II parce que la composition
-   précède le calcul, pas parce que ça fait sérieux. */
-.chapitre{display:grid;gap:clamp(28px,4vw,64px);align-items:start}
 @media (min-width:900px){.chapitre{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}}
-.chapitre .corps + .corps{margin-top:18px}
-
-/* Trois variantes de chapitre, parce que quatre fois la même grille se lit
-   comme un gabarit. Elles ne sont pas décoratives : chacune sert son contenu.
-
-   `inverse` met le texte à gauche et le titre à droite — pour le procédé, dont
-   l'explication compte plus que l'intitulé.
-   `centre` supprime la colonne — pour les chiffres, qui n'ont pas besoin
-   d'être introduits sur le côté, et pour l'invitation, qui doit s'adresser à
-   quelqu'un et non se ranger dans une grille. */
-@media (min-width:900px){
-  .chapitre.inverse{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
-  .chapitre.inverse > :first-child{order:2}
-  .chapitre.inverse > :last-child{order:1;align-self:end}
-}
 /* Le bloc de contact était CENTRÉ — titre, texte, bouton, adresse, tout sur
    l'axe. C'est la mise en page qui datait le plus : elle appartient aux pages
    « nous contacter » de 2015, et elle oblige l'oeil à repartir du milieu à
@@ -447,56 +310,12 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    mais numérotés en chiffres arabes et non romains : ce n'est pas une séquence,
    c'est une liste. Quatre métiers dans n'importe quel ordre. */
 .metiers{margin-top:clamp(40px,6vh,72px);display:grid;gap:0}
-.metier{display:grid;gap:8px clamp(24px,4vw,64px);padding:clamp(26px,3.4vw,44px) 0;
-  border-top:1px solid var(--ligne)}
-.metier:last-child{border-bottom:1px solid var(--ligne)}
 @media (min-width:900px){.metier{grid-template-columns:auto minmax(0,4fr) minmax(0,6fr);
   align-items:baseline}}
-.metier .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--sourd)}
-.metier h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,2.4vw,2rem);
-  line-height:1.05;margin:0}
-.metier .corps{font-size:.95em}
-
-/* Le procédé : trois étapes, séparées par des filets et non par des cartes.
-   Une carte suggère qu'on peut prendre les étapes dans le désordre. */
-.etapes{margin-top:clamp(40px,6vh,72px);display:grid;gap:0}
-.etape{display:grid;gap:10px clamp(24px,4vw,64px);padding:clamp(26px,3.4vw,44px) 0;
-  border-top:1px solid var(--ligne)}
-.etape:last-child{border-bottom:1px solid var(--ligne)}
 @media (min-width:900px){.etape{grid-template-columns:auto minmax(0,4fr) minmax(0,6fr);
   align-items:baseline}}
-.etape .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ambre)}
-.etape h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,2.4vw,2rem);
-  line-height:1.05;margin:0}
-
-/* Les chiffres. Tous mesurés — c'est la seule raison pour laquelle ils ont le
-   droit d'être écrits aussi gros. Chiffres tabulaires : sans ça les colonnes
-   dansent d'une ligne à l'autre. */
-.chiffres{margin-top:clamp(40px,6vh,72px);display:grid;gap:1px;background:var(--ligne);
-  border:1px solid var(--ligne)}
 @media (min-width:640px){.chiffres{grid-template-columns:1fr 1fr}}
 @media (min-width:1000px){.chiffres{grid-template-columns:repeat(4,1fr)}}
-.chiffre{background:var(--noir);padding:clamp(24px,3vw,40px);display:flex;
-  flex-direction:column;gap:8px}
-.chiffre .val{font-family:var(--serif);font-size:clamp(2.6rem,5.2vw,4.2rem);line-height:.9;
-  font-variant-numeric:tabular-nums;color:var(--os)}
-.chiffre .val u{text-decoration:none;font-size:.4em;color:var(--gris);margin-left:.15em}
-.chiffre .quoi{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--sourd)}
-.chiffre .note{font-size:.88em;color:var(--gris);margin:0}
-
-/* L'invitation : le seul endroit ambre plein de la page. Sa rareté est ce qui
-   lui donne son poids. */
-.appel{display:inline-flex;align-items:center;gap:14px;margin-top:36px;
-  padding:17px 30px;background:var(--ambre);color:var(--noir);text-decoration:none;
-  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;
-  text-transform:uppercase;pointer-events:auto;
-  transition:background .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
-.appel:hover{background:#DCA157;transform:translateY(-2px)}
-.appel span{transition:transform .3s cubic-bezier(.22,1,.36,1)}
-.appel:hover span{transform:translateX(5px)}
-.sous{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--sourd)}
 
 /* --------------------------------------------------------- le pied de page
    Une fiche, pas une signature. Quatre blocs libellés — identité, adresse,
@@ -562,32 +381,10 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
   display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:space-between;
   align-items:baseline;font-family:var(--mono);font-size:10.5px;
   letter-spacing:.14em;text-transform:uppercase;color:#8C9BB0}
-
-/* L'apparition. Une seule, discrète, et coupée net si le visiteur a demandé
-   moins de mouvement — auquel cas tout est visible d'emblée. */
-.pose{opacity:0;transform:translateY(20px);
-  transition:opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)}
-.vu .pose{opacity:1;transform:none}
-.vu .pose:nth-child(2){transition-delay:.08s}
-.vu .pose:nth-child(3){transition-delay:.16s}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:.001ms!important;animation:none!important}
   .pose{opacity:1;transform:none}
 }
-
-/* Le chargement. Il porte un nom, parce qu'un chargement qui dit ce qu'il fait
-   fait déjà partie du film. */
-.voile{position:fixed;inset:0;z-index:90;background:var(--noir);
-  display:grid;place-content:center;justify-items:center;gap:22px;
-  transition:opacity .9s ease}
-.voile.parti{opacity:0;pointer-events:none}
-.voile em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.24em;
-  text-transform:uppercase;color:var(--sourd)}
-.voile .jauge{width:min(230px,52vw);height:1px;background:var(--ligne);overflow:hidden}
-.voile .jauge b{display:block;height:100%;width:0;background:var(--ambre);
-  transition:width .3s ease}
-.voile .pct{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--os);
-  font-variant-numeric:tabular-nums}
 
 /* Les champs encore vides des mentions légales se signalent d'eux-mêmes.
    Un « à compléter » en gris passe inaperçu et finit publié tel quel ; en
@@ -729,8 +526,7 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
 .coord dd{margin:0 0 22px;color:var(--os);line-height:1.75}
 .coord dd a{color:var(--ambre);text-decoration:none;border-bottom:1px solid transparent;
   transition:border-color .25s ease}
-.coord dd a:hover{border-bottom-color:var(--ambre)}
-</style>
+.coord dd a:hover{border-bottom-color:var(--ambre)}</style>
 </head>
 <body>
 
