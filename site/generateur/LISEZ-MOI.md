@@ -65,16 +65,47 @@ manifeste-vitrine.json    celui de la vitrine — c'est LUI qui a révélé le g
 mesures.mjs               les relevés dans la page SERVIE (navigateur)
 controleur.py             le verdict : contrat + fichiers + page. Sort en 1 si ça casse.
 
+nouveau.py                fabrique la page et le contrat d'un site neuf, puis
+                          MESURE ses courses dans la page servie
+CHEFFE.md                 la brève de la cheffe d'orchestre, à lui donner telle quelle
+
 ../moteur/lecteur.js      LE LECTEUR, source unique, inséré à <!--LECTEUR-->
-../moteur/socle.css       les 79 règles de structure, insérées à <!--SOCLE-->
+../moteur/socle.css       les 80 règles de structure, insérées à <!--SOCLE-->
+../moteur/gabarit.html    la page neuve, correcte par construction
+../PROMPTS-FILM.md        comment commander le film
+../MODELE-FILM-DEFILANT.md  tout ce qui a été mesuré, et tout ce qui casse
 ```
+
+## Un site neuf, de bout en bout
+
+```bash
+python3 nouveau.py <nom> film=<dossier> marque="…" titre="…" [demo]
+# … écrire les six actes, poser le film …
+python3 ../build_flux.py client=<nom> manifeste=generateur/manifeste-<nom>.json
+python3 nouveau.py <nom> mesurer http://127.0.0.1:8000/index.html
+python3 ../build_flux.py client=<nom> manifeste=generateur/manifeste-<nom>.json
+python3 controleur.py manifeste-<nom>.json ../dist/<nom>
+```
+
+On construit DEUX fois, et ce n'est pas une maladresse : la première donne une
+page à mesurer, la seconde encode le nombre d'images que la mesure a donné.
+Mesurer avant d'encoder, jamais l'inverse.
 
 Le second site a payé sa place : porté sur le contrat, il a montré que la règle
 de choix de série écrite pour le premier était fausse pour lui — ses deux séries
 ne montrent pas le même cadre — et le contrôleur y a trouvé deux défauts vivants
 que personne n'avait vus, dont le bas de page qui touchait le bord de l'écran.
-C'est pourquoi il ne faut PAS construire la cheffe d'orchestre avant d'avoir
-deux exemples : on généraliserait à partir d'un seul.
+Le TROISIÈME a payé la sienne encore plus cher. Première page à n'avoir jamais
+eu de copie du lecteur ni du socle, elle a trouvé trois trous que les deux
+autres masquaient : le socle ne contenait pas la règle de la toile — la page
+s'affichait vide sans une seule erreur ; le lecteur ne nommait pas l'élément
+manquant quand la page en oubliait un ; et le choix de série ignorait le nombre
+d'images, servant sur une fenêtre de 900 px une pellicule qui ne tenait pas la
+densité.
+
+Aucun des trois ne s'était manifesté en deux sites, parce qu'ils se
+ressemblaient trop. C'est exactement pourquoi il ne fallait pas écrire la
+cheffe d'orchestre avant d'avoir trois exemples.
 
 ## Usage
 
