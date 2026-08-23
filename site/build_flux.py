@@ -120,9 +120,16 @@ def _drapeau(nom, defaut):
 # Au-delà de quarante décibels on est dans le visuellement sans perte, et q45
 # y était déjà. Monter à q80 coûterait 3,3 fois les octets pour trois
 # décibels — pour rien de visible, et pour un décodage plus lent, qui lui se
-# voit. On prend 55 comme marge et on s'arrête là : la compression n'est plus
-# le maillon faible, la source l'est.
-QUALITE = _drapeau("q=", 55)
+# voit. La compression n'est plus le maillon faible, la source l'est.
+#
+# Le défaut valait 55 « comme marge » — et le site EN LIGNE est en q45. Vérifié
+# au kilo-octet près : l'image f0100 du lot publié pèse 50,8 Ko, ce que q45
+# reproduit exactement, quand q55 en fait 85,5. Personne ne construisait donc
+# avec le défaut, et le jour où quelqu'un l'aurait fait sans y penser, la
+# pellicule aurait grossi de deux tiers sans que rien ne le dise. Une marge
+# qu'on n'utilise pas n'est pas une marge, c'est un piège. Le défaut dit
+# désormais ce qui tourne.
+QUALITE = _drapeau("q=", 45)
 # Réécrit seulement index.html, sans toucher aux images déjà encodées.
 PAGE_SEULE = "page" in sys.argv[1:]
 # Ne réencoder qu'une série, en gardant l'autre telle quelle. Vingt minutes
@@ -144,9 +151,33 @@ PAR_IMAGE = _drapeau("parimage=", 33)
 FILM = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("film=")), None) or CLIENT
 _pref = FILM if FILM else "accueil"
 _etroit = f"{FILM}-etroit" if FILM else "accueil-etroit"
+# La série du téléphone vient du MÊME maître que celle du bureau, seulement
+# moins large — elle n'est plus un recadrage.
+#
+# Elle l'était : « assets/film/<film>-etroit » contenait un rognage centré 9:16
+# du maître 16:9, qui n'en gardait que 32 % de la largeur. Mesuré image par
+# image contre un recadrage centré reconstruit ici, l'écart médian est de
+# 1,4 sur 255 — c'est le bruit de recompression JPEG, autrement dit c'était
+# bien un rognage, malgré la note qui affirmait le contraire.
+#
+# Et ce rognage ne servait à rien. En cadrage « couvrir », la part du film
+# visible ne dépend que du rapport de la TOILE et de celui du maître :
+# 0,462 / 1,778 = 26 %, que la série intermédiaire soit en 9:16, en 3:4, carrée
+# ou en 16:9. Le rognage ne déplaçait pas le cadrage, il ne faisait que jeter
+# des pixels — et le client a fini par le dire : « sur téléphone c'est trop
+# zoomé ».
+#
+# `sortie` sépare donc le dossier SOURCE du dossier ÉCRIT. Sans elle, les deux
+# séries lues dans le même dossier s'écriraient au même endroit.
 SERIES = {
-    "accueil":        dict(dossier=f"assets/film/{_pref}",   largeur=_drapeau("large=", 1920)),
-    "accueil-etroit": dict(dossier=f"assets/film/{_etroit}", largeur=_drapeau("etroit=", 720)),
+    "accueil":        dict(dossier=f"assets/film/{_pref}", sortie=_pref,
+                           largeur=_drapeau("large=", 1920)),
+    # 1440 px : la toile du téléphone fait 585 x 810 pixels d'appareil (390 CSS
+    # de large, densité plafonnée à 1,5). Une image 1440x810 s'y pose au rapport
+    # 1:1 en hauteur, sans agrandissement — en dessous elle serait floue, au
+    # dessus on paierait des octets que personne ne voit.
+    "accueil-etroit": dict(dossier=f"assets/film/{_pref}", sortie=_etroit,
+                           largeur=_drapeau("etroit=", 1440)),
 }
 # Les courses mesurées dans un navigateur. Ce sont elles qui, divisées par la
 # densité voulue, donnent le nombre d'images à livrer.
@@ -155,8 +186,24 @@ SERIES = {
 # la vitrine tient ses actes sur trois écrans, un client peut en vouloir cinq.
 # D'où les drapeaux, plutôt qu'une constante à retoucher — deux sites doivent
 # pouvoir se construire le même jour sans se marcher dessus.
-COURSES = {"accueil": _drapeau("course=", 15300),
-           "accueil-etroit": _drapeau("courseetroit=", 10297)}
+#
+# ELLES SE MESURENT, ELLES NE SE DEVINENT PAS. Dans la page servie :
+#
+#     prologue.offsetHeight - innerHeight
+#
+# Prendre la plus GRANDE des fenêtres visées : une course plus courte que
+# prévu donne une densité plus fine que voulue, l'inverse donne un film qui
+# saute. Mesuré ici — bureau 1440x900 : 26 100 px ; 1280x800 : 23 200 ;
+# téléphone 390x844 : 17 386 ; 360x740 : 15 244.
+#
+# Ces valeurs valaient 15 300 et 10 297 et n'ont pas suivi le passage des
+# actes de 130 à 170 svh. Rien ne l'a signalé : la construction a livré 464 et
+# 312 images en annonçant fièrement « 33,0 px de défilement par image », alors
+# que la vraie densité tombait à 56 — un film deux fois plus saccadé, et le
+# message qui affirmait le contraire. Une constante fausse qui sert aussi à
+# calculer ce qu'on affiche ne peut pas se contredire toute seule.
+COURSES = {"accueil": _drapeau("course=", 26100),
+           "accueil-etroit": _drapeau("courseetroit=", 17386)}
 # Pas d'affûtage : les images viennent d'un agrandissement 4K qui l'a déjà
 # fait, et mieux. Voir la note de build_ultra.py.
 FORMAT = "AVIF"
@@ -205,14 +252,14 @@ def main():
         if voulu < len(fichiers):
             idx = np.linspace(0, len(fichiers) - 1, voulu).round().astype(int)
             fichiers = [fichiers[i] for i in idx]
-        # Le dossier de sortie porte le nom du dossier SOURCE, pas celui de la
-        # clé de série. Les deux coïncident pour la vitrine — clé « accueil »,
-        # dossier « accueil » — et divergent pour un client : la page demande
-        # « assets/film/transgold/f » alors que la clé vaut « accueil ». Nommer
-        # d'après la clé écrivait donc les images à côté de là où la page les
-        # cherche, et la page se révélait sur une toile vide sans une seule
-        # erreur — le pire mode de défaillance, celui qui ne se signale pas.
-        cible = os.path.join(OUT, "assets", "film", os.path.basename(reg["dossier"]))
+        # Le dossier de sortie est DÉCLARÉ, jamais déduit. Ni de la clé de
+        # série — la page demande « assets/film/transgold/f » alors que la clé
+        # vaut « accueil », et nommer d'après la clé écrivait les images à côté
+        # de là où la page les cherche : toile vide, sans une seule erreur, le
+        # pire mode de défaillance. Ni du dossier source, puisque les deux
+        # séries lisent désormais le même maître et s'écraseraient l'une
+        # l'autre.
+        cible = os.path.join(OUT, "assets", "film", reg["sortie"])
         if PAGE_SEULE or (SEULE and nom != SEULE):
             comptes[nom] = len(os.listdir(cible))
             print(f"  {nom:15s} {comptes[nom]:4d} images déjà encodées")
