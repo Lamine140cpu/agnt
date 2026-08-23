@@ -120,6 +120,13 @@ def fichiers(m, out, r):
             larg = _valeur(s["largeur"], "")
             r.dire(im.width == larg, f"série {nom} : largeur {im.width} px",
                    "" if im.width == larg else f"le contrat dit {larg}")
+            if "hauteur" in s:
+                haut = _valeur(s["hauteur"], "")
+                r.dire(im.height == haut, f"série {nom} : hauteur {im.height} px",
+                       "" if im.height == haut else
+                       f"le contrat dit {haut} — c'est SUR CES DEUX DIMENSIONS "
+                       f"que le lecteur choisit sa série, jamais sur un rapport "
+                       f"arrondi")
             rapp = round(im.width / im.height, 3)
             att = _valeur(s["rapport"], "")
             r.dire(abs(rapp - att) < 0.01, f"série {nom} : rapport {rapp}",
@@ -179,6 +186,14 @@ def page(m, url, r):
         r.dire(not e["sous_la_barre"], "aucune ancre sous l'en-tête",
                " · ".join(e["sous_la_barre"]) +
                (f" (en-tête {e['tete_hauteur']} px)" if e["sous_la_barre"] else ""))
+
+        attendue = champs(m["page"].get("serie_attendue", {})).get(taille)
+        if attendue:
+            r.dire(e.get("serie_servie") == attendue,
+                   f"série servie « {e.get('serie_servie')} »",
+                   "" if e.get("serie_servie") == attendue else
+                   f"le contrat attend « {attendue} » — une mauvaise série ne se "
+                   f"voit pas à l'écran, elle se paye en octets")
 
         sans_densite = taille.split("@")[0]
         if sans_densite in courses:

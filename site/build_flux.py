@@ -339,6 +339,32 @@ def main():
             sys.exit(f"compte de {nom} : {combien} correspondance(s) dans la page "
                      f"au lieu d'une — lecteur modifié ?")
 
+    # Les DIMENSIONS de chaque série, mesurées sur l'image livrée et écrites
+    # dans la page. C'est le lecteur qui s'en sert pour choisir sa série : la
+    # forme d'abord — un film monté en portrait doit être trouvé comme tel —
+    # puis la plus petite qui couvre la toile sans agrandissement.
+    #
+    # Elles sont MESURÉES, jamais recopiées. Une dimension écrite à la main
+    # rejoindrait la liste des constantes de ce dépôt qui ont cessé de décrire
+    # la réalité sans que rien ne le signale : la course, la qualité, la nature
+    # de la série téléphone, le compte d'images.
+    from PIL import Image as _Im
+    for nom in comptes:
+        cible = os.path.join(OUT, "assets", "film", SERIES[nom]["sortie"])
+        premiere = sorted(os.listdir(cible))[0]
+        with _Im.open(os.path.join(cible, premiere)) as im:
+            l, h = im.size
+        motif = (rf"(chemin: *'assets/film/{re.escape(SERIES[nom]['sortie'])}/f',"
+                 rf"[^}}]*?images: *\d+)([^}}]*)")
+
+        def _dim(m):
+            reste = re.sub(r", *largeur: *\d+, *hauteur: *\d+", "", m.group(2))
+            return f"{m.group(1)}, largeur: {l}, hauteur: {h}{reste}"
+
+        src, n_dim = re.subn(motif, _dim, src, count=1)
+        if n_dim != 1:
+            sys.exit(f"{nom} : impossible d'écrire les dimensions dans la page")
+
     # Et on RELIT ce qu'on vient d'écrire, série par série. Compter les
     # substitutions ne prouve rien sur ce qui est dans le fichier : deux
     # substitutions réussies peuvent avoir visé la même ligne. Seule la

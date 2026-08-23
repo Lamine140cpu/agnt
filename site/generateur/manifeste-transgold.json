@@ -8,6 +8,7 @@
         "_": "La série de bureau. Le maître, pleine largeur.",
         "dossier": { "valeur": "transgold", "origine": "choix" },
         "largeur": { "valeur": 1920, "origine": "choix" },
+        "hauteur": { "valeur": 1080, "origine": "mesure" },
         "images":  { "valeur": 791, "origine": "mesure" },
         "rapport": { "valeur": 1.778, "origine": "mesure" },
         "course":  "1440x900"
@@ -16,6 +17,7 @@
         "_": "La série du téléphone. LE MÊME cadre, moins large — surtout pas un recadrage : en cadrage « couvrir » la part du film visible ne dépend que du rapport de la toile et de celui du maître, jamais de la série intermédiaire. 1440x810 pour une toile de 585x810 pixels d'appareil : l'image s'y pose au 1:1, sans agrandissement.",
         "dossier": { "valeur": "transgold-etroit", "origine": "choix" },
         "largeur": { "valeur": 1440, "origine": "mesure" },
+        "hauteur": { "valeur": 810, "origine": "mesure" },
         "images":  { "valeur": 527, "origine": "mesure" },
         "rapport": { "valeur": 1.778, "origine": "mesure" },
         "course":  "390x844"
@@ -40,6 +42,14 @@
       "360x740":  { "valeur": 15244, "origine": "mesure" }
     },
     "ancres": ["metiers", "procede", "garanties", "maison", "parler", "mentions"],
+    "serie_attendue": {
+      "_": "Quelle série doit être servie à quelle taille. Sans ce contrôle, une régression du choix de série passe inaperçue : le site reste beau, il pèse simplement le double sur téléphone. C'est arrivé — un quart de pixel d'écart faisait servir la pellicule de 1920 à un téléphone.",
+      "1440x900": "transgold",
+      "1280x800@2": "transgold",
+      "900x800": "transgold-etroit",
+      "390x844@3": "transgold-etroit",
+      "360x740@2": "transgold-etroit"
+    },
     "toile_hauteur_telephone": {
       "_": "Le film prend une bande, pas tout l'écran. C'est le SEUL levier qui change le cadrage sur téléphone : 64 % porte la part visible du film de 26 % à 41 %.",
       "valeur": "64svh", "origine": "choix"
