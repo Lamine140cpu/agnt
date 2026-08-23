@@ -33,7 +33,15 @@ import re
 import sys
 
 SITE = os.path.dirname(os.path.abspath(__file__))
-MOTEUR_SOURCE = os.path.join(SITE, "transgold.html")
+# La source unique. Elle n'est plus prise dans transgold.html : cette page est
+# celle d'un client, et y puiser le lecteur faisait dépendre toutes les autres
+# de ses modifications. Mesuré avant de couper le lien : six versions du même
+# lecteur cohabitaient dans ce dépôt, divergeant de 8 à 13 % — les cinq
+# refontes et la vitrine tournaient sans aucun des correctifs récents.
+MOTEUR_SOURCE = os.path.join(SITE, "moteur", "lecteur.js")
+# Les refontes partagent la pellicule de transgold : elles ne changent que la
+# direction artistique, jamais le film.
+FILM = "transgold"
 DOSSIER = os.path.join(SITE, "refontes")
 
 # Le nom du fichier produit vaut aussi nom de construction : `build_flux.py
@@ -52,13 +60,22 @@ EXIGENCES = ('id="toile"', 'id="prologue"', 'id="suite"',
 
 
 def moteur():
-    src = open(MOTEUR_SOURCE, encoding="utf-8").read()
-    blocs = re.findall(r"<script>(.*?)</script>", src, re.S)
-    if not blocs:
-        sys.exit(f"aucun <script> dans {MOTEUR_SOURCE}")
-    # Le lecteur est de loin le plus long : les autres sont des compléments de
-    # mise en page propres à chaque direction.
-    return max(blocs, key=len)
+    """Le lecteur, précédé des séries que CE film emploie.
+
+    Le lecteur ne déclare plus ses séries : il lit `window.SERIES`, que la page
+    doit poser avant lui. C'est ce qui l'a rendu générique — c'était son seul
+    morceau propre à un site, sur huit cent soixante et une lignes.
+    """
+    if not os.path.exists(MOTEUR_SOURCE):
+        sys.exit(f"{MOTEUR_SOURCE} est introuvable — c'est la source unique")
+    code = open(MOTEUR_SOURCE, encoding="utf-8").read()
+    series = (
+        "window.SERIES = {\n"
+        f"  accueil:          {{ chemin: 'assets/film/{FILM}/f',        images: 1152 }},\n"
+        f"  'accueil-etroit': {{ chemin: 'assets/film/{FILM}-etroit/f',  images: 1152 }},\n"
+        "};\n"
+    )
+    return series + code
 
 
 def assembler(nom, code):
@@ -89,8 +106,8 @@ def main():
                  f"au choix {', '.join(REFONTES)}")
 
     code = moteur()
-    print(f"lecteur repris de {os.path.basename(MOTEUR_SOURCE)} "
-          f"({len(code)/1024:.0f} Ko)\n")
+    print(f"lecteur repris de moteur/{os.path.basename(MOTEUR_SOURCE)} "
+          f"({len(code)/1024:.0f} Ko), séries du film « {FILM} »\n")
     for nom in demandes:
         cible, taille = assembler(nom, code)
         print(f"  {nom:8s} -> {os.path.basename(cible):26s} {taille/1024:6.0f} Ko")

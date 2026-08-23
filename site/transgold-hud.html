@@ -686,7 +686,38 @@ footer{position:relative;z-index:4;background:var(--noir);color:var(--gris);
   <p class="pct" id="pct">0 %</p>
 </div>
 
-<script>
+<script>window.SERIES = {
+  accueil:          { chemin: 'assets/film/transgold/f',        images: 1152 },
+  'accueil-etroit': { chemin: 'assets/film/transgold-etroit/f',  images: 1152 },
+};
+/* ============================================================================
+   LE LECTEUR — la source unique.
+
+   Ce fichier était recopié dans chaque page. Mesuré avant de l'extraire : six
+   versions différentes du même lecteur cohabitaient dans ce dépôt, divergeant
+   de 8 à 13 % — les cinq refontes et la vitrine tournaient sur un moteur qui
+   n'avait aucun des correctifs de fluidité, de cadrage ni de définition. Le
+   dépôt le disait déjà lui-même : « un correctif de fluidité avait dû être
+   porté trois fois de suite ».
+
+   Il n'est PAS chargé par <script src>. La construction l'insère dans la page,
+   à la place du marqueur <!--LECTEUR-->. Un site client tient sur une seule
+   page : une requête de plus avant que le film ne démarre coûterait un
+   aller-retour à chaque visite, pour un cache que personne ne réutiliserait.
+   Une seule source, zéro requête : les deux à la fois.
+
+   CE QUE LA PAGE DOIT FOURNIR, sous peine d'écran noir silencieux :
+
+     window.SERIES     { clé: { chemin, images } } — déclaré AVANT le lecteur
+     #toile            la toile du film
+     #prologue         contenant des <section> : les actes
+     #suite            les blocs révélés au défilement, OPAQUES
+     #voile #etape #jauge #pct     l'écran d'attente
+
+   Les clés de `window.SERIES` sont « accueil » et « accueil-etroit ». Ce sont
+   des rôles, pas des noms de client : la première est servie aux toiles larges,
+   la seconde sous 820 px.
+   ============================================================================ */
 /* ============================================================================
    Le prologue est un film déroulé par le défilement.
 
@@ -717,42 +748,51 @@ const etape = document.getElementById('etape');
 const { min, max, round, abs, exp } = Math;
 const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
 
-/* Deux montages, pas un seul recadré.
+/* Deux tailles du MÊME montage.
 
-   Un téléphone tenu debout ne reçoit PAS l'image large rognée : plusieurs
-   des plans ont été tournés nativement en 9:16, et rogner un cadre 16:9
-   en portrait ne garde que 32 % de sa largeur — le sujet en sort. La série
-   étroite est donc un vrai montage.
+   La note qui tenait ici affirmait que la série étroite était « un vrai
+   montage », plusieurs plans ayant été tournés nativement en 9:16. C'était
+   faux. Reconstruit ici un rognage centré 9:16 du maître et comparé image par
+   image à la série étroite : écart médian 1,4 sur 255, soit le bruit de
+   recompression JPEG. C'était un rognage, qui ne gardait que 32 % de la
+   largeur du film — et le client a fini par le dire : « sur téléphone c'est
+   trop zoomé ».
+
+   La série téléphone est donc désormais le maître ENTIER, en 1440 px de large
+   au lieu de 1920 : la toile du téléphone fait 585 x 810 pixels d'appareil,
+   une image 1440x810 s'y pose sans agrandissement.
 
    Elle compte moins d'images que la large, et ce n'est pas une économie :
    sur un téléphone les actes font deux écrans au lieu de trois, ce qui met
    la course du prologue à 10 297 px contre 15 300. Deux tiers de la
    distance demandent deux tiers des images pour le même grain. La
    construction calcule ce partage toute seule. */
-const SEQUENCES = {
-  accueil:          { chemin: 'assets/film/transgold/f',        images: 1152 },
-  'accueil-etroit': { chemin: 'assets/film/transgold-etroit/f',  images: 1152 },
-};
+const SEQUENCES = window.SERIES;
+if (!SEQUENCES || !Object.keys(SEQUENCES).length) {
+  /* Sans séries, la toile reste noire et RIEN ne le dit : c'est le pire mode
+     de panne de ce lecteur, et il s'est produit trois fois dans ce dépôt.
+     On le rend bruyant. */
+  throw new Error('le lecteur n\'a pas trouvé window.SERIES — la page doit ' +
+                  'déclarer ses séries avant de le charger');
+}
 /* La construction dépose les images ici ; sans elle on va les lire sur le
    disque. Le lecteur n'a pas à savoir lequel des deux. */
 const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || null;
 
-/* La série se choisit sur la forme du CADRE, pas sur celle de la fenêtre.
-
-   Tant que le film occupait tout l'écran, les deux se confondaient. Dès qu'une
-   mise en page l'encadre — une colonne de droite sur écran large, par exemple —
-   elles divergent : la fenêtre est en paysage, le cadre en portrait, et servir
-   la série paysage y rogne l'image des deux tiers. On mesure donc la toile.
+/* La série se choisit sur la largeur du CADRE, pas sur celle de la fenêtre :
+   une mise en page peut n'accorder au film qu'une colonne d'un écran large, et
+   y servir la grande série serait payer 1920 px pour en afficher 600.
 
    La toile n'a pas encore de taille au moment où ces lignes s'exécutent si le
    CSS ne lui en donne pas ; d'où le repli sur la fenêtre. */
 const _cadre = canvas.getBoundingClientRect();
-const _rapport = (_cadre.width && _cadre.height)
-  ? _cadre.width / _cadre.height
-  : innerWidth / innerHeight;
-/* Plus haut que large : la série 9:16 rogne alors moins que la 16:9. */
-const portrait = _rapport < 1;
-const NOM = (portrait && (!SOURCES || SOURCES['accueil-etroit']))
+/* Les deux séries montrent le même cadre ; seule leur DÉFINITION diffère. Le
+   choix n'est donc plus une affaire de forme mais de nombre de pixels : sous
+   820 px de large, la toile n'a jamais besoin de 1920, et servir la grande
+   série y coûterait 41 Ko l'image au lieu de 23 — le double de la charge
+   mobile pour un rendu identique. */
+const etroit = (_cadre.width || innerWidth) < 820;
+const NOM = (etroit && (!SOURCES || SOURCES['accueil-etroit']))
   ? 'accueil-etroit' : 'accueil';
 const SEQ = SEQUENCES[NOM];
 /* Le compte écrit ci-dessus n'est qu'un défaut pour le mode disque : dès que
@@ -1004,11 +1044,16 @@ function poser(im){
       ctx.drawImage(im, im.width - 1, 0, 1, im.height, x + l - 1, 0, cw - x - l + 1, h);
     }
     ctx.drawImage(im, x, 0, l, h);
+    window.__IMAGE = im;
     return;
   }
   const k = max(cw / im.width, ch / im.height);
   ctx.drawImage(im, (cw - im.width * k) / 2, (ch - im.height * k) / 2,
                 im.width * k, im.height * k);
+  /* L'image posée est publiée : une mise en page peut vouloir y puiser sa
+     couleur. Échantillonner huit pixels sur huit coûte 0,021 ms — c'est
+     mesuré, et c'est trois centièmes du budget d'une trame. */
+  window.__IMAGE = im;
 }
 
 function dessiner(i){
@@ -1440,6 +1485,34 @@ if (new URLSearchParams(location.search).get('diag') === '1') {
       `molette    ${molette ? 'lissée' : 'native'}`;
   }, 250);
 }
+
+/* ------------------------------------------------------- le repère de section
+
+   Sur une page de trente écrans, savoir où l'on se trouve vaut mieux qu'un
+   menu qui ne dit rien. Le lien de la section en vue reste souligné d'ambre.
+
+   Un observateur d'intersection plutôt qu'un calcul à chaque défilement : le
+   navigateur fait le travail hors du fil principal, et la page tourne déjà à
+   soixante images par seconde qu'il ne faut pas dépenser ici. La marge basse
+   de -55 % choisit la section dont le HAUT a franchi le milieu de l'écran,
+   ce qui donne le même verdict que l'oeil. */
+(function repere(){
+  const liens = new Map();
+  for (const a of document.querySelectorAll('.menu a')) {
+    const cible = document.querySelector(a.getAttribute('href'));
+    if (cible) liens.set(cible, a);
+  }
+  if (!liens.size || typeof IntersectionObserver !== 'function') return;
+  let vues = new Set();
+  const oeil = new IntersectionObserver((entrees) => {
+    for (const e of entrees) e.isIntersecting ? vues.add(e.target) : vues.delete(e.target);
+    let gagnant = null;
+    for (const [cible] of liens)
+      if (vues.has(cible)) gagnant = cible;      /* la plus basse des visibles */
+    for (const [cible, a] of liens) a.classList.toggle('ici', cible === gagnant);
+  }, { rootMargin: '0px 0px -55% 0px' });
+  for (const [cible] of liens) oeil.observe(cible);
+})();
 
 /* L'apparition des blocs de la suite. Une seule fois : on cesse d'observer
    après, pour qu'un aller-retour ne fasse pas clignoter la page. */

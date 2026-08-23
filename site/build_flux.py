@@ -224,8 +224,35 @@ def _un(travail):
     return len(octets)
 
 
+def lecteur(src):
+    """Insère le lecteur unique à la place du marqueur.
+
+    Le lecteur n'est pas chargé par <script src> : un site client tient sur une
+    seule page, et une requête de plus avant que le film ne démarre coûterait un
+    aller-retour à chaque visite pour un cache que personne ne réutiliserait. On
+    veut donc les deux — une seule source sur le disque, zéro requête en ligne.
+
+    Une page sans marqueur est laissée telle quelle : les anciennes pages
+    portent encore leur lecteur en clair, et la migration se fait une par une.
+    """
+    if "<!--LECTEUR-->" not in src:
+        return src
+    if src.count("<!--LECTEUR-->") != 1:
+        sys.exit(f"le marqueur <!--LECTEUR--> apparaît "
+                 f"{src.count('<!--LECTEUR-->')} fois — il en faut exactement un")
+    if "window.SERIES" not in src:
+        sys.exit("la page appelle le lecteur mais ne déclare pas window.SERIES : "
+                 "la toile resterait noire")
+    chemin = os.path.join(SITE, "moteur", "lecteur.js")
+    if not os.path.exists(chemin):
+        sys.exit(f"{chemin} est introuvable — c'est la source unique du lecteur")
+    code = open(chemin, encoding="utf-8").read()
+    print(f"  lecteur          {len(code)/1024:4.0f} Ko  <- moteur/lecteur.js")
+    return src.replace("<!--LECTEUR-->", "<script>\n" + code + "\n</script>")
+
+
 def main():
-    src = open(SOURCE, encoding="utf-8").read()
+    src = lecteur(open(SOURCE, encoding="utf-8").read())
     if not PAGE_SEULE and not SEULE:
         shutil.rmtree(OUT, ignore_errors=True)
         os.makedirs(OUT)
