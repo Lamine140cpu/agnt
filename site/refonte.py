@@ -42,6 +42,9 @@ MOTEUR_SOURCE = os.path.join(SITE, "moteur", "lecteur.js")
 # Les refontes partagent la pellicule de transgold : elles ne changent que la
 # direction artistique, jamais le film.
 FILM = "transgold"
+# La page qui fait foi : c'est elle que les moteurs doivent trouver, jamais un
+# essai.
+CANONIQUE = "https://lamine140cpu.github.io/agnt/transgold/"
 DOSSIER = os.path.join(SITE, "refontes")
 
 # Le nom du fichier produit vaut aussi nom de construction : `build_flux.py
@@ -97,6 +100,25 @@ def assembler(nom, code):
     if manque:
         sys.exit(f"{nom} : le lecteur ne trouverait pas {', '.join(manque)} — "
                  f"la page s'afficherait noire sans la moindre erreur")
+
+    # UNE DIRECTION REJETÉE NE DOIT JAMAIS ÊTRE INDEXABLE.
+    #
+    # Les cinq refontes portaient « index, follow » et le MÊME titre que la page
+    # du client, à une adresse voisine — deux pages concurrentes sur le même nom
+    # d'entreprise, ce qui est exactement ce qu'un moteur de recherche pénalise.
+    # Pire, leur adresse canonique désignait un fichier qui n'existe pas :
+    # « /transgold/terminal.html » quand la page est publiée sous
+    # « /transgold-terminal/ ». Une canonique cassée ne protège de rien.
+    #
+    # Ce sont des essais. On les rend invisibles aux moteurs et on désigne la
+    # vraie page comme canonique — sans rien supprimer : elles restent
+    # consultables par leur adresse directe, ce qui est leur seul usage.
+    page = re.sub(r'<meta name="robots" content="[^"]*">',
+                  '<meta name="robots" content="noindex, nofollow">', page)
+    page = re.sub(r'<link rel="canonical" href="[^"]*">',
+                  f'<link rel="canonical" href="{CANONIQUE}">', page)
+    page = re.sub(r'<meta property="og:url" content="[^"]*">',
+                  f'<meta property="og:url" content="{CANONIQUE}">', page)
 
     page = page.replace("<!--MOTEUR-->", "<script>" + code + "</script>")
     cible = os.path.join(SITE, REFONTES[nom])
