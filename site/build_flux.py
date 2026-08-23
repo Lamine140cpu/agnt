@@ -106,6 +106,36 @@ def _drapeau(nom, defaut):
     return next((int(a[len(nom):]) for a in sys.argv[1:] if a.startswith(nom)), defaut)
 
 
+# LE MANIFESTE, quand il y en a un, l'emporte sur les défauts.
+#
+# Les défauts ne peuvent PAS servir deux sites : mesuré, la course du prologue
+# vaut 26 100 px chez Trans Gold et 15 300 sur la vitrine. Une constante
+# globale est donc juste pour l'un et fausse pour l'autre, en silence — c'est
+# exactement ce qui s'est produit, dans les deux sens. Ces valeurs
+# appartiennent au site, pas au script.
+_MANIF = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("manifeste=")), None)
+_M = None
+if _MANIF:
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "generateur"))
+    from manifeste import charger as _charger, champs as _champs, _valeur as _val, Faute as _Faute
+    try:
+        _M = _charger(_MANIF)
+    except _Faute as e:
+        sys.exit(f"CONTRAT ROMPU — {e}")
+
+
+def _du_manifeste(chemin, defaut):
+    """Une valeur du manifeste, ou le défaut. `chemin` en pointillés."""
+    if not _M:
+        return defaut
+    n = _M
+    for cle in chemin.split("."):
+        if not isinstance(n, dict) or cle not in n:
+            return defaut
+        n = n[cle]
+    return _val(n, chemin) if isinstance(n, dict) and "valeur" in n else n
+
+
 # q=55 et non 32 comme dans le fichier unique : là-bas chaque kilo-octet
 # économisé achetait une image, ici il n'achète rien du tout.
 #
@@ -129,7 +159,7 @@ def _drapeau(nom, defaut):
 # pellicule aurait grossi de deux tiers sans que rien ne le dise. Une marge
 # qu'on n'utilise pas n'est pas une marge, c'est un piège. Le défaut dit
 # désormais ce qui tourne.
-QUALITE = _drapeau("q=", 45)
+QUALITE = _drapeau("q=", _du_manifeste("film.qualite", 45))
 # Réécrit seulement index.html, sans toucher aux images déjà encodées.
 PAGE_SEULE = "page" in sys.argv[1:]
 # Ne réencoder qu'une série, en gardant l'autre telle quelle. Vingt minutes
@@ -137,7 +167,7 @@ PAGE_SEULE = "page" in sys.argv[1:]
 SEULE = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("serie=")), None)
 # Densité voulue, en pixels de défilement par image. C'est ELLE qu'on choisit ;
 # le nombre d'images en découle.
-PAR_IMAGE = _drapeau("parimage=", 33)
+PAR_IMAGE = _drapeau("parimage=", _du_manifeste("film.densite_visee", 33))
 # Les CLÉS restent « accueil » et « accueil-etroit » : ce sont les noms que le
 # lecteur emploie pour choisir sa série selon la forme de l'écran, et il n'a
 # pas à savoir de quel client il s'agit. Seuls les DOSSIERS changent.
@@ -202,8 +232,20 @@ SERIES = {
 # que la vraie densité tombait à 56 — un film deux fois plus saccadé, et le
 # message qui affirmait le contraire. Une constante fausse qui sert aussi à
 # calculer ce qu'on affiche ne peut pas se contredire toute seule.
-COURSES = {"accueil": _drapeau("course=", 26100),
-           "accueil-etroit": _drapeau("courseetroit=", 17386)}
+def _course(cle, drapeau, defaut):
+    """La course d'une série : le manifeste dit LAQUELLE des courses mesurées
+    la concerne, par la taille d'écran. Sans manifeste, le drapeau, puis le
+    défaut — qui n'est juste que pour la vitrine."""
+    if _M:
+        s = _champs(_M["film"]["series"]).get(cle, {})
+        taille = s.get("course")
+        if taille:
+            return _drapeau(drapeau, _val(_champs(_M["page"]["courses"])[taille], ""))
+    return _drapeau(drapeau, defaut)
+
+
+COURSES = {"accueil": _course("accueil", "course=", 15300),
+           "accueil-etroit": _course("accueil-etroit", "courseetroit=", 10297)}
 # Pas d'affûtage : les images viennent d'un agrandissement 4K qui l'a déjà
 # fait, et mieux. Voir la note de build_ultra.py.
 FORMAT = "AVIF"
