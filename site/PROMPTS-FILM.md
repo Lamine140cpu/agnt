@@ -42,7 +42,9 @@ généralement le bon.
 
 **3. Aucune coupe à l'intérieur d'un plan.**
 Une coupe dans un plan devient un saut à mi-défilement, impossible à distinguer
-d'une image manquante.
+d'une image manquante. Attention : **c'est le modèle qui en ajoute**, pas vous.
+Voir « ce que fait vraiment Extend », plus bas — la parade est dans la
+formulation du prompt.
 
 **4. Aucun texte, aucun logo demandé au modèle.**
 Mesuré sur le film Trans Gold : les inscriptions générées sortent en charabia —
@@ -94,8 +96,8 @@ Aucun texte, aucune inscription, aucun logo, aucun visage en gros plan.
 Les trois lignes de fin ne sautent jamais : ce sont elles qui évitent les
 défauts du § 2.
 
-**Pour les plans 2 à 6**, fournir en image de départ la dernière image du plan
-précédent :
+**Pour les plans 2 à 6**, partir de la dernière image du plan précédent. Dans
+Flow, c'est **Extend** ; hors de Flow :
 
 ```bash
 python3 film_raccord.py plan1.mp4 amorce2.png
@@ -103,6 +105,42 @@ python3 film_raccord.py plan1.mp4 amorce2.png
 
 Sans cette amorce, chaque plan repart d'un sujet légèrement différent — autre
 teinte, autre position d'ombre — et les jointures sautent aux yeux.
+
+### CE QUE FAIT VRAIMENT « EXTEND », mesuré
+
+Extend ne fond pas le nouveau prompt dans le mouvement en cours. Il **prolonge
+le plan précédent une à deux secondes, puis COUPE** vers la scène demandée.
+Mesuré sur six plans enchaînés :
+
+```
+fin du plan N  vs  début du plan N+1          3,3 à 5,3 / 255   (continu)
+fin du plan N  vs  plan N+1 après sa coupe   37 à 45   / 255   (rien à voir)
+```
+
+Trois des six plans portaient ainsi une coupe franche, entre leur 4ᵉ et leur
+38ᵉ image. **Ne jamais rogner ce début** : c'est le pont qui tient la chaîne.
+
+Pour obtenir un film SANS aucune coupe, il faut donc formuler chaque prompt
+d'enchaînement comme une **continuation du mouvement**, jamais comme une
+nouvelle scène :
+
+```
+   NON   « Un escalier en bois en cours d'assemblage sur tréteaux. »
+   OUI   « La caméra poursuit son travelling latéral le long de l'atelier et
+          découvre, sur des tréteaux, un escalier en bois en cours
+          d'assemblage. »
+```
+
+Le sujet doit être atteignable **depuis là où la caméra se trouve à la fin du
+plan précédent**. Un salon n'est pas atteignable depuis un atelier : il faut
+franchir une porte, et le dire.
+
+### Où tombent les coupes, si on en garde
+
+Un plan vaut environ un acte. Les coupes tombent donc naturellement près des
+changements d'acte — mesuré sur le film menuiserie : à 0,4 %, 2,8 % et 3,3 %
+des frontières. À cette distance elles se lisent comme une anticipation de
+chapitre, pas comme un défaut.
 
 ---
 

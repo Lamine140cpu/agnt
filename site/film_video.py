@@ -78,12 +78,17 @@ SERIE = _reste[2] if len(_reste) > 2 else "large"
 # « transgold » : le premier client. Dossiers à part, pour que sa séquence et
 # celle de la vitrine coexistent sans qu'aucune n'écrase l'autre — les deux
 # doivent rester livrables en même temps.
-FORMATS = {"large": 16 / 9, "etroit": 9 / 16,
-           "accueil": 16 / 9, "accueil-etroit": 9 / 16,
-           "transgold": 16 / 9, "transgold-etroit": 9 / 16}
-if SERIE not in FORMATS:
-    sys.exit(f"série inconnue : {SERIE} — attendu : {', '.join(FORMATS)}")
-CIBLE = FORMATS[SERIE]
+# Le rapport se DÉDUIT du nom, il ne se lit plus dans une liste.
+#
+# La liste était codée en dur — « large », « etroit », « accueil »,
+# « transgold »… — et il fallait l'éditer à chaque nouveau client. C'est la
+# même forme de piège que les constantes de ce dépôt qui ont cessé de décrire
+# la réalité : une liste à tenir à jour finit toujours par ne plus l'être, et
+# ici elle refusait simplement de travailler, ce qui est le meilleur des cas.
+#
+# La convention est celle que tout le reste emploie déjà : un nom se terminant
+# par « -etroit » ou valant « etroit » désigne la série du téléphone.
+CIBLE = 9 / 16 if SERIE == "etroit" or SERIE.endswith("-etroit") else 16 / 9
 SORTIE = os.path.join(SITE, "assets", "film", SERIE)
 
 
