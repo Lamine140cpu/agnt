@@ -118,6 +118,18 @@ for (const [w, h, dpr] of ECRANS) {
         .filter(a => a.scrollWidth > a.clientWidth + 1).map(a => a.textContent.trim()),
       liens_bleus: [...document.querySelectorAll('a')]
         .filter(a => /rgb\(0, 0, (238|255)\)/.test(getComputedStyle(a).color)).length,
+      /* LA MARGE LATÉRALE. Un bloc dont le texte touche le bord de l'écran
+       * est illisible, et le défaut est invisible sur grand écran : la
+       * largeur maximale du contenu l'y centre et masque tout. Il ne se voit
+       * qu'au téléphone, et il a été trouvé deux fois dans ce dépôt — un
+       * `padding` en raccourci écrasant celui d'une classe posée avant. */
+      colles_au_bord: [...document.querySelectorAll('#suite .bloc, footer')]
+        .map(el => {
+          const e = el.querySelector('p,h1,h2,h3,li,dd');
+          if (!e) return null;
+          const g = e.getBoundingClientRect().left;
+          return g < 12 ? `${el.id || el.className.split(' ')[0]} à ${Math.round(g)} px` : null;
+        }).filter(Boolean),
       contrastes: {
         corps: contraste('#suite .corps'),
         second_plan: contraste('#suite .eti'),

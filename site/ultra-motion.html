@@ -107,7 +107,14 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    Une seule gouttière, une seule largeur maximale, partout. C'est ce qui tient
    une page longue : le lecteur n'a jamais à retrouver le bord du texte. */
 .bande{max-width:var(--max);margin:0 auto;padding:0 var(--marge)}
-.bloc{padding:clamp(86px,13vh,170px) 0}
+/* `padding` en RACCOURCI écrasait la marge latérale que `.bande` venait de
+   poser : les deux règles s'appliquent au même élément — class="bloc bande" —
+   et celle-ci, déclarée après, remettait le côté à zéro. Sur écran large le
+   centrage de `.bande` rattrapait l'affaire ; sur téléphone, où il n'y a rien
+   à centrer, les QUATRE sections du bas touchaient le bord gauche. Mesuré :
+   0 px du bord. Le même défaut a été trouvé et corrigé sur la page client, et
+   n'avait jamais été reporté ici. */
+.bloc{padding-top:clamp(86px,13vh,170px);padding-bottom:clamp(86px,13vh,170px)}
 .regle{border-top:1px solid var(--ligne)}
 
 /* En-tête et pied fixes, en mono, très discrets : ce sont des repères, pas des

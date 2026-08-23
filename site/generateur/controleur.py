@@ -183,6 +183,11 @@ def page(m, url, r):
                "" if not e.get("absentes") else
                f"{e['absentes_total']} manquantes — " + " · ".join(e["absentes"])
                + " — le compte déclaré dans la page ne vaut pas celui du dossier")
+        r.dire(not e.get("colles_au_bord"), "marge latérale respectée",
+               "" if not e.get("colles_au_bord") else
+               " · ".join(e["colles_au_bord"]) +
+               " — un `padding` en raccourci écrase souvent celui d'une classe "
+               "posée avant, et ça ne se voit que sur téléphone")
         r.dire(not e["sous_la_barre"], "aucune ancre sous l'en-tête",
                " · ".join(e["sous_la_barre"]) +
                (f" (en-tête {e['tete_hauteur']} px)" if e["sous_la_barre"] else ""))
