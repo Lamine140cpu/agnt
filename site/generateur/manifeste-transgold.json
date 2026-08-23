@@ -46,7 +46,7 @@
       "_": "Quelle série doit être servie à quelle taille. Sans ce contrôle, une régression du choix de série passe inaperçue : le site reste beau, il pèse simplement le double sur téléphone. C'est arrivé — un quart de pixel d'écart faisait servir la pellicule de 1920 à un téléphone.",
       "1440x900": "transgold",
       "1280x800@2": "transgold",
-      "900x800": "transgold-etroit",
+      "900x800": "transgold",
       "390x844@3": "transgold-etroit",
       "360x740@2": "transgold-etroit"
     },

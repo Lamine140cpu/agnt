@@ -75,6 +75,41 @@ const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
    la course du prologue à 10 297 px contre 15 300. Deux tiers de la
    distance demandent deux tiers des images pour le même grain. La
    construction calcule ce partage toute seule. */
+/* LES ÉLÉMENTS QUE LA PAGE DOIT FOURNIR, vérifiés nommément.
+
+   Sans ce contrôle, une page à qui il en manque un plante sur un « Cannot read
+   properties of null » quelque part au milieu du lecteur, et la toile reste à
+   sa taille par défaut — 300 x 150, invisible sur un fond noir. C'est arrivé
+   en écrivant la troisième page : `jauge` avait été posé comme CLASSE du
+   conteneur alors que c'est l'IDENTIFIANT de la barre intérieure. Le message
+   ne disait rien, et il a fallu comparer deux pages ligne à ligne.
+
+   Le nom manquant est maintenant dit. */
+{
+  const requis = { toile: canvas, voile, jauge, pct, etape,
+                   prologue: document.getElementById('prologue') };
+  const absents = Object.keys(requis).filter(k => !requis[k]);
+  /* ET LA TOILE DOIT AVOIR UNE BOÎTE. Une toile sans règle CSS reste à sa
+     taille par défaut — 300 x 150 px, en position statique — et la page
+     s'affiche vide sans une seule erreur. C'est exactement ce qui est arrivé
+     en écrivant la troisième page : la règle `#toile` manquait au socle, les
+     deux premiers sites en avaient chacun une copie, donc la page neuve n'en
+     avait aucune. Le contrôle coûte deux lignes et supprime le pire mode de
+     panne de ce lecteur. */
+  const _b = canvas.getBoundingClientRect();
+  if (getComputedStyle(canvas).position === 'static' &&
+      _b.width === 300 && _b.height === 150) {
+    throw new Error('#toile n\'a aucune règle CSS : elle est restée à sa ' +
+      'taille par défaut de 300x150 en position statique, et la page ' +
+      's\'afficherait vide. Le socle doit la fournir.');
+  }
+  if (absents.length) {
+    throw new Error('le lecteur ne trouve pas #' + absents.join(', #') +
+      ' — la page doit les fournir. Attention au nid : `jauge` est ' +
+      "l'identifiant du <b> À L'INTÉRIEUR de .jauge, pas celui du conteneur.");
+  }
+}
+
 const SEQUENCES = window.SERIES;
 if (!SEQUENCES || !Object.keys(SEQUENCES).length) {
   /* Sans séries, la toile reste noire et RIEN ne le dit : c'est le pire mode
@@ -153,6 +188,20 @@ if (_decrites.length) {
      l'autre deux fois plus large que haute. */
   const memeForme = _decrites.filter(k => ecart(k) <= meilleur + 0.01);
 
+  /* TROISIÈME CRITÈRE, découvert par le troisième site : une série doit avoir
+     ASSEZ D'IMAGES pour la course de la page où elle est servie.
+
+     La pellicule légère est taillée pour la course du téléphone. Sur une
+     fenêtre de 900 px de large elle couvrait la toile et pesait moins, donc
+     elle gagnait — mais la page y garde la course du bureau, et 527 images sur
+     23 200 px font 44 px de défilement par image : le film saute. Le poids ne
+     se juge pas seul, il se juge à densité tenue. */
+  const _prol = document.getElementById('prologue');
+  const _course = _prol ? Math.max(_prol.offsetHeight - innerHeight, 1) : 0;
+  const _dmax = window.DENSITE_MAX || 40;
+  const assez = k => !_course || !SEQUENCES[k].images ||
+                     _course / SEQUENCES[k].images <= _dmax;
+
   const plafond = _cw < 820 ? 1.5 : 2;
   const besoinL = _cw * Math.min(devicePixelRatio || 1, plafond);
   const besoinH = _ch * Math.min(devicePixelRatio || 1, plafond);
@@ -172,8 +221,12 @@ if (_decrites.length) {
      mauvaise série, si. */
   const couvre = k => SEQUENCES[k].largeur >= besoinL * 0.98 &&
                       SEQUENCES[k].hauteur >= besoinH * 0.98;
-  const suffisantes = memeForme.filter(couvre);
-  const parmi = suffisantes.length ? suffisantes : memeForme;
+  const suffisantes = memeForme.filter(k => couvre(k) && assez(k));
+  /* Si aucune ne tient les deux, on retombe sur celles qui couvrent, puis sur
+     la forme seule : mieux vaut une image un peu trop grande qu'un film qui
+     saute, et un film qui saute qu'une page vide. */
+  const parmi = suffisantes.length ? suffisantes
+              : (memeForme.filter(couvre).length ? memeForme.filter(couvre) : memeForme);
   NOM = parmi.reduce((a, b) =>
     (suffisantes.length ? SEQUENCES[a].largeur <= SEQUENCES[b].largeur
                         : SEQUENCES[a].largeur >= SEQUENCES[b].largeur) ? a : b);
