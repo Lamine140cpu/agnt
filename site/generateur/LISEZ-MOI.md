@@ -65,6 +65,8 @@ manifeste-vitrine.json    celui de la vitrine — c'est LUI qui a révélé le g
 mesures.mjs               les relevés dans la page SERVIE (navigateur)
 controleur.py             le verdict : contrat + fichiers + page. Sort en 1 si ça casse.
 
+chaine.py                 LA CHAÎNE : construire, mesurer, reconstruire, contrôler
+monteuse.py               des plans vidéo au dossier d'images, ordre MESURÉ
 nouveau.py                fabrique la page et le contrat d'un site neuf, puis
                           MESURE ses courses dans la page servie
 CHEFFE.md                 la brève de la cheffe d'orchestre, à lui donner telle quelle
@@ -80,16 +82,65 @@ CHEFFE.md                 la brève de la cheffe d'orchestre, à lui donner tell
 
 ```bash
 python3 nouveau.py <nom> film=<dossier> marque="…" titre="…" [demo]
-# … écrire les six actes, poser le film …
-python3 ../build_flux.py client=<nom> manifeste=generateur/manifeste-<nom>.json
-python3 nouveau.py <nom> mesurer http://127.0.0.1:8000/index.html
-python3 ../build_flux.py client=<nom> manifeste=generateur/manifeste-<nom>.json
-python3 controleur.py manifeste-<nom>.json ../dist/<nom>
+# … écrire les six actes dans <nom>.html …
+python3 monteuse.py <nom> plans=<dossier de .mp4>     # le film
+python3 chaine.py <nom>                               # tout le reste
+```
+
+`chaine.py` enchaîne les quatre pas qui se faisaient à la main :
+
+```
+1. CONSTRUIRE     une première fois, pour avoir une page à mesurer
+2. MESURER        les courses dans la page servie, et en déduire les images
+3. RECONSTRUIRE   avec le compte que la mesure a donné
+4. CONTRÔLER      et s'arrêter là si ça ne passe pas
 ```
 
 On construit DEUX fois, et ce n'est pas une maladresse : la première donne une
 page à mesurer, la seconde encode le nombre d'images que la mesure a donné.
 Mesurer avant d'encoder, jamais l'inverse.
+
+`chaine.py <nom> page` saute le réencodage de la pellicule : la mise en page
+change dix fois par jour, le film une fois par site.
+
+**L'étape 4 est une barrière, pas un rapport.** Si le contrôleur refuse, la
+chaîne sort en erreur et ne publie rien. C'est tout l'intérêt d'avoir un
+contrôle qui ne raisonne pas : on peut lui confier le droit de veto.
+
+### La barrière a d'abord été creuse
+
+Elle mérite d'être racontée, parce que c'est le défaut type de ce genre
+d'outil. Première version : `mesurer` réécrivait `serie_attendue` avec ce
+qu'il venait d'observer. Le contrôleur comparait donc la réalité à elle-même
+— **un contrôle qui ne peut pas échouer**, et qui affiche `ok` avec aplomb.
+
+Trouvé en sabotant volontairement le contrat pour voir si la chaîne s'en
+apercevait : elle passait au vert. Le garde-fou s'établit maintenant au premier
+passage, et ensuite les écarts sont **signalés, jamais gommés** — si le
+changement est voulu, on corrige le contrat à la main, parce que c'est une
+décision et qu'elle doit se prendre.
+
+La leçon vaut pour tout ce qui sera ajouté ici : **un garde-fou qu'on n'a
+jamais vu refuser n'est pas un garde-fou.** Le casser exprès une fois est le
+seul moyen de savoir.
+
+### L'ordre des plans se mesure
+
+`monteuse.py` ne se fie pas aux noms de fichier. Sur le film menuiserie,
+l'ordre des prompts et l'ordre réel des plans différaient : les fichiers
+portaient les noms des prompts, la chaîne suivait l'ordre de génération. Se
+fier au nom donnait un film qui saute trois fois.
+
+Elle compare donc la dernière image de chaque plan à la première de tous les
+autres — trente comparaisons — et déduit la chaîne des chiffres. Une vraie
+jointure tient sous 6 sur 255, c'est le bruit de recompression ; une fausse est
+au-dessus de 35. Si la chaîne est rompue, elle s'arrête : un film dont les
+plans ne se suivent pas montre six ateliers différents.
+
+**Ce qui n'est pas éprouvé : l'appel au modèle vidéo.** Il n'y avait pas de clé
+dans l'environnement où la monteuse a été écrite, donc `commander()` lève
+plutôt que de faire semblant. Le jour où une clé arrive, c'est cette
+fonction-là qu'il faut éprouver — et sur UN SEUL plan d'abord.
 
 Le second site a payé sa place : porté sur le contrat, il a montré que la règle
 de choix de série écrite pour le premier était fausse pour lui — ses deux séries
