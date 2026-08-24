@@ -67,6 +67,10 @@ controleur.py             le verdict : contrat + fichiers + page. Sort en 1 si �
 
 chaine.py                 LA CHAÎNE : construire, mesurer, reconstruire, contrôler
 monteuse.py               des plans vidéo au dossier d'images, ordre MESURÉ
+fournisseur.py            LA FRONTIÈRE VIDÉO — un descripteur JSON par fournisseur
+descripteurs/             un fichier par modèle vidéo ; gabarit.json est le modèle
+cerveau.py                LA FRONTIÈRE CLAUDE — les deux rôles et leurs réglages
+architecte.py             écrit les six actes, et REFUSE les faits inventés
 nouveau.py                fabrique la page et le contrat d'un site neuf, puis
                           MESURE ses courses dans la page servie
 CHEFFE.md                 la brève de la cheffe d'orchestre, à lui donner telle quelle
@@ -123,6 +127,51 @@ décision et qu'elle doit se prendre.
 La leçon vaut pour tout ce qui sera ajouté ici : **un garde-fou qu'on n'a
 jamais vu refuser n'est pas un garde-fou.** Le casser exprès une fois est le
 seul moyen de savoir.
+
+### Les deux frontières, et pourquoi elles sont éprouvables sans clé
+
+Le moteur ne parle au monde extérieur qu'à deux endroits : `fournisseur.py`
+pour le modèle vidéo, `cerveau.py` pour Claude. Chacun est une interface avec
+un **mode rejeu**, et c'est ce qui permet d'éprouver tout le reste sans
+dépenser un centime ni attendre huit minutes.
+
+```bash
+python3 fournisseur.py essai     # la mécanique réseau, contre un faux serveur
+python3 monteuse.py essai plans=…  # la boucle de reprise, contre un faux modèle
+python3 architecte.py essai      # le garde-fou des faits, dans les deux sens
+```
+
+Un fournisseur vidéo neuf est **un fichier JSON**, pas du code : tous font la
+même chose (soumettre, attendre, télécharger), seuls les noms de champs
+changent. Copier `descripteurs/gabarit.json`, remplir, essayer sur UN plan,
+puis basculer `"verifie": true`. Tant qu'il est à `false`, le fournisseur
+refuse de tourner — six plans commandés sur des noms devinés, ce sont six
+plans payés pour rien.
+
+### Le garde-fou des faits
+
+Un modèle à qui on demande d'écrire la page d'un transporteur écrira « vingt
+ans d'expérience », « certifiés ISO 9001 » et un numéro de téléphone. Tout
+sera crédible. Tout sera faux. **Et meilleur est le modèle, plus c'est
+crédible.**
+
+Ce n'est pas un défaut de raisonnement, c'est son métier : il complète. On ne
+le corrige donc pas en le lui demandant gentiment dans la consigne — on le lui
+demande aussi, mais surtout on vérifie : tout chiffre, date, quantité, durée,
+courriel ou identifiant du texte produit doit se retrouver dans ce que le
+manifeste déclare, sinon la page entière est refusée.
+
+Passé sur les pages déjà en ligne, il a trouvé du premier coup que Trans Gold
+annonçait **« Huit ans d'exploitation »** alors que l'immatriculation
+(31/07/2017) en fait neuf. Le compte était juste le jour où il a été écrit et
+s'est périmé tout seul — la classe de défaut exacte que ce dépôt traque.
+Remplacé par une formulation sourcée qui ne se périme pas.
+
+Deux limites trouvées en l'éprouvant, et corrigées : il ne lisait que
+`client.faits` (il criait donc à l'invention sur les chiffres techniques
+déclarés sous `film`), et il jugeait un nombre nu — « 45 chauffeurs » passait
+parce que 45 figure dans « 45 rue Jean Charcot ». Il cherche maintenant le
+nombre **avec son unité**.
 
 ### L'ordre des plans se mesure
 
