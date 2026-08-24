@@ -12,21 +12,32 @@ dans le même ordre :
   5. découpe en images numérotées
   6. réécrit dans le manifeste ce qu'elle a RÉELLEMENT produit
 
-    python3 monteuse.py <nom> plans=<dossier>          rejeu : des .mp4 déjà là
-    python3 monteuse.py <nom> metier="menuiserie" api=kling cle=...
+    python3 monteuse.py <nom> api=<descripteur> cle=<clé>   génération
+    python3 monteuse.py <nom> plans=<dossier>               rejeu : des .mp4 là
+    python3 monteuse.py essai plans=<dossier>               éprouve la boucle
 
-L'ÉTAPE 4 N'EST PAS UN LUXE. Sur le film menuiserie, l'ordre réel des plans
-n'était PAS celui des prompts : c'était l'ordre de génération. Les six fichiers
-portaient des noms trompeurs, et se fier au nom aurait donné un film qui saute
-trois fois. On compare donc la dernière image de chaque plan à la première de
-tous les autres — trente comparaisons — et la chaîne se déduit des chiffres.
+LE MODÈLE VIDÉO A LE DROIT DE RATER ; IL N'A PAS LE DROIT DE PASSER.
 
-CE QUI N'EST PAS TESTÉ ICI : l'appel au modèle vidéo. Il n'y avait pas de clé
-dans l'environnement où ce fichier a été écrit, donc `commander()` n'a jamais
-tourné en vrai. Tout le reste — profilage, chaînage, découpe, réécriture du
-manifeste — a été vérifié sur les six plans du film menuiserie, en mode rejeu.
-Le jour où une clé arrive, c'est cette fonction-là qu'il faut éprouver, et elle
-seule.
+On ne peut pas obliger un modèle vidéo à enchaîner : on lui donne la dernière
+image du plan précédent, il rend ce qu'il veut. Alors on ne lui demande pas de
+réussir, on MESURE — la jointure avec le plan d'avant, et la continuité du plan
+lui-même. Un plan qui rate est jeté et recommandé ; au bout de `essais`
+tentatives, on s'arrête. Ce n'est donc pas le modèle qui garantit la
+continuité, c'est la boucle. Voir `produire()`.
+
+L'ORDRE NE SE LIT PAS SUR LES NOMS DE FICHIER. En génération il est connu par
+construction. En rejeu il est MESURÉ : sur le film menuiserie, l'ordre réel
+n'était pas celui des prompts mais celui de la génération, et se fier au nom
+donnait un film qui saute trois fois. On compare donc la dernière image de
+chaque plan à la première de tous les autres — trente comparaisons.
+
+CE QUI EST ÉPROUVÉ, ET COMMENT. La boucle de reprise et les deux contrôles :
+`monteuse.py essai` les fait tourner contre un fournisseur qui rate exprès —
+sans ça, six plans qui passent du premier coup ne font jamais tourner la
+boucle et on ne saurait pas si elle marche. La mécanique réseau : voir
+`fournisseur.py essai`. Ce qui n'est PAS éprouvé : les valeurs d'un descripteur
+de vrai fournisseur, faute de clé — d'où le refus de tourner tant que son
+`"verifie"` n'a pas été basculé à la main après un essai sur UN plan.
 """
 import glob
 import json
@@ -92,26 +103,91 @@ def prompts(sujets):
 
 # ------------------------------------------------------------- la commande
 
-def commander(prompts_, dossier, api, cle, amorce_de=None):
-    """Commande les six plans au modèle vidéo.
+def derniere_image(mp4, jpg):
+    """La dernière image d'un plan, sur le disque. C'est elle, l'amorce.
 
-    NON ÉPROUVÉE — aucune clé n'était disponible quand ce fichier a été écrit.
-    Le corps ci-dessous décrit l'appel tel qu'il doit être fait ; à valider
-    contre la documentation du fournisseur avant le premier vrai passage, et à
-    lancer une première fois SUR UN SEUL PLAN.
-
-    Le paramètre qui compte est l'image de départ. Chez Kling c'est
-    `type: "first_frame"` ; ailleurs le nom change, jamais le principe.
+    C'est le seul lien entre deux plans. Un plan commandé sans elle montre un
+    autre atelier — même prompt, même métier, autre lieu.
     """
-    raise SystemExit(
-        "commander() n'a jamais tourné : il n'y avait pas de clé dans "
-        "l'environnement où ce fichier a été écrit.\n\n"
-        "Avant de l'utiliser :\n"
-        "  1. vérifier la forme exacte de l'appel dans la doc du fournisseur ;\n"
-        "  2. l'essayer SUR UN SEUL PLAN, en regardant le fichier qui revient ;\n"
-        "  3. seulement ensuite lancer les six.\n\n"
-        "En attendant, le mode rejeu fait tout le reste :\n"
-        "  python3 monteuse.py <nom> plans=<dossier de .mp4>")
+    import cv2
+    fr = _image(mp4, -1)
+    if fr is None:
+        raise RuntimeError(f"pas d'image lisible dans {mp4}")
+    cv2.imwrite(jpg, fr, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+    return jpg
+
+
+def produire(fournisseur, prompts_, travail, seuil=8.0, essais=3, journal=print,
+             tolerer_coupes=False):
+    """Les six plans, commandés dans l'ordre, VÉRIFIÉS à chaque pas.
+
+    LE MODÈLE VIDÉO A LE DROIT DE RATER ; IL N'A PAS LE DROIT DE PASSER.
+
+    C'est toute la logique de cette fonction. On ne peut pas obliger un modèle
+    vidéo à enchaîner : on lui donne la dernière image du plan précédent et un
+    prompt, il rend ce qu'il veut. Parfois ça continue, parfois ça coupe.
+
+    Alors on ne lui demande pas de réussir, on MESURE ce qu'il rend :
+
+      - le plan commence-t-il bien là où le précédent finit ? (la jointure)
+      - le plan lui-même est-il continu, ou coupe-t-il en son milieu ?
+
+    Un plan qui rate l'un des deux est jeté et RECOMMANDÉ. Ce n'est donc pas le
+    modèle qui garantit la continuité, c'est la boucle. Et si après `essais`
+    tentatives ça ne tient toujours pas, on s'arrête : mieux vaut pas de film
+    qu'un film qui saute.
+
+    Les seuils ne sont pas choisis, ils sont mesurés. Sur les six plans du film
+    menuiserie, les vraies jointures tiennent entre 3,3 et 5,3 sur 255 — le
+    bruit de recompression — et les fausses dépassent 35. Il n'y a pas de zone
+    grise entre les deux, c'est ce qui rend le contrôle sûr.
+
+    `tolerer_coupes` N'EXISTE QUE POUR LES CLIPS D'ESSAI, et il faut savoir
+    pourquoi. Les six plans de référence viennent de « Extend », qui ne
+    continue pas un plan : il le prolonge une à deux secondes puis COUPE vers
+    ce qu'on décrit. Mesuré sur ces plans — coupes aux images 4, 33 et 38, de
+    36 à 45 sur 255, soit quatre à six fois le mouvement normal ; sur un plan
+    sain le maximum reste à 1,3 fois. Ce pont du début est justement ce qui
+    fait tenir la jointure : le rogner ne supprime pas la coupe, il la déplace.
+    Avec Extend, une coupure par plan est donc inévitable.
+
+    Une vraie interface `first_frame` n'a pas ce défaut : le modèle part de
+    l'image donnée et avance. C'est pour l'attraper si elle se comporte quand
+    même comme Extend que le contrôle existe — alors en production il reste à
+    faux, toujours.
+    """
+    plans, amorce, journal_essais = [], None, []
+    for i, prompt in enumerate(prompts_, 1):
+        for essai in range(1, essais + 1):
+            chemin = os.path.join(travail, f"plan{i}.mp4")
+            journal(f"  plan {i}/{len(prompts_)}"
+                    + (f" — tentative {essai}" if essai > 1 else ""))
+            fournisseur.generer(prompt, chemin, amorce=amorce)
+
+            faute = None
+            pr = profiler(chemin)
+            if pr["coupes"] and not tolerer_coupes:
+                faute = f"coupe interne à {pr['coupes']}"
+            elif plans:
+                e = _ecart(_image(plans[-1], -1), _image(chemin, 0))
+                if e > seuil:
+                    faute = f"ne suit pas le plan {i - 1} — {e:.1f}/255"
+                else:
+                    journal(f"    jointure {e:.1f}/255")
+            journal_essais.append((i, essai, faute))
+            if not faute:
+                break
+            journal(f"    REJETÉ : {faute}")
+        else:
+            raise RuntimeError(
+                f"le plan {i} n'enchaîne toujours pas après {essais} "
+                f"tentatives.\nDernière faute : {faute}\n\n"
+                "On s'arrête là volontairement. Un film dont les plans ne se\n"
+                "suivent pas montre six ateliers différents — c'est pire\n"
+                "qu'un site sans film.")
+        plans.append(chemin)
+        amorce = derniere_image(chemin, os.path.join(travail, f"amorce{i}.jpg"))
+    return plans, journal_essais
 
 
 # --------------------------------------------------------------- le profil
@@ -198,9 +274,113 @@ def decouper(ordre, film, images, largeur=1920):
     return p.stdout
 
 
+def _essai_boucle(dossier):
+    """Éprouve la boucle de reprise, sans clé et sans réseau.
+
+    Six plans qui s'enchaînent tous du premier coup ne font JAMAIS tourner la
+    boucle : on ne saurait pas si elle marche. On se sert donc d'un fournisseur
+    qui rate exprès, et on vérifie les deux sens — qu'elle rattrape un plan
+    fautif, et qu'elle refuse quand ça ne tient toujours pas.
+
+    Un garde-fou qu'on n'a jamais vu refuser n'est pas un garde-fou.
+    """
+    import tempfile
+    sys.path.insert(0, ICI)
+    from fournisseur import Capricieux
+
+    plans = sorted(glob.glob(os.path.join(dossier, "*.mp4")))
+    if len(plans) < 3:
+        sys.exit(f"il faut au moins trois .mp4 dans {dossier}")
+
+    print(f"{len(plans)} plans — on mesure d'abord leur ordre réel\n")
+    vrai, _, faute = chainer(plans)
+    if faute:
+        sys.exit(f"les plans d'essai ne s'enchaînent pas : {faute}")
+    for a, b in zip(vrai, vrai[1:]):
+        print(f"  {os.path.basename(a):20s} -> {os.path.basename(b)}")
+
+    ok = []
+
+    def verifier(titre, condition, detail=""):
+        ok.append(bool(condition))
+        print(f"  {'ok  ' if condition else 'NON '} {titre}"
+              + (f"  {detail}" if detail else ""))
+
+    faux_sujets = ["un sujet"] * 6
+    p6 = prompts(faux_sujets)[:len(vrai)]
+
+    # Les clips de référence viennent d'« Extend » : trois d'entre eux portent
+    # une coupe interne (images 4, 33, 38). On éprouve donc les deux règles
+    # séparément — la jointure ici, la coupe juste après.
+    coupus = [p for p in vrai if profiler(p)["coupes"]]
+    print(f"\n  ({len(coupus)}/{len(vrai)} de ces clips portent une coupe "
+          f"interne — signature d'« Extend »)")
+
+    # 1. Le plan 3 rate deux fois, puis passe. La boucle doit rattraper.
+    print("\nLE PLAN 3 RATE DEUX FOIS (essais=3)")
+    t = tempfile.mkdtemp()
+    f = Capricieux(vrai, rates={3: 2})
+    rendu, journal = produire(f, p6, t, essais=3, journal=lambda *_: None,
+                              tolerer_coupes=True)
+    rejets = [(i, e) for i, e, faute in journal if faute]
+    verifier("les six plans sortent quand même", len(rendu) == len(vrai),
+             f"{len(rendu)}/{len(vrai)}")
+    verifier("deux rejets, tous deux sur le plan 3",
+             len(rejets) == 2 and all(i == 3 for i, _ in rejets), str(rejets))
+    verifier("le fournisseur a bien été appelé deux fois de plus",
+             f.appels == len(vrai) + 2, f"{f.appels} appels")
+    ordres = [os.path.getsize(p) for p in rendu]
+    attendus = [os.path.getsize(p) for p in vrai]
+    verifier("l'ordre final est le bon", ordres == attendus)
+    for a, b in zip(rendu, rendu[1:]):
+        e = _ecart(_image(a, -1), _image(b, 0))
+        if e > 8.0:
+            verifier("toutes les jointures tiennent", False, f"{e:.1f}/255")
+            break
+    else:
+        verifier("toutes les jointures tiennent", True)
+
+    # 2. Le plan 3 rate plus souvent qu'on n'a d'essais. Doit REFUSER.
+    print("\nLE PLAN 3 RATE TROIS FOIS (essais=2) — doit refuser")
+    t = tempfile.mkdtemp()
+    try:
+        produire(Capricieux(vrai, rates={3: 3}), p6, t, essais=2,
+                 journal=lambda *_: None, tolerer_coupes=True)
+        verifier("la boucle s'arrête au lieu de livrer un film qui saute",
+                 False, "elle a livré")
+    except RuntimeError as e:
+        verifier("la boucle s'arrête au lieu de livrer un film qui saute",
+                 "plan 3" in str(e))
+        verifier("et elle dit pourquoi", "ne suit pas" in str(e))
+
+    # 3. L'autre règle : une coupe DANS un plan est fatale aussi.
+    if coupus:
+        print("\nUN PLAN QUI COUPE EN SON MILIEU — doit refuser aussi")
+        t = tempfile.mkdtemp()
+        # On place un plan coupé en tête : sa jointure n'est pas en cause,
+        # seule sa coupe interne peut le faire rejeter.
+        try:
+            produire(Capricieux([coupus[0]]), p6[:1], t, essais=1,
+                     journal=lambda *_: None)
+            verifier("une coupe interne fait rejeter le plan", False,
+                     "il est passé")
+        except RuntimeError as e:
+            verifier("une coupe interne fait rejeter le plan",
+                     "coupe interne" in str(e), str(e).splitlines()[0][:60])
+
+    print(f"\n{sum(ok)}/{len(ok)} — "
+          + ("la boucle tient." if all(ok) else "IL RESTE UN DÉFAUT."))
+    return 0 if all(ok) else 1
+
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__.strip())
+    if sys.argv[1] == "essai":
+        d = _drapeau("plans")
+        if not d:
+            sys.exit("python3 monteuse.py essai plans=<dossier de .mp4>")
+        sys.exit(_essai_boucle(d))
     nom = sys.argv[1]
     contrat = os.path.join(ICI, f"manifeste-{nom}.json")
     if not os.path.exists(contrat):
@@ -209,11 +389,45 @@ def main():
     film = m["film"]["series"]["accueil"]["dossier"]["valeur"]
 
     dossier = _drapeau("plans")
-    if not dossier:
-        commander(None, None, _drapeau("api"), _drapeau("cle"))
-    plans = sorted(glob.glob(os.path.join(dossier, "*.mp4")))
-    if not plans:
-        sys.exit(f"aucun .mp4 dans {dossier}")
+    api = _drapeau("api")
+
+    # DEUX MODES, ET LA DIFFÉRENCE EST DANS L'ORDRE.
+    #
+    #   génération : on commande les plans un par un, chacun amorcé par la
+    #                dernière image du précédent. L'ordre est connu PAR
+    #                CONSTRUCTION, et chaque jointure est vérifiée au moment
+    #                où elle arrive — un plan qui ne suit pas est recommandé.
+    #
+    #   rejeu      : six fichiers sont là, leur ordre est inconnu. On le
+    #                MESURE. Sur le film menuiserie, l'ordre des noms n'était
+    #                pas l'ordre réel — s'y fier donnait un film qui saute
+    #                trois fois.
+    if api:
+        from fournisseur import ouvrir, Refus
+        sujets = m["film"].get("sujets")
+        if not sujets or len(sujets) != 6:
+            sys.exit("le manifeste n'a pas ses six « sujets » de plan.\n"
+                     "C'est l'architecte qui les écrit — un par plan, une "
+                     "phrase chacun.")
+        travail = os.path.join(SITE, "assets", "plans", nom)
+        os.makedirs(travail, exist_ok=True)
+        print(f"GÉNÉRATION — six plans, chacun amorcé par le précédent\n")
+        try:
+            f = ouvrir(api, _drapeau("cle"), journal=print)
+            ordre, _ = produire(f, prompts(sujets), travail,
+                                essais=int(_drapeau("essais", 3)))
+        except Refus as e:
+            sys.exit(f"\nle fournisseur vidéo refuse :\n{e}")
+        plans = ordre
+        print()
+    else:
+        if not dossier:
+            sys.exit("ni `plans=` (rejeu) ni `api=` (génération) — "
+                     "la monteuse ne sait pas d'où sortir les plans")
+        plans = sorted(glob.glob(os.path.join(dossier, "*.mp4")))
+        if not plans:
+            sys.exit(f"aucun .mp4 dans {dossier}")
+        ordre = None
 
     print(f"{len(plans)} plans\n")
     print("PROFIL")
@@ -224,14 +438,19 @@ def main():
         print(f"  {os.path.basename(p):32s} {pr['images']:4d} images · "
               + (f"coupe(s) à {pr['coupes']}" if pr["coupes"] else "aucune coupe"))
 
-    print("\nCHAÎNE — mesurée, jamais déduite des noms de fichier")
-    ordre, ecarts, faute = chainer(plans)
-    if faute:
-        print(f"  ROMPUE : {faute}")
-        print("  Les plans n'ont pas été enchaînés sur la dernière image du")
-        print("  précédent. Les régénérer : un film dont les plans ne se")
-        print("  suivent pas montre six ateliers différents.")
-        sys.exit(1)
+    if ordre:
+        print("\nCHAÎNE — vérifiée plan par plan pendant la génération")
+        ecarts = {(a, b): _ecart(_image(a, -1), _image(b, 0))
+                  for a, b in zip(ordre, ordre[1:])}
+    else:
+        print("\nCHAÎNE — mesurée, jamais déduite des noms de fichier")
+        ordre, ecarts, faute = chainer(plans)
+        if faute:
+            print(f"  ROMPUE : {faute}")
+            print("  Les plans n'ont pas été enchaînés sur la dernière image du")
+            print("  précédent. Les régénérer : un film dont les plans ne se")
+            print("  suivent pas montre six ateliers différents.")
+            sys.exit(1)
     for a, b in zip(ordre, ordre[1:]):
         print(f"  {os.path.basename(a):32s} -> {os.path.basename(b):32s} "
               f"{ecarts[(a, b)]:5.1f}/255")
