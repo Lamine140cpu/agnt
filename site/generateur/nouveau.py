@@ -30,6 +30,8 @@ import sys
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(ICI)
+sys.path.insert(0, ICI)
+from manifeste import champs, ecrire  # noqa: E402
 GABARIT = os.path.join(SITE, "moteur", "gabarit.html")
 NOEUD = "/opt/node22/bin/node"
 
@@ -213,8 +215,7 @@ def creer(nom):
             ],
         },
     }
-    json.dump(m, open(contrat, "w", encoding="utf-8"),
-              ensure_ascii=False, indent=2)
+    ecrire(m, contrat)
 
     print(f"écrit  {os.path.relpath(page, SITE)}")
     print(f"écrit  {os.path.relpath(contrat, SITE)}\n")
@@ -259,9 +260,36 @@ def mesurer(nom, url):
         if e.get("serie_servie"):
             servies[taille] = e["serie_servie"]
     m["page"]["courses"] = courses
-    m["page"]["serie_attendue"] = dict(
-        {"_": "Une mauvaise série ne se voit pas à l'écran, elle se paye en "
-              "octets — ou en film qui saute."}, **servies)
+
+    # LA SÉRIE ATTENDUE NE SE RÉÉCRIT PAS. C'est un garde-fou, pas un relevé.
+    #
+    # Première version de ce fichier : `mesurer` l'écrasait à chaque passage
+    # avec ce qu'il venait d'observer. Le contrôleur comparait donc la réalité
+    # à elle-même — un contrôle qui ne peut pas échouer. Vérifié en sabotant
+    # volontairement le contrat : la chaîne passait au vert.
+    #
+    # On l'établit donc une fois, et ensuite on SIGNALE l'écart sans le
+    # gommer. Si le changement est voulu, on corrige le contrat à la main :
+    # c'est une décision, elle doit se prendre, pas se subir.
+    connu = champs(m["page"].get("serie_attendue") or {})
+    if not connu:
+        m["page"]["serie_attendue"] = dict(
+            {"_": "Une mauvaise série ne se voit pas à l'écran, elle se paye "
+                  "en octets — ou en film qui saute. Établi au premier "
+                  "passage ; ensuite ce fichier fait foi, pas la mesure."},
+            **servies)
+        print("série attendue établie :", ", ".join(
+            f"{t} -> {s}" for t, s in servies.items()), "\n")
+    else:
+        ecarts = [(t, connu[t], servies[t]) for t in servies
+                  if t in connu and connu[t] != servies[t]]
+        if ecarts:
+            print("\nLA SÉRIE SERVIE A CHANGÉ depuis l'établissement du contrat :")
+            for t, a, b in ecarts:
+                print(f"  {t:12s} contrat « {a} »  ->  servie « {b} »")
+            print("\nElle n'est PAS réécrite : si le changement est voulu, "
+                  "corriger le contrat\nà la main. Sinon, c'est une régression "
+                  "et le contrôleur va la refuser.\n")
 
     densite = m["film"]["densite_visee"]["valeur"]
     for nom_s, s in m["film"]["series"].items():
@@ -271,8 +299,7 @@ def mesurer(nom, url):
         if cle and cle in courses:
             s["images"]["valeur"] = round(courses[cle]["valeur"] / densite)
 
-    json.dump(m, open(contrat, "w", encoding="utf-8"),
-              ensure_ascii=False, indent=2)
+    ecrire(m, contrat)
 
     print(f"courses relevées dans {url}\n")
     for t, c in courses.items():

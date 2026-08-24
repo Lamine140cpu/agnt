@@ -58,6 +58,20 @@ def _valeur(bloc, chemin):
     return bloc["valeur"]
 
 
+def ecrire(m, chemin):
+    """Réécrit le contrat, toujours de la même façon.
+
+    Trois outils le réécrivent — la monteuse, l'échafaudage, la mesure. Chacun
+    avec ses propres réglages, c'est trois mises en forme différentes du même
+    fichier, et un diff illisible à chaque passage. Un seul endroit, donc, et
+    un saut de ligne final : sans lui, chaque écriture laisse un fichier que
+    git signale comme tronqué.
+    """
+    with open(chemin, "w", encoding="utf-8") as f:
+        json.dump(m, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+
+
 def charger(chemin):
     with open(chemin, encoding="utf-8") as f:
         m = json.load(f)
