@@ -6,7 +6,13 @@
  * page qui n'a pas été contrôlée, et personne ne saurait plus laquelle des
  * deux est la vraie.
  */
-export default function Projection({ url, etat }: { url: string | null; etat: string }) {
+export default function Projection(
+  { cle, publie, etat }: { cle: string | null; publie: boolean; etat: string },
+) {
+  // On passe par /s/<clé> et jamais par l'URL du stockage : Supabase sert
+  // le HTML en `text/plain` avec `nosniff`, et le navigateur afficherait le
+  // code source au lieu de la page. Mesuré.
+  const url = cle && publie ? `/s/${cle}` : null;
   return (
     <div className="projo">
       <div className="ecran">
