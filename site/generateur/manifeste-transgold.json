@@ -170,9 +170,9 @@
       },
       {
         "cle": "directeur_publication",
-        "valeur": null,
-        "source": null,
-        "_": "Obligation légale. Deux dirigeants au registre : ne pas choisir à leur place."
+        "valeur": "Samy",
+        "source": "le client, 24/08/2026",
+        "_": "INCOMPLET POUR UNE MENTION LÉGALE. Le client a donné « Samy ». Une mention de directeur de la publication doit IDENTIFIER la personne : il y faut le nom de famille. Un prénom seul est pire qu'un « à compléter » — la mention a l'air remplie et ne remplit pas son office. Demander le nom, puis reconstruire."
       },
       {
         "cle": "hebergeur",
@@ -225,7 +225,7 @@
         "cle": "donneurs_ordre_fret",
         "valeur": "JAS, Rahand, WFS, SFS",
         "source": "le client, texte envoyé le 24/08/2026",
-        "_": "NOMS DE TIERS. Le client les cite, donc la source existe — mais une source n'est pas une autorisation : ces sociétés n'ont pas donné leur accord pour figurer sur son site. À lui confirmer avant publication."
+        "_": "Le client confirme le 24/08/2026 que ces sociétés ont donné leur accord pour figurer sur le site. La question est close."
       },
       {
         "cle": "nature_capital",
