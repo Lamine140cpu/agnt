@@ -96,8 +96,15 @@ LETTRES_DUREE = (r"\b(?:un|une)\s+(?:demi-)?"
 # On cherche donc le nombre AVEC ce qu'il compte, et c'est cette expression
 # entière qu'on va chercher dans les faits : « 45 rue » y est, « 45 chauffeurs »
 # n'y est pas.
+# UNE ANNÉE N'EST PAS UN COMPTE. « © 2026 Atelier Martin » se lisait
+# « 2026 ateliers » — un millésime suivi du nom de la marque. Les années
+# sont donc exclues ici ; elles restent jugées par le motif « une année ».
+# Angle mort assumé : « 1998 clients » passerait si 1998 était déjà déclaré
+# comme date de création. Un faux positif sur chaque bas de page ferait
+# débrancher le garde-fou, ce qui coûterait bien plus cher.
 MOTIFS.append(("une quantité",
-               r"\b\d+\s+(?:de\s+|d['’])?(?:" + _DENOMBRABLES + r")\b"))
+               r"\b(?!(?:19|20)\d{2}\b)\d+\s+(?:de\s+|d['’])?(?:"
+               + _DENOMBRABLES + r")\b"))
 
 # Ce qui ressemble à un chiffre sans en être un. Sans cette liste, le
 # garde-fou refuserait les tournures ordinaires du français et personne ne
@@ -326,61 +333,38 @@ def poser(m, rep):
 
 
 def essai():
-    """Éprouve le garde-fou dans les deux sens, sans clé et sans réseau."""
-    m = {"site": "essai", "client": {"faits": [
-        {"cle": "raison_sociale", "valeur": "Atelier Martin", "source": "registre"},
-        {"cle": "telephone", "valeur": "03 20 45 67 89", "source": "client"},
-        {"cle": "creation", "valeur": "1998", "source": "registre"},
-        {"cle": "effectif", "valeur": None, "source": None},
-    ]}}
+    """Éprouve le garde-fou sur les vecteurs PARTAGÉS avec l'application.
+
+    Les cas ne sont pas écrits ici : ils vivent dans vecteurs-faits.json, et
+    console/lib/contrat.ts répond au même questionnaire. Deux codes qui jugent
+    la même chose divergent toujours — sauf s'ils passent le même examen. Une
+    divergence voudrait dire qu'on affiche dans le chat une phrase que le
+    moteur refusera ensuite, et l'utilisateur aurait raison de n'y plus rien
+    comprendre.
+    """
+    chemin = os.path.join(ICI, "vecteurs-faits.json")
+    if not os.path.exists(chemin):
+        sys.exit(f"{chemin} est introuvable — c'est le questionnaire commun")
+    v = json.load(open(chemin, encoding="utf-8"))
+    m = {"site": "essai", "client": {"faits": v["faits"]}}
     permis = faits_declares(m)
     ok = []
 
-    def cas(titre, texte, doit_mordre, attendu=None):
-        t = inventions(texte, permis)
-        bon = bool(t) == doit_mordre
-        if bon and attendu:
-            bon = any(attendu in b for _, b in t)
+    largeur = max(len(c["quoi"]) for c in v["cas"])
+    for c in v["cas"]:
+        t = inventions(c["texte"], permis)
+        bon = bool(t) == c["mord"]
+        if bon and c.get("extrait"):
+            bon = any(c["extrait"] in b for _, b in t)
         ok.append(bon)
-        detail = ", ".join(f"{q}:« {b} »" for q, b in t) or "rien"
-        print(f"  {'ok  ' if bon else 'NON '} {titre}")
+        verbe = "refuse " if c["mord"] else "laisse "
+        print(f"  {'ok  ' if bon else 'NON '} {verbe} {c['quoi']:<{largeur}}")
         if not bon:
+            detail = ", ".join(f"{q} : « {b} »" for q, b in t) or "rien"
+            print(f"       « {c['texte'][:70]} »")
             print(f"       trouvé : {detail}")
 
-    print("CE QUI DOIT ÊTRE REFUSÉ")
-    cas("une ancienneté inventée", "Vingt ans de savoir-faire.", True, "Vingt ans")
-    cas("une flotte inventée", "Une trentaine de véhicules à votre service.",
-        True, "trentaine de véhicules")
-    cas("une certification inventée", "Atelier certifié ISO 9001.", True, "ISO")
-    cas("un téléphone inventé", "Appelez le 01 42 86 33 10.", True)
-    cas("un courriel inventé", "Écrivez à contact@atelier-martin.fr", True)
-    cas("une date inventée", "Fondé en 1972 par le grand-père.", True, "1972")
-    cas("un chiffre inventé", "Plus de 500 chantiers livrés.", True, "500")
-    cas("un SIREN inventé", "SIREN 812 456 933", True)
-    cas("trois générations inventées", "Trois générations de menuisiers.",
-        True, "Trois générations")
-    cas("une ancienneté au singulier", "Un an de garantie sur chaque pose.",
-        True, "Un an")
-    # Le 45 du téléphone déclaré ne doit pas servir de laissez-passer à un
-    # effectif inventé : c'est l'unité qui tranche, pas le nombre.
-    cas("un effectif chiffré qui emprunte un nombre déclaré",
-        "Nos 45 compagnons travaillent le chêne.", True, "45 compagnons")
-
-    print("\nCE QUI DOIT PASSER")
-    cas("le métier, sans chiffre",
-        "Le chêne se travaille lentement. On écoute la matière avant de la "
-        "couper, et la main sait avant l'œil.", False)
-    cas("un fait DÉCLARÉ, écrit tel quel",
-        "Atelier Martin travaille le bois massif.", False)
-    cas("le téléphone déclaré, autrement ponctué",
-        "Au bout du fil : 03.20.45.67.89", False)
-    cas("l'année déclarée", "Depuis 1998, le même établi.", False)
-    cas("les tournures ordinaires du français",
-        "Une porte, deux montants, et de la patience. "
-        "Des heures à ajuster ce que personne ne verra.", False)
-    cas("un article devant un lieu", "Un atelier, une odeur de copeaux.", False)
-
-    print("\nLA VÉRIFICATION COMPLÈTE")
+    print("\n  LA VÉRIFICATION COMPLÈTE")
     bon = {"actes": [{c: "Le bois" if c != "corps" else
                       "On écoute la matière avant de la couper."
                       for c in CHAMPS} for _ in range(6)],
@@ -392,7 +376,8 @@ def essai():
         ok.append(False); print(f"  NON  une réponse honnête est refusée : {e}")
 
     for titre, casse in (
-        ("cinq actes au lieu de six", {"actes": bon["actes"][:5], "sujets": bon["sujets"]}),
+        ("cinq actes au lieu de six",
+         {"actes": bon["actes"][:5], "sujets": bon["sujets"]}),
         ("un acte au champ vide",
          {"actes": [dict(bon["actes"][0], offre="  ")] + bon["actes"][1:],
           "sujets": bon["sujets"]}),
