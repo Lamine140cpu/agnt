@@ -11,14 +11,14 @@
         },
         "largeur": {
           "valeur": 1920,
-          "origine": "choix"
+          "origine": "mesure"
         },
         "hauteur": {
           "valeur": 1080,
           "origine": "mesure"
         },
         "images": {
-          "valeur": 791,
+          "valeur": 1200,
           "origine": "mesure"
         },
         "rapport": {
@@ -42,7 +42,7 @@
           "origine": "mesure"
         },
         "images": {
-          "valeur": 527,
+          "valeur": 803,
           "origine": "mesure"
         },
         "rapport": {
@@ -61,25 +61,43 @@
       "_": "Pixels de défilement par image. À 1000 px/s de molette, 33 donne 30 changements d'image par seconde. Au-delà de 45 ça saute visiblement.",
       "valeur": 33,
       "origine": "choix"
+    },
+    "_produit": {
+      "plans": [
+        "p1.mp4",
+        "p2.mp4",
+        "p3.mp4",
+        "p4.mp4",
+        "p5.mp4",
+        "p6.mp4",
+        "p7.mp4"
+      ],
+      "images_sources": 1312,
+      "definition": "1920x1080",
+      "_": "Écrit par la monteuse d'après le disque, pas d'après ce qu'elle comptait produire."
     }
   },
   "page": {
     "courses": {
-      "_": "prologue.offsetHeight - innerHeight, relevé dans la page servie. Ces valeurs ont déjà été périmées une fois par le passage des actes de 130 à 170 svh, sans que rien ne le signale.",
+      "_": "prologue.offsetHeight - innerHeight, relevé dans la page servie. Elles changent dès qu'on touche à la hauteur des actes : les remesurer alors, sans quoi la densité ment.",
       "1440x900": {
-        "valeur": 26100,
+        "valeur": 39600,
         "origine": "mesure"
       },
       "1280x800": {
-        "valeur": 23200,
+        "valeur": 35200,
+        "origine": "mesure"
+      },
+      "900x800": {
+        "valeur": 35200,
         "origine": "mesure"
       },
       "390x844": {
-        "valeur": 17386,
+        "valeur": 26502,
         "origine": "mesure"
       },
       "360x740": {
-        "valeur": 15244,
+        "valeur": 23236,
         "origine": "mesure"
       }
     },
