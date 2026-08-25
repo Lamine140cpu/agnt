@@ -52,6 +52,7 @@ class Base:
     def finir(self, tache_id, etat, motif=None, journal=None): raise NotImplementedError
     def projet(self, projet_id): raise NotImplementedError
     def dire(self, projet_id, texte, meta=None): raise NotImplementedError
+    def publier(self, projet_id, version): raise NotImplementedError
 
 
 class Postgrest(Base):
@@ -98,6 +99,12 @@ class Postgrest(Base):
             "projet": projet_id, "role": "journal", "texte": texte,
             "meta": meta or {}})
 
+    def publier(self, projet_id, version):
+        # La VERSION est ce qui compte : chaque publication va dans un chemin
+        # neuf, et c'est cette ligne qui dit lequel est servi.
+        self._appel(f"/rest/v1/projets?id=eq.{projet_id}", "PATCH", {
+            "version": version, "etat": "publie", "publie_le": "now()"})
+
 
 class FausseBase(Base):
     """Une base en mémoire. Éprouve tout ce qui n'est pas le réseau."""
@@ -120,6 +127,10 @@ class FausseBase(Base):
 
     def dire(self, projet_id, texte, meta=None):
         self.dits.append(texte)
+
+    def publier(self, projet_id, version):
+        self.publiees = getattr(self, "publiees", [])
+        self.publiees.append((projet_id, version))
 
 
 # ------------------------------------------------------------- le travail
@@ -186,9 +197,12 @@ def faire(tache, base, py=sys.executable):
             _lancer(cmd, journal, minutes=45)
 
         elif quoi == "publier":
-            return "erreur", ("la publication n'est pas câblée : elle dépend de "
-                              "l'hébergement, et c'est la seule opération de la "
-                              "chaîne qu'on ne peut pas défaire"), journal
+            # LA SEULE OPÉRATION QU'ON NE PEUT PAS DÉFAIRE. publier.py refuse
+            # sans le verdict du contrôleur ; on ne le contourne pas d'ici.
+            import publier as P
+            version = P.publier(cle, journal=journal.append)
+            base.publier(tache["projet"], version)
+            journal.append(f"publié sous la version {version}")
         else:
             return "erreur", f"tâche inconnue : {quoi}", journal
 
@@ -241,11 +255,18 @@ def _essai():
 
     projets = {"p1": {"id": "p1", "cle": "menuiserie", "etat": "construire"}}
 
-    # 1. Une tâche inconnue est une erreur, pas un refus.
+    # 1. PUBLIER SANS VERDICT DU CONTRÔLEUR EST REFUSÉ.
+    #    C'est la seule opération qu'on ne peut pas défaire : mettre en ligne
+    #    une page que personne n'a contrôlée est exactement ce qu'on empêche.
     b = FausseBase([{"id": 1, "projet": "p1", "quoi": "publier", "charge": {}}], projets)
     tour(b)
-    verifier("publier n'est pas câblé, et le dit", b.finies[0]["etat"] == "erreur",
-             str(b.finies[0]))
+    verifier("publier sans verdict ne passe pas", b.finies[0]["etat"] == "erreur",
+             str(b.finies[0]["etat"]))
+    verifier("et le motif dit pourquoi",
+             "verdict" in (b.finies[0]["motif"] or "").lower(),
+             (b.finies[0]["motif"] or "")[:70])
+    verifier("rien n'a été enregistré comme publié",
+             not getattr(b, "publiees", []))
 
     # 2. Un projet absent est une erreur.
     b = FausseBase([{"id": 2, "projet": "inconnu", "quoi": "construire", "charge": {}}], {})
