@@ -354,6 +354,17 @@ def main():
         # l'autre.
         cible = os.path.join(OUT, "assets", "film", reg["sortie"])
         if PAGE_SEULE or (SEULE and nom != SEULE):
+            # Une série jamais encodée n'est pas une trace de pile. Le mode
+            # `page` suppose la pellicule déjà là ; quand elle ne l'est pas,
+            # il faut le dire, pas planter sur un dossier introuvable.
+            if not os.path.isdir(cible):
+                sys.exit(
+                    f"la série « {nom} » n'a jamais été encodée : "
+                    f"{os.path.relpath(cible, SITE)} n'existe pas.\n"
+                    f"Le mode `page` saute l'encodage, il ne le remplace pas.\n"
+                    f"  - soit reconstruire sans `page` ;\n"
+                    f"  - soit produire la pellicule : "
+                    f"python3 generateur/monteuse.py <nom> plans=<dossier>")
             comptes[nom] = len(os.listdir(cible))
             print(f"  {nom:15s} {comptes[nom]:4d} images déjà encodées")
             continue
