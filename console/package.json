@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "verif": "tsc --noEmit && node --test --experimental-strip-types epreuves/*.test.ts"
+    "verif": "tsc --noEmit && node --test --use-env-proxy --experimental-strip-types epreuves/*.test.ts"
   },
   "dependencies": {
     "next": "16.3.2",
