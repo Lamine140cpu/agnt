@@ -166,7 +166,8 @@
       {
         "cle": "logo",
         "valeur": "assets/transgold-logo.png",
-        "source": "fichier fourni par le client"
+        "source": "fichier fourni par le client",
+        "_": "263x192 px, fond transparent. Suffisant pour l'en-tête du site, qui l'affiche à 120 px. INSUFFISANT pour une incrustation dans le film, où le logo occupe environ 1 200 px : il faudrait un SVG, ou un PNG d'au moins 2 000 px de large."
       },
       {
         "cle": "directeur_publication",
@@ -238,6 +239,34 @@
         "cle": "nature_capital",
         "valeur": "entreprise familiale",
         "source": "le client, texte envoyé le 24/08/2026"
+      },
+      {
+        "cle": "prestations",
+        "valeur": "transport dédié, tournées régulières, livraison sur rendez-vous, transport express, livraison avec manutention",
+        "source": "le client, texte des neuf actes, 25/08/2026"
+      },
+      {
+        "cle": "manutention_installation",
+        "valeur": "manutention, montage et installation d'équipements professionnels, de leur départ jusqu'à leur installation sur site",
+        "source": "le client, texte des neuf actes, 25/08/2026",
+        "_": "Prestation nouvelle : elle n'existait dans aucun texte antérieur. Elle change ce que le site promet, pas seulement sa formulation."
+      },
+      {
+        "cle": "secteur_sport",
+        "valeur": "matériel sportif et fitness : livraison chez les particuliers, livraison en entreprise, installation d'équipements, interventions en salles de sport",
+        "source": "le client, texte des neuf actes, 25/08/2026",
+        "_": "Le seul secteur nommément cité par le client. À vérifier avant mise en ligne : est-ce une activité établie ou une ambition ? Le texte l'affirme au présent."
+      },
+      {
+        "cle": "zone_intervention",
+        "valeur": "ensemble du territoire français et opérations en Europe",
+        "source": "le client, texte des neuf actes, 25/08/2026"
+      },
+      {
+        "cle": "fret_aerien_statut",
+        "valeur": "activité que l'entreprise souhaite développer fortement",
+        "source": "le client, texte des neuf actes, 25/08/2026",
+        "_": "Formulation du client lui-même, et elle est prudente : il dit vouloir développer, pas être établi. Le film met le fret aérien sur trois plans sur sept — l'image promet donc davantage que le texte. À confirmer avec lui."
       }
     ]
   }
