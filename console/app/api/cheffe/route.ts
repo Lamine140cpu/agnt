@@ -118,11 +118,15 @@ export async function POST(req: NextRequest) {
                 ? "Je retire ce message : il avance un fait que je ne peux pas justifier."
                 : `Je retire ce message : il avance ${trouves.length} faits que je ne peux pas justifier.`,
           });
+          // Le TEXTE retiré est gardé dans `meta`, pas seulement son résumé.
+          // Sans lui, rouvrir le projet demain montrerait une ligne de
+          // journal sèche au lieu de la phrase barrée — et on perdrait
+          // justement ce qui rend le garde-fou visible.
           await sb.from("messages").insert({
             projet, role: "journal",
             texte: `garde-fou : message retiré — ${trouves
               .map((t) => `${t.quoi} « ${t.extrait} »`).join(", ")}`,
-            meta: { trouves },
+            meta: { trouves, retire: accumule },
           });
         } else if (accumule.trim()) {
           await sb.from("messages").insert({

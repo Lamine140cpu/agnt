@@ -5,6 +5,7 @@ import Chat, { type Tour } from "@/composants/Chat";
 import Rail from "@/composants/Rail";
 import Projection from "@/composants/Projection";
 import Etapes from "@/composants/Etapes";
+import Nouveau from "@/composants/Nouveau";
 import type { Fait } from "@/lib/contrat";
 
 export default async function Console({ params }: { params: Promise<{ projet: string }> }) {
@@ -22,11 +23,11 @@ export default async function Console({ params }: { params: Promise<{ projet: st
   // aucun projet n'existe encore.
   if (projet === "neuf") {
     return <Atelier plan={compte?.plan ?? "essai"} tous={tous ?? []} courant={null}
-                    etat="parler" faits={[]} tours={[]} url={null} />;
+                    etat="parler" faits={[]} tours={[]} cle={null} publie={false} />;
   }
 
   const { data: p } = await sb.from("projets")
-    .select("id, nom, etat, url").eq("id", projet).single();
+    .select("id, nom, cle, etat, version").eq("id", projet).single();
   if (!p) notFound();
 
   const [{ data: faits }, { data: msgs }] = await Promise.all([
@@ -34,16 +35,26 @@ export default async function Console({ params }: { params: Promise<{ projet: st
     sb.from("messages").select("id, role, texte, meta").eq("projet", projet).order("id"),
   ]);
 
-  const tours: Tour[] = (msgs ?? []).map((m) => ({
-    id: String(m.id),
-    role: m.role as Tour["role"],
-    texte: m.texte,
-    trouves: (m.meta as { trouves?: Tour["trouves"] })?.trouves,
-  }));
+  // « retrait » n'est pas un rôle de la base : la contrainte n'en connaît
+  // que trois. Une rétractation y est un message de journal qui porte, dans
+  // sa `meta`, ce qui a été retiré et pourquoi. On la reconstitue ici —
+  // sinon, rouvrir le projet montrerait une ligne sèche à la place de la
+  // phrase barrée, et le moment le plus utile du produit disparaîtrait au
+  // premier rechargement.
+  const tours: Tour[] = (msgs ?? []).map((m) => {
+    const meta = (m.meta ?? {}) as { trouves?: Tour["trouves"]; retire?: string };
+    const retrait = m.role === "journal" && meta.trouves?.length;
+    return {
+      id: String(m.id),
+      role: (retrait ? "retrait" : m.role) as Tour["role"],
+      texte: retrait ? (meta.retire ?? m.texte) : m.texte,
+      trouves: meta.trouves,
+    };
+  });
 
   return <Atelier plan={compte?.plan ?? "essai"} tous={tous ?? []} courant={p.id}
                   etat={p.etat} faits={(faits ?? []) as Fait[]} tours={tours}
-                  url={p.url} />;
+                  cle={p.cle} publie={Boolean(p.version)} />;
 }
 
 function Atelier(props: {
@@ -53,7 +64,8 @@ function Atelier(props: {
   etat: string;
   faits: Fait[];
   tours: Tour[];
-  url: string | null;
+  cle: string | null;
+  publie: boolean;
 }) {
   return (
     <div className="atelier">
@@ -79,23 +91,13 @@ function Atelier(props: {
       {props.courant ? (
         <Chat projet={props.courant} debut={props.tours} />
       ) : (
-        <section className="chat">
-          <div className="fil"><div className="fil-dedans">
-            <div className="tour">
-              <div className="nom"><i /> cheffe</div>
-              <div className="corps">
-                <p>Créez un projet pour commencer. Je vous demanderai le métier,
-                  puis le SIREN — j'interroge le registre plutôt que votre mémoire.</p>
-              </div>
-            </div>
-          </div></div>
-        </section>
+        <Nouveau />
       )}
 
       <main className="scene">
         <Etapes etat={props.etat} />
         <div className="aire">
-          <Projection url={props.url} etat={props.etat} />
+          <Projection cle={props.cle} publie={props.publie} etat={props.etat} />
           <Rail faits={props.faits} />
         </div>
       </main>
