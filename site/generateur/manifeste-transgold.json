@@ -225,7 +225,14 @@
         "cle": "donneurs_ordre_fret",
         "valeur": "JAS, Rahand, WFS, SFS",
         "source": "le client, texte envoyé le 24/08/2026",
-        "_": "Le client confirme le 24/08/2026 que ces sociétés ont donné leur accord pour figurer sur le site. La question est close."
+        "_": "Le client confirme le 24/08/2026 que ces sociétés ont donné leur accord pour FIGURER SUR LE SITE, c'est-à-dire être citées dans le texte. C'est l'étendue de ce qui est acquis, et c'est ce que l'acte 3 en fait."
+      },
+      {
+        "cle": "livree_jas_dans_le_film",
+        "valeur": "le plan 2 montre un avion-cargo portant le sigle JAS",
+        "source": "décision de l'atelier, 25/08/2026",
+        "origine": "choix",
+        "_": "CHOIX ASSUMÉ, PAS UN FAIT SOURCÉ, et la distinction compte pour qui relira ce fichier. L'accord obtenu porte sur la citation dans le texte ; il ne porte pas sur l'apposition de la marque de JAS sur un appareil généré. La question a été posée deux fois et l'atelier a tranché de le faire quand même. Deux conséquences à connaître : le sigle est FABRIQUÉ par le modèle vidéo, qui ne connaît pas cette marque — ce n'est donc pas le logo de JAS mais une ressemblance ; et JAS est commissionnaire de transport, l'image lui prête une flotte aérienne qu'elle n'exploite pas. Pour rendre la chose sourcée il suffirait d'un accord écrit de JAS pour cet usage précis : l'ajouter ici avec sa date et repasser origine à « registre »."
       },
       {
         "cle": "nature_capital",
