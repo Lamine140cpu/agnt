@@ -455,8 +455,27 @@ def main():
         print(f"  {os.path.basename(a):32s} -> {os.path.basename(b):32s} "
               f"{ecarts[(a, b)]:5.1f}/255")
 
-    print(f"\nDÉCOUPE — {total} images en {film}")
-    print(decouper(ordre, film, total).splitlines()[-3] if total else "")
+    # TOUTES LES SÉRIES DÉCLARÉES, PAS SEULEMENT LA MAÎTRESSE.
+    #
+    # Longtemps ce fichier ne découpait que `film`, et la série étroite était
+    # produite à la main. Le trou ne se voyait pas : le dossier existait déjà,
+    # rempli lors d'un passage antérieur. Trouvé en faisant tourner l'ouvrier
+    # sur un dossier neuf — la construction s'arrêtait sur un dossier
+    # introuvable, sans que rien n'ait jamais signalé qu'il manquait.
+    #
+    # Chaque série a sa largeur : la page sert la plus légère qui couvre
+    # l'écran sans agrandissement. On découpe le même montage à chacune de
+    # ces largeurs, avec toutes les images sources ; c'est la construction
+    # qui sous-échantillonne ensuite au compte que la mesure a donné.
+    print(f"\nDÉCOUPE — {total} images sources")
+    for nom_s, s in m["film"]["series"].items():
+        dossier = s["dossier"]["valeur"]
+        largeur = int(s.get("largeur", {}).get("valeur", 1920))
+        print(f"  {nom_s:16s} {largeur:5d} px  -> assets/film/{dossier}/")
+        sortie = decouper(ordre, dossier, total, largeur)
+        derniere = [l for l in sortie.splitlines() if l.strip()]
+        if derniere:
+            print(f"    {derniere[-1].strip()}")
 
     # Ce qui a RÉELLEMENT été produit, relu sur le disque.
     livrees = sorted(glob.glob(os.path.join(SITE, "assets", "film", film, "*.jpg")))
