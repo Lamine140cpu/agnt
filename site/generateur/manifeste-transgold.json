@@ -171,9 +171,11 @@
       },
       {
         "cle": "directeur_publication",
-        "valeur": "Samy",
-        "source": "le client, 24/08/2026",
-        "_": "INCOMPLET POUR UNE MENTION LÉGALE. Le client a donné « Samy ». Une mention de directeur de la publication doit IDENTIFIER la personne : il y faut le nom de famille. Un prénom seul est pire qu'un « à compléter » — la mention a l'air remplie et ne remplit pas son office. Demander le nom, puis reconstruire."
+        "valeur": "Sami Bakas",
+        "source": "recherche-entreprises.api.gouv.fr, relevé le 25/08/2026",
+        "origine": "registre",
+        "releve_le": "2026-08-25",
+        "_": "Le registre le donne comme PRÉSIDENT DE SAS, ce qui en fait le représentant légal — donc le directeur de la publication par défaut au sens de la LCEN. ORTHOGRAPHE : le registre écrit « SAMI », le client avait écrit « Samy ». C'est la graphie du registre qui identifie la personne, c'est donc elle qui va dans la mention légale. La société a un second dirigeant, Said Bakas, directeur général ; il n'est pas le représentant légal et n'a pas à figurer."
       },
       {
         "cle": "hebergeur",
@@ -199,8 +201,9 @@
       },
       {
         "cle": "courriel",
-        "valeur": null,
-        "source": null
+        "valeur": "contact@transgold.fr",
+        "source": "le client, 25/08/2026",
+        "_": "À NE PAS METTRE EN LIGNE EN L'ÉTAT. Vérifié le 25/08/2026 : le domaine transgold.fr NE RÉSOUT PAS. Contrôle fait avec la résolution DNS de la machine, qui répondait au même moment pour github.com, google.com et transgold.com — ce n'est donc pas le réseau. Sans DNS il n'y a pas de MX, et sans MX aucun message n'arrive : chaque visiteur qui écrirait recevrait un rebond. L'acte IX dit « envoyez-nous un email ». Faire enregistrer le domaine et pointer la messagerie AVANT publication, puis revérifier."
       },
       {
         "cle": "horaires",
