@@ -120,11 +120,27 @@ def main():
         print("\033[1mARRÊT\033[0m — le contrôleur refuse. Rien n'est publié.")
         sys.exit(1)
 
+    # LE VERDICT, ÉCRIT À CÔTÉ DE LA PAGE. C'est lui que le publieur exige :
+    # sans preuve que le contrôleur a dit oui, rien ne part en ligne. Le
+    # laisser en mémoire ne servirait à rien — l'ouvrier qui publie tourne
+    # dans un autre processus, parfois une heure plus tard.
+    import json as _json, datetime as _dt
+    with open(os.path.join(out, ".verdict.json"), "w", encoding="utf-8") as f:
+        _json.dump({"conforme": True,
+                    "le": _dt.datetime.now().isoformat(timespec="seconds"),
+                    "_": "Écrit par chaine.py APRÈS que le contrôleur a dit oui. "
+                         "publier.py refuse de mettre en ligne sans ce fichier."},
+                   f, ensure_ascii=False, indent=2)
+
     if publier:
         Etape(5, total, "PUBLIER")
-        print("    la publication n'est pas câblée ici : elle dépend de "
-              "l'hébergement,\n    et pousser en ligne est la seule opération "
-              "de cette chaîne\n    qu'on ne peut pas défaire.")
+        # Ce message disait « la publication n'est pas câblée » longtemps
+        # après qu'elle l'ait été. Un message rassurant et faux est ce que ce
+        # dépôt traque partout ailleurs ; il n'avait rien à faire ici.
+        sys.path.insert(0, ICI)
+        import publier as P
+        version = P.publier(nom, journal=lambda l: print("    " + l))
+        print(f"    version {version} — la page se sert par /s/{nom}")
 
     print(f"\n\033[1mdist/{nom}/ est prêt.\033[0m")
 
