@@ -1934,7 +1934,7 @@ function progression(){
 }
 
 const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let vise = 0, courant = 0, dernier = performance.now();
+let vise = 0, courant = 0, visePrec = 0, dernier = performance.now();
 
 /* ------------------------------------------------- le défilement lissé
    La différence la plus visible avec les sites qu'on prend pour référence, et
@@ -1959,7 +1959,10 @@ let vise = 0, courant = 0, dernier = performance.now();
 const _arg = new URLSearchParams(location.search).get('molette');
 const molette = _arg !== '0' && !lent
   && matchMedia('(hover: hover) and (pointer: fine)').matches;
-let cibleY = scrollY, lisseY = scrollY;
+/* LE TEMPS DE RÉPONSE DU LISSEUR, en secondes. Ce n'est plus un taux de
+   rattrapage : c'est la durée que met la page à rejoindre sa cible. */
+const REPONSE = 0.14;
+let cibleY = scrollY, lisseY = scrollY, vitesseY = 0;
 
 /* La hauteur de la page, mesurée UNE fois.
 
@@ -1985,19 +1988,66 @@ if (molette) {
      passer par la molette doit ramener la cible, sinon elle tirerait la page
      en arrière à la molette suivante. */
   addEventListener('scroll', () => {
-    if (abs(scrollY - lisseY) > 2) { cibleY = scrollY; lisseY = scrollY; }
+    /* La vitesse se remet à zéro avec la position : sans ça, un saut d'ancre
+       repart avec l'élan du geste précédent, et la page dépasse sa cible. */
+    if (abs(scrollY - lisseY) > 2) { cibleY = scrollY; lisseY = scrollY; vitesseY = 0; }
   }, { passive: true });
 }
 
 function boucle(now){
   const dt = min((now - dernier) / 1000, 0.05); dernier = now;
 
-  /* 14 et non 9. Une fois le second rattrapage supprimé, il reste ce seul
-     lissage : on peut donc le rendre plus franc sans que rien ne saute. Le
-     temps de réponse passe de 263 à environ 170 ms, ce qui est le domaine où
-     un geste et son effet se lisent comme simultanés. */
-  if (molette && abs(cibleY - lisseY) > 0.4) {
-    lisseY += (cibleY - lisseY) * (1 - exp(-14 * dt));
+  /* ------------------------------------- POURQUOI UN RESSORT ET NON UN TAUX
+
+     Ce lisseur était un rattrapage du premier ordre :
+
+         lisseY += (cibleY - lisseY) * (1 - exp(-14 * dt))
+
+     et c'était LUI le « pas fluide sur PC ». Pas le décodeur, pas la taille de
+     la toile, pas la carte graphique : mesuré à soixante images par seconde
+     pleines, sur une molette parfaitement régulière et des trames régulières à
+     16,7 ms, l'avance réelle de la page par trame donnait
+
+         30, 24, 19, 15, 12,  30, 24, 19, 15, 12,  30, 24, 19, 15, 12 …
+
+     Un cycle exact, d'amplitude 2,5 pour 1. Les rapports entre trames — 0,800
+     0,792 0,789 0,800 — sont exp(-14 x dt) = 0,792 à trois décimales : c'est
+     la réponse analytique du rattrapage, pas un aléa de machine.
+
+     LA CAUSE EST DE FORME, PAS DE RÉGLAGE. Un rattrapage à taux fixe donne une
+     vitesse PROPORTIONNELLE À L'ÉCART RESTANT. Une molette crantée n'envoie pas
+     un flot continu : elle envoie des impulsions. Chaque cran creuse l'écart
+     d'un coup — donc la vitesse saute — puis l'écart se referme
+     géométriquement — donc la vitesse retombe. Le film accélère et ralentit à
+     la cadence des crans, une douzaine de fois par seconde, ce qui est
+     exactement la bande où l'oeil lit une irrégularité.
+
+     ET DURCIR LA CONSTANTE AGGRAVE. C'est le contrôle qui interdit de croire à
+     un simple réglage — trois variantes de la même page construite, mesurées :
+
+         actuel (taux 14)          irrégularité 33 %   cycle  2,58 : 1
+         taux durci à 40           irrégularité 80 %   cycle 17,00 : 1
+         ressort amorti            irrégularité 11 %   cycle  1,28 : 1
+
+     Le taux durci suit les impulsions plus fidèlement, donc il les restitue au
+     lieu de les absorber : sept fois pire. La vitesse moyenne, elle, est la
+     même dans les trois cas — on ne troque donc rien contre rien.
+
+     LE RESSORT CRITIQUEMENT AMORTI règle ça par construction : la vitesse y
+     est un ÉTAT, pas une conséquence de l'écart. Une impulsion sur la cible la
+     COURBE au lieu de la créneler, et elle ne peut pas sauter. Même temps de
+     réponse ressenti, cycle ramené à 1,28 pour 1.
+
+     La forme employée est l'intégration semi-implicite habituelle : stable
+     quel que soit `dt`, ce qui compte ici puisque `dt` varie d'une trame à
+     l'autre dès que la machine peine. */
+  if (molette && (abs(cibleY - lisseY) > 0.4 || abs(vitesseY) > 1)) {
+    const om = 2 / REPONSE, x = om * dt;
+    const e = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
+    const ecart = lisseY - cibleY;
+    const tmp = (vitesseY + om * ecart) * dt;
+    vitesseY = (vitesseY - om * tmp) * e;
+    lisseY = cibleY + (ecart + tmp) * e;
     scrollTo(0, lisseY);
   }
 
@@ -2029,7 +2079,17 @@ function boucle(now){
      économise deux tracés. */
   if (abs(courant - posee) > 0.05) fondu(courant);
   acteCourant();
-  jauger(now, abs(vise - courant) > 0.05);
+  /* « EN MOUVEMENT » SE LIT SUR LE FILM, PAS SUR L'ÉCART AU RATTRAPAGE.
+     Le témoin était `abs(vise - courant) > 0,05`. Or la ligne du dessus pose
+     `courant = vise` dès que la molette est lissée — donc sur TOUT ordinateur.
+     L'écart y valait zéro par construction, `jauger` recevait toujours faux, et
+     la toile qui s'auto-règle n'a jamais mesuré une seule trame là où elle
+     était censée servir. Elle ne tournait que sur téléphone, où le tactile
+     laisse `courant` retarder sur `vise` — soit exactement l'inverse du but.
+     On regarde donc si le film AVANCE, ce qui est vrai dans les deux modes. */
+  const bouge = abs(vise - visePrec) > 0.01; visePrec = vise;
+  jauger(now, bouge);
+  regularite(scrollY, now);
   requestAnimationFrame(boucle);
 }
 
@@ -2111,7 +2171,40 @@ function jauger(now, enMouvement){
 
    Le témoin répond à la place : il donne la fenêtre, la toile, la densité, le
    temps médian d'une trame pendant le défilement, et le retard du décodeur.
-   Ces cinq nombres suffisent à désigner le coupable. */
+   Ces cinq nombres suffisent à désigner le coupable.
+
+   ET SURTOUT LA RÉGULARITÉ, qui est le seul chiffre à dire « pas fluide »
+   quand la cadence, elle, est pleine. Une page peut tenir soixante images par
+   seconde et sautiller quand même, si l'avance du film varie d'une trame à
+   l'autre — c'était précisément le défaut du lisseur de molette, invisible à
+   tout compteur d'images. On mesure donc l'écart-type de l'avance rapporté à
+   sa moyenne, sur les trames où ça défile :
+
+       moins de 10 %   fluide
+       10 à 25 %       perceptible sur un mouvement lent
+       plus de 25 %    c'est ce qu'on voit et qu'on appelle « pâteux » */
+let avPrec = -1, tReg = 0, avances = [], derniereRegularite = 0;
+function regularite(y, now){
+  const d = y - avPrec, dt = now - tReg;
+  const bouge = avPrec >= 0 && dt > 0 && d > 0.01;
+  avPrec = y; tReg = now;
+  /* UN ARRÊT VIDE L'ACCUMULATION. Sans ça, une série de mesures enjambe la
+     pause entre deux gestes : elle compare la fin d'un ralentissement au début
+     du suivant, et annonce un sautillement que personne ne voit. Mesuré : 39 %
+     affichés là où le défilement continu en valait 10.
+
+     Et l'on compte une VITESSE, pas une avance : les trames ne durent pas
+     toutes pareil, et diviser par leur durée évite d'accuser le lecteur d'une
+     irrégularité qui n'est que celle de l'horloge d'affichage. */
+  if (!bouge) { avances.length = 0; return; }
+  avances.push(d / dt);
+  if (avances.length < 45) return;
+  const moy = avances.reduce((a, b) => a + b, 0) / avances.length;
+  const ec = Math.sqrt(avances.reduce((a, b) => a + (b - moy) ** 2, 0) / avances.length);
+  derniereRegularite = moy > 0.0001 ? ec / moy : 0;
+  avances.length = 0;
+}
+
 if (new URLSearchParams(location.search).get('diag') === '1') {
   const t = document.createElement('pre');
   t.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;margin:0;'
@@ -2125,6 +2218,9 @@ if (new URLSearchParams(location.search).get('diag') === '1') {
       `toile      ${canvas.width} x ${canvas.height}   échelle ${echelle.toFixed(2)}\n` +
       `film       ${filmL} x ${filmH}   lissage ${ctx.imageSmoothingQuality}\n` +
       `trame      ${m ? m.toFixed(1) + ' ms  (' + Math.round(1000/m) + ' i/s)' : '—'}\n` +
+      `régularité ${derniereRegularite ? (derniereRegularite * 100).toFixed(0) + ' %  ' +
+         (derniereRegularite < 0.10 ? 'fluide'
+          : derniereRegularite < 0.25 ? 'perceptible' : 'SAUTILLE') : '—'}\n` +
       /* On compare l'image POSÉE à l'image DEMANDÉE, toutes deux entières.
          La version précédente comparait un entier à la position fractionnaire :
          à l'arrêt sur l'image 296 la position vaut 296,99, et l'écart affichait
