@@ -600,8 +600,8 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
    Comptes et dimensions sont ceux du mode replié ; la construction les mesure
    sur les images livrées et les remplace. */
 window.SERIES = {
-  accueil:          { chemin: 'assets/film/menuiserie/f',        images: 791, largeur: 1920, hauteur: 1080 },
-  'accueil-etroit': { chemin: 'assets/film/menuiserie-etroit/f',  images: 527, largeur: 1440, hauteur: 810 },
+  accueil:          { chemin: 'assets/film/menuiserie/f',        images: 791, largeur: 1920, hauteur: 1080, octets: 40844 },
+  'accueil-etroit': { chemin: 'assets/film/menuiserie-etroit/f',  images: 527, largeur: 1440, hauteur: 810, octets: 28789 },
 };
 </script>
 <script>
@@ -871,7 +871,105 @@ if (_decrites.length) {
   NOM = (etroit && (!SOURCES || SOURCES['accueil-etroit']))
     ? 'accueil-etroit' : 'accueil';
 }
-const SEQ = SEQUENCES[NOM];
+/* ============================================================================
+   LE DÉBIT EST UN CRITÈRE, AU MÊME TITRE QUE LA DÉFINITION.
+
+   Tout ce qui précède choisit la série la plus fine que la toile puisse
+   afficher sans agrandissement. C'était juste tant qu'on supposait les images
+   arrivées. Un visiteur mesuré a montré que non :
+
+       fenêtre 1280 x 551, densité 1,5  ->  1920 px demandés
+       série servie : 1200 images à 42,8 Ko  ->  15 Mbit/s à 1000 px/s
+       ligne réelle : 10 Mbit/s
+       résultat     : 79 % des trames n'avaient AUCUNE image à montrer
+
+   Soixante images par seconde, et un film qui ne bouge pas. Le lecteur avait
+   préféré la NETTETÉ au fait que le film se joue — et il ne pouvait pas faire
+   autrement, rien ne lui disait ce qu'une série coûte à télécharger.
+
+   La série légère de ce même site tenait dans 7 Mbit/s : 803 images au lieu de
+   1200 — donc moins d'images par seconde à la même vitesse — et 29 Ko au lieu
+   de 43. Elle serait un peu moins nette sur une image arrêtée. Elle serait
+   SURTOUT visible en mouvement, ce qui n'était pas le cas de l'autre.
+
+   On estime donc le débit disponible et on écarte les séries qu'il ne peut pas
+   nourrir. Deux sources, et la seconde corrige la première :
+
+     1. `navigator.connection.downlink`, tout de suite — une indication, pas une
+        mesure : le navigateur la lisse sur l'historique récent et l'arrondit.
+     2. le débit RÉELLEMENT obtenu pendant l'amorçage, qui remplace l'estimation
+        avant que la page ne se révèle (voir `arbitrer`, plus bas).
+
+   VITESSE DE RÉFÉRENCE : 1000 px/s. C'est un défilement franc et tenu, pas un
+   geste de démonstration. Dimensionner sur un défilement lent reviendrait à
+   dimensionner pour le cas où le défaut ne se voit pas.
+   ============================================================================ */
+const VITESSE_REF = 1000;
+
+/** Ce qu'une série exige, en mégabits par seconde, à la vitesse de référence. */
+function exigence(k, courseVue){
+  const s = SEQUENCES[k];
+  if (!s.octets || !s.images || !courseVue) return 0;
+  const parImage = courseVue / max(s.images - 1, 1);
+  return (VITESSE_REF / parImage) * s.octets * 8 / 1e6;
+}
+
+/**
+ * Le débit qu'on croit avoir AVANT d'avoir rien téléchargé. `?debit=N` le
+ * force, pour pouvoir éprouver la décision sans truquer le réseau.
+ *
+ * `downlink` N'EST PAS UNE MESURE, ET NE SERT PLUS ICI. Chrome le plafonne à
+ * 10 Mbit/s pour limiter le pistage, l'arrondit, et le lisse sur l'historique
+ * récent — si bien qu'il décrit les pages d'avant plutôt que la ligne du
+ * moment. Éprouvé sur réseau LIBRE : il annonçait 1,55 Mbit/s quand le débit
+ * réellement obtenu était 40,8. La page rétrogradait donc sur fibre.
+ *
+ * Ce n'était pas seulement faux, c'était IRRÉVERSIBLE : la rétrogradation
+ * tombait avant le premier téléchargement, et rien ensuite ne remonte. Une
+ * indication douteuse qui décide avant la mesure est pire qu'une absence
+ * d'indication — celle-ci, au moins, laisse mesurer.
+ *
+ * Ne reste donc que ce qui est SÛR : `saveData`, qui n'est pas une estimation
+ * mais une demande explicite du visiteur. Tout le reste attend l'amorçage.
+ */
+function debitEstime(){
+  const force = parseFloat(REGLAGES.get('debit'));
+  if (Number.isFinite(force) && force > 0) return force;
+  if (navigator.connection && navigator.connection.saveData) return 2;
+  return Infinity;                       // sans mesure, on ne dégrade pas
+}
+
+/**
+ * Retient la série la plus fine que le débit puisse NOURRIR.
+ *
+ * Si aucune ne passe, on garde la plus légère : à ce moment-là le choix n'est
+ * plus entre net et moins net, il est entre un film et un diaporama.
+ */
+function selonDebit(candidates, debit, courseVue){
+  if (!isFinite(debit) || candidates.length < 2) return null;
+  const tiennent = candidates.filter(k => {
+    const e = exigence(k, courseVue);
+    return !e || e <= debit;
+  });
+  if (tiennent.length)
+    return tiennent.reduce((a, b) => SEQUENCES[a].largeur >= SEQUENCES[b].largeur ? a : b);
+  return candidates.reduce((a, b) =>
+    (exigence(a, courseVue) || Infinity) <= (exigence(b, courseVue) || Infinity) ? a : b);
+}
+
+{
+  /* La course n'est pas encore mesurée ici — `mesurer()` tourne plus tard — mais
+     le prologue existe déjà, ce qui suffit à l'estimer. */
+  const _prol2 = document.getElementById('prologue');
+  const _courseVue = _prol2 ? max(_prol2.offsetHeight - innerHeight, 1) : 0;
+  const _debit = debitEstime();
+  const _mieux = selonDebit(_dispo, _debit, _courseVue);
+  if (_mieux && _mieux !== NOM && exigence(NOM, _courseVue) > _debit) NOM = _mieux;
+}
+
+/* `let` et non `const` : l'amorçage peut changer de série une fois le débit
+   réel connu, et il le fait avant que la page ne se révèle. */
+let SEQ = SEQUENCES[NOM];
 /* Le compte écrit ci-dessus n'est qu'un défaut pour le mode disque : dès que
    la construction a injecté les images, c'est elle qui a raison. Sans ça, une
    série plus longue s'arrêterait avant la fin et le dernier tiers du
@@ -959,9 +1057,16 @@ function charger(i){
   return true;
 }
 
+/* Ce que le réseau a réellement livré. `navigator.connection.downlink` est une
+   indication lissée sur l'historique récent ; ces deux compteurs-là sont ce qui
+   est arrivé sur CETTE page, à CE moment. */
+let octetsRecus = 0, imagesRecues = 0;
+
 async function lire(i){
   try {
-    const im = await decoder(await source(i));
+    const blob = await source(i);
+    octetsRecus += blob.size || 0; imagesRecues++;
+    const im = await decoder(blob);
     /* La première image décodée révèle ce que coûte vraiment une image en
        mémoire — la construction peut servir n'importe quelle définition, la
        page n'a pas à la connaître d'avance. */
@@ -1820,7 +1925,9 @@ if (REGLAGES.get('test') === '1') {
       `${navigator.deviceMemory ? ', machine ' + navigator.deviceMemory + ' Go' : ''}\n` +
       `écran      ${innerWidth}x${innerHeight} densité ${(devicePixelRatio || 1).toFixed(2)}\n` +
       `toile      ${canvas.width}x${canvas.height}, film ${filmL}x${filmH}\n` +
-      `série      ${NOM}, ${SEQ.images} images\n` +
+      `série      ${NOM}, ${SEQ.images} images, ` +
+      `${SEQ.octets ? (SEQ.octets / 1024).toFixed(0) + ' Ko/image, ' : ''}` +
+      `${exigence(NOM, course).toFixed(1)} Mbit/s exigés\n` +
       `molette    ${molette ? 'lissée' : 'native'}\n` +
       `agent      ${navigator.userAgent}`;
 
@@ -1928,6 +2035,7 @@ function acteCourant(){
   /* `lire` et non `charger` : le plafond par image ne concerne que la fenêtre
      glissante. À l'amorçage il n'y a encore rien à afficher, donc rien à
      saccader — on décode aussi vite que possible. */
+  const _t0 = performance.now();
   await Promise.all(Array.from({ length: amorce }, (v, i) => {
     encours.add(i);
     return lire(i).then(() => {
@@ -1936,6 +2044,75 @@ function acteCourant(){
       pct.textContent = p + ' %';
     });
   }));
+
+  /* ------------------------------------------------------------ L'ARBITRAGE
+
+     L'amorçage vient de télécharger seize images en parallèle : c'est une
+     mesure du débit RÉEL, faite sur cette page et sur cette ligne. Elle vaut
+     mieux que `downlink`, que le navigateur lisse et arrondit, et elle arrive
+     encore à temps — la page n'est pas révélée.
+
+     Si la série retenue ne peut pas être nourrie, on en change ICI, avant que
+     le visiteur voie quoi que ce soit. Changer plus tard obligerait à vider un
+     cache déjà rempli et se verrait à l'écran.
+
+     ON MESURE LE RÉSEAU, PAS LE DÉCODAGE. Première version : octets reçus
+     divisés par la durée totale de l'amorçage. Elle rétrogradait sur réseau
+     LIBRE — parce que seize images décodées en parallèle prennent à peu près le
+     même temps quelle que soit la ligne. La durée mesurée était celle du
+     décodeur, et le débit qu'on en tirait était un plancher, pas une capacité.
+
+     On lit donc les minutages du navigateur, qui séparent le transfert du
+     reste : octets transférés sur la durée pendant laquelle des requêtes
+     étaient réellement en vol.
+
+     Le facteur 0,8 n'est pas de la prudence gratuite : l'amorçage tire seize
+     images d'un coup sur une ligne au repos, ce qui flatte le débit par rapport
+     à un défilement qui dure. Mieux vaut sous-estimer et servir une image un
+     peu moins fine que surestimer et servir un diaporama. */
+  const _mesureReseau = () => {
+    let bas = Infinity, haut = 0, poids = 0, n = 0;
+    for (const r of performance.getEntriesByType('resource')) {
+      if (r.name.indexOf('/assets/film/') < 0 || !r.responseEnd) continue;
+      const t = r.transferSize || r.encodedBodySize || 0;
+      if (!t) continue;
+      poids += t; n++;
+      bas = min(bas, r.startTime); haut = max(haut, r.responseEnd);
+    }
+    const span = (haut - bas) / 1000;
+    return (n >= 4 && span > 0.03) ? (poids * 8 / 1e6) / span * 0.8 : 0;
+  };
+  const _sec = (performance.now() - _t0) / 1000;
+  const _reelMesure = _mesureReseau();
+  if (_reelMesure > 0 && !SOURCES) {
+    const _reel = _reelMesure;
+    const _autre = selonDebit(_dispo, _reel, course);
+    const _exig = exigence(NOM, course);
+    if (_autre && _autre !== NOM && _exig > _reel) {
+      const _av = NOM;
+      NOM = _autre;
+      SEQ = SEQUENCES[NOM];
+      /* Tout ce qui a été décodé appartenait à l'AUTRE série : le garder
+         mélangerait deux définitions sur la même toile. */
+      for (const im of cache.values()) im.close?.();
+      cache.clear(); encours.clear();
+      octetsImage = 0; filmL = filmH = 0; dessinee = -1; posee = -1;
+      reglerFenetre();
+      console.info(`film : ${_av} -> ${NOM} — ${_exig.toFixed(1)} Mbit/s exigés, ` +
+                   `${_reel.toFixed(1)} mesurés`);
+      etape.textContent = 'Adaptation à votre connexion…';
+      let refaites = 0;
+      const amorce2 = min(16, SEQ.images);
+      await Promise.all(Array.from({ length: amorce2 }, (v, i) => {
+        encours.add(i);
+        return lire(i).then(() => {
+          const p = round(++refaites / amorce2 * 100);
+          jauge.style.width = p + '%';
+          pct.textContent = p + ' %';
+        });
+      }));
+    }
+  }
 
   /* Si rien n'a pu être décodé, on le DIT. La page se révélait autrefois quand
      même, sur une toile vide : le visiteur voyait un écran noir sans savoir si
