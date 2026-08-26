@@ -1800,6 +1800,178 @@ if (new URLSearchParams(location.search).get('diag') === '1') {
   }, 250);
 }
 
+/* ============================================================================
+   `?test=1` — LE DIAGNOSTIC QUI SE LIT TOUT SEUL
+
+   Le témoin `?diag=1` suppose qu'on sache lire sept lignes de chiffres pendant
+   qu'on fait défiler d'une main. Éprouvé sur un vrai utilisateur : ça ne marche
+   pas, et la question qui revient est « je regarde où ». Un instrument que
+   personne ne sait lire ne mesure rien.
+
+   Celui-ci fait le geste À LA PLACE du visiteur — il défile lui-même, à vitesse
+   connue — puis rend UNE phrase qui nomme la cause, et un bouton qui copie le
+   relevé. Rien à lire pendant qu'on scrolle, rien à photographier.
+
+   IL EXISTE PARCE QUE LE DÉFAUT NE SE REPRODUIT PAS ICI. La machine qui a servi
+   à écrire ce lecteur n'a pas de carte graphique et sert les images depuis le
+   disque : ni le coût d'une texture, ni la latence d'un réseau n'y existent.
+   Les quatre causes possibles se distinguent pourtant par des chiffres
+   différents, et ces chiffres-là, seule la machine du visiteur les a.
+   ============================================================================ */
+if (REGLAGES.get('test') === '1') {
+  const CIBLE = 1000;          // px par seconde : un défilement franc mais tenu
+  const DUREE = 6000;          // ms de mesure, après amorçage
+
+  const ecran = document.createElement('div');
+  ecran.style.cssText =
+    'position:fixed;inset:0;z-index:2147483647;background:rgba(6,9,13,.94);' +
+    'display:flex;align-items:center;justify-content:center;padding:22px;' +
+    'font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#EAEFF5';
+  ecran.innerHTML =
+    '<div style="max-width:560px;width:100%">' +
+    '<div id="t-etat" style="font-size:19px;font-weight:600;margin-bottom:14px">' +
+    'Diagnostic en cours…</div>' +
+    '<div style="height:6px;background:#20262F;border-radius:6px;overflow:hidden">' +
+    '<div id="t-barre" style="height:100%;width:0;background:#E8A94A;transition:width .2s"></div>' +
+    '</div>' +
+    '<div id="t-sous" style="margin-top:11px;color:#93A0AE;font-size:13.5px">' +
+    'Ne touche à rien, la page défile toute seule.</div></div>';
+  document.body.appendChild(ecran);
+  const etat = ecran.querySelector('#t-etat');
+  const barre = ecran.querySelector('#t-barre');
+  const sous = ecran.querySelector('#t-sous');
+
+  const octetsFilm = () => performance.getEntriesByType('resource')
+    .filter((r) => r.name.indexOf('/assets/film/') >= 0)
+    .reduce((s, r) => s + (r.transferSize || r.encodedBodySize || 0), 0);
+
+  (async function passer(){
+    /* ON ATTEND QUE LE FILM SOIT LÀ. Mesurer pendant l'écran d'attente
+       compterait le chargement initial comme un défaut de la machine, et
+       accuserait toutes les connexions du monde. */
+    const depart = performance.now();
+    while (!voile.classList.contains('parti') && performance.now() - depart < 120000) {
+      sous.textContent = 'Chargement du film…';
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    sous.textContent = 'Ne touche à rien, la page défile toute seule.';
+    scrollTo(0, 0); cibleY = lisseY = 0; vitesseY = 0;
+    await new Promise((r) => setTimeout(r, 1400));       // laisser l'avance se remplir
+
+    const trames = [], vitesses = [];
+    let absentes = 0, total = 0, prevT = 0, prevY = 0;
+    const o0 = octetsFilm(), t0 = performance.now();
+
+    await new Promise((fini) => {
+      let dep = performance.now();
+      (function pas(now){
+        const dt = now - dep; dep = now;
+        /* On pousse la CIBLE, pas la position : tout le chemin habituel —
+           lisseur compris — reste donc exercé. */
+        const av = CIBLE * dt / 1000;
+        if (molette) cibleY = Math.min(cibleY + av, basDePage);
+        else scrollTo(0, Math.min(scrollY + av, basDePage));
+
+        if (prevT) {
+          trames.push(now - prevT);
+          const d = scrollY - prevY;
+          if (d > 0.01) vitesses.push(d / (now - prevT));
+          total++;
+          if (window.__POSEE < 0) absentes++;
+        }
+        prevT = now; prevY = scrollY;
+
+        const p = (now - t0) / DUREE;
+        barre.style.width = Math.min(100, p * 100).toFixed(0) + '%';
+        if (p < 1 && scrollY < basDePage - 4) requestAnimationFrame(pas);
+        else fini();
+      })(performance.now());
+    });
+
+    const secondes = (performance.now() - t0) / 1000;
+    const mbit = ((octetsFilm() - o0) * 8) / secondes / 1e6;
+
+    trames.sort((a, b) => a - b);
+    const tr = trames[trames.length >> 1] || 0;
+    const ips = tr ? Math.round(1000 / tr) : 0;
+    const moy = vitesses.reduce((a, b) => a + b, 0) / (vitesses.length || 1);
+    const ec = Math.sqrt(vitesses.reduce((a, b) => a + (b - moy) ** 2, 0) / (vitesses.length || 1));
+    const reg = moy > 0.0001 ? ec / moy : 0;
+    const trous = total ? absentes / total : 0;
+
+    /* LE VERDICT, dans l'ordre où les causes se masquent l'une l'autre : un
+       rendu qui ne suit pas rend tout le reste illisible, et un film qui
+       n'arrive pas se lit comme un rendu lent alors que la page tourne bien. */
+    let cause, quoi;
+    if (ips && ips < 45) {
+      cause = 'Le rendu ne suit pas';
+      quoi = `Cette machine n'affiche que ${ips} images par seconde pendant le défilement. ` +
+             `C'est l'affichage lui-même qui coûte, pas le film.`;
+    } else if (trous > 0.15) {
+      cause = 'Les images n\'arrivent pas assez vite';
+      quoi = `${Math.round(trous * 100)} % des trames n'avaient aucune image à montrer. ` +
+             `Le film a reçu ${mbit.toFixed(1)} Mbit/s ; il en faut environ 18 à cette vitesse ` +
+             `de défilement. La page tourne bien (${ips} i/s), c'est le débit qui manque.`;
+    } else if (reg > 0.25) {
+      cause = 'Le défilement est irrégulier';
+      quoi = `La cadence est pleine (${ips} i/s) mais la vitesse varie de ` +
+             `${Math.round(reg * 100)} % d'une trame à l'autre.`;
+    } else {
+      cause = 'Cette machine tient le film';
+      quoi = `${ips} images par seconde, régularité ${Math.round(reg * 100)} %, ` +
+             `${Math.round(trous * 100)} % de trames sans image, ${mbit.toFixed(1)} Mbit/s reçus. ` +
+             `Rien ici n'explique un ralentissement.`;
+    }
+
+    const releve =
+      `cause      ${cause}\n` +
+      `cadence    ${ips} i/s (${tr.toFixed(1)} ms par trame)\n` +
+      `régularité ${Math.round(reg * 100)} %\n` +
+      `images     ${Math.round(trous * 100)} % de trames sans image\n` +
+      `débit      ${mbit.toFixed(1)} Mbit/s\n` +
+      `mémoire    ${octetsImage ? (cache.size * octetsImage / 1048576).toFixed(0) : '?'} Mo tenus` +
+      `${navigator.deviceMemory ? ', machine ' + navigator.deviceMemory + ' Go' : ''}\n` +
+      `écran      ${innerWidth}x${innerHeight} densité ${(devicePixelRatio || 1).toFixed(2)}\n` +
+      `toile      ${canvas.width}x${canvas.height}, film ${filmL}x${filmH}\n` +
+      `série      ${NOM}, ${SEQ.images} images\n` +
+      `molette    ${molette ? 'lissée' : 'native'}\n` +
+      `agent      ${navigator.userAgent}`;
+
+    etat.textContent = cause;
+    etat.style.color = cause.indexOf('tient') > 0 ? '#6FD3AC' : '#F0A93A';
+    barre.parentElement.style.display = 'none';
+    sous.innerHTML = '';
+    const par = document.createElement('p');
+    par.style.cssText = 'margin:0 0 15px;color:#C3CCD7';
+    par.textContent = quoi;
+    const zone = document.createElement('textarea');
+    zone.readOnly = true; zone.value = releve; zone.rows = 11;
+    zone.style.cssText =
+      'width:100%;background:#10151C;color:#9FE8D0;border:1px solid #2A323D;border-radius:7px;' +
+      'padding:11px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical';
+    const rangee = document.createElement('div');
+    rangee.style.cssText = 'display:flex;gap:9px;margin-top:12px;flex-wrap:wrap';
+    const bouton = (txt, fn) => {
+      const b = document.createElement('button');
+      b.textContent = txt;
+      b.style.cssText =
+        'padding:10px 17px;border-radius:7px;border:1px solid #3A434F;background:#1D242D;' +
+        'color:#EAEFF5;font:600 13.5px system-ui,sans-serif;cursor:pointer';
+      b.addEventListener('click', fn);
+      return b;
+    };
+    rangee.append(
+      bouton('Copier le relevé', async (e) => {
+        zone.select();
+        try { await navigator.clipboard.writeText(releve); } catch (_) { document.execCommand('copy'); }
+        e.target.textContent = 'Copié';
+      }),
+      bouton('Fermer', () => ecran.remove()),
+    );
+    sous.append(par, zone, rangee);
+  })();
+}
+
 /* ------------------------------------------------------- le repère de section
 
    Sur une page de trente écrans, savoir où l'on se trouve vaut mieux qu'un
