@@ -439,18 +439,36 @@ def main():
     # rejoindrait la liste des constantes de ce dépôt qui ont cessé de décrire
     # la réalité sans que rien ne le signale : la course, la qualité, la nature
     # de la série téléphone, le compte d'images.
+    # LE POIDS EST ÉCRIT AVEC LES DIMENSIONS, et il est aussi décisif qu'elles.
+    #
+    # Le lecteur choisissait sa série sur la forme et la définition seules. Un
+    # visiteur mesuré : fenêtre 1280 x 551 en densité 1,5, donc 1920 pixels
+    # demandés, donc la série lourde — 1200 images à 42,8 Ko. Sur sa ligne à
+    # 10 Mbit/s il en aurait fallu 15 : 79 % de ses trames n'avaient AUCUNE
+    # image à montrer. La série légère, elle, tenait dans 7 Mbit/s.
+    #
+    # La netteté avait donc été préférée au fait que le film se joue. Le lecteur
+    # ne pouvait pas faire mieux : rien dans la page ne lui disait ce qu'une
+    # série coûte à télécharger. C'est ce chiffre-là qu'on lui donne.
     from PIL import Image as _Im
     for nom in comptes:
         cible = os.path.join(OUT, "assets", "film", SERIES[nom]["sortie"])
-        premiere = sorted(os.listdir(cible))[0]
+        fichiers = sorted(os.listdir(cible))
+        premiere = fichiers[0]
         with _Im.open(os.path.join(cible, premiere)) as im:
             l, h = im.size
+        # Moyenne sur un échantillon régulier : les premières images d'un film
+        # ne pèsent pas ce que pèsent les plus chargées, et c'est la moyenne
+        # qui décide du débit tenu.
+        ech = fichiers[:: max(1, len(fichiers) // 40)][:40]
+        octets = round(sum(os.path.getsize(os.path.join(cible, f)) for f in ech) / len(ech))
         motif = (rf"(chemin: *'assets/film/{re.escape(SERIES[nom]['sortie'])}/f',"
                  rf"[^}}]*?images: *\d+)([^}}]*)")
 
         def _dim(m):
-            reste = re.sub(r", *largeur: *\d+, *hauteur: *\d+", "", m.group(2))
-            return f"{m.group(1)}, largeur: {l}, hauteur: {h}{reste}"
+            reste = re.sub(r", *largeur: *\d+, *hauteur: *\d+(, *octets: *\d+)?", "", m.group(2))
+            reste = re.sub(r", *octets: *\d+", "", reste)
+            return f"{m.group(1)}, largeur: {l}, hauteur: {h}, octets: {octets}{reste}"
 
         src, n_dim = re.subn(motif, _dim, src, count=1)
         if n_dim != 1:
