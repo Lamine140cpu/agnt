@@ -276,12 +276,26 @@ def lecteur(src):
 
     Une page sans marqueur est laissée telle quelle : les anciennes pages
     portent encore leur lecteur en clair, et la migration se fait une par une.
+
+    LE MARQUEUR SE RECONNAÎT À SA LIGNE, PAS À SON TEXTE. Cherché n'importe où
+    dans la page, il se trouvait aussi dans le commentaire d'en-tête du lecteur
+    lui-même — qui explique en toutes lettres qu'il est inséré « à la place du
+    marqueur <!--LECTEUR--> ». Une page non migrée porte ce commentaire avec sa
+    copie du lecteur : la construction prenait donc la CITATION pour le
+    marqueur et injectait le lecteur neuf au milieu d'un commentaire, où il
+    restait inerte. La page se construisait sans une seule erreur, s'ouvrait
+    sans une seule erreur, et tournait sur l'ancien code. Un correctif de
+    fluidité y a été livré et n'y a jamais tourné.
+
+    On exige donc une ligne qui ne contient QUE le marqueur.
     """
-    if "<!--LECTEUR-->" not in src:
+    marqueur = re.compile(r"^[ \t]*<!--LECTEUR-->[ \t]*$", re.MULTILINE)
+    trouves = marqueur.findall(src)
+    if not trouves:
         return src
-    if src.count("<!--LECTEUR-->") != 1:
-        sys.exit(f"le marqueur <!--LECTEUR--> apparaît "
-                 f"{src.count('<!--LECTEUR-->')} fois — il en faut exactement un")
+    if len(trouves) != 1:
+        sys.exit(f"le marqueur <!--LECTEUR--> apparaît sur {len(trouves)} lignes "
+                 f"— il en faut exactement une")
     if "window.SERIES" not in src:
         sys.exit("la page appelle le lecteur mais ne déclare pas window.SERIES : "
                  "la toile resterait noire")
@@ -290,7 +304,7 @@ def lecteur(src):
         sys.exit(f"{chemin} est introuvable — c'est la source unique du lecteur")
     code = open(chemin, encoding="utf-8").read()
     print(f"  lecteur          {len(code)/1024:4.0f} Ko  <- moteur/lecteur.js")
-    return src.replace("<!--LECTEUR-->", "<script>\n" + code + "\n</script>")
+    return marqueur.sub(lambda _: "<script>\n" + code + "\n</script>", src, count=1)
 
 
 def socle(src):
