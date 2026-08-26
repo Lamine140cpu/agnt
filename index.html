@@ -764,11 +764,40 @@ window.SERIES = {
       D'où createImageBitmap, qui décode ailleurs et rend un objet que la toile
       dessine sans retravail.
    ============================================================================ */
+/* ------------------------------------------- LES INTERRUPTEURS DE L'ADRESSE
+
+   Ce lecteur a été réglé sur une machine SANS CARTE GRAPHIQUE. Tout ce qui
+   dépend du GPU y est donc invisible : le coût d'une texture, la pression sur
+   la mémoire graphique, le chemin de composition d'une toile opaque. Mesuré
+   ici, la page tient 60 i/s en 1080p et 30 en 1440p — mais c'est le
+   compositeur logiciel qui parle, et il ne dit rien d'un vrai PC.
+
+   Deviner à distance ce qui coûte sur la machine d'un visiteur ne marche pas.
+   On lui donne donc de quoi le MESURER, une hypothèse par interrupteur :
+
+     ?diag=1        affiche cadence, régularité, retard du décodeur, mémoire
+     ?molette=0     rend la molette au navigateur (coupe notre lissage)
+     ?memoire=N     plafonne les images décodées à N mégaoctets
+     ?alpha=1       toile transparente au lieu d'opaque
+
+   Chacun isole une cause. Si `?memoire=192` fait repartir une machine qui
+   ramait, c'est la mémoire graphique ; si c'est `?alpha=1`, c'est le chemin de
+   composition ; si c'est `?molette=0`, c'est nous. Trois réponses qu'aucune
+   mesure faite ici ne pouvait donner. */
+const REGLAGES = new URLSearchParams(location.search);
 const canvas = document.getElementById('toile');
 /* alpha:false — la toile est opaque, le navigateur n'a pas à la composer avec
    ce qu'il y a dessous. desynchronized:true — on renonce à la synchronisation
-   stricte avec le reste de la page, ce qui réduit la latence du geste. */
-const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+   stricte avec le reste de la page, ce qui réduit la latence du geste.
+
+   Les deux sont des PARIS sur le comportement du compositeur, pas des mesures :
+   une toile opaque et plein écran peut aussi bien être promue en surcouche que
+   retomber sur un chemin lent, et rien ici ne permet de trancher. D'où
+   `?alpha=1`, qui laisse la machine du visiteur répondre. */
+const ctx = canvas.getContext('2d', {
+  alpha: REGLAGES.get('alpha') === '1',
+  desynchronized: true,
+});
 const voile = document.getElementById('voile');
 const jauge = document.getElementById('jauge');
 const pct = document.getElementById('pct');
@@ -1132,8 +1161,23 @@ const AVANCE = 700, RECUL = 240, MEMOIRE = 1100;
    huit par la norme ; on en prend soixante-dix mégaoctets par gigaoctet. Le
    navigateur qui ne connaît pas cette propriété — Safari, Firefox — est
    supposé être sur un ordinateur de bureau ordinaire, donc huit. */
-const MEMOIRE_MAX = (innerWidth < 820 ? 144
-  : min(560, round((navigator.deviceMemory || 8) * 70))) * 1048576;
+/* CE QUE CE BUDGET COÛTE VRAIMENT, mesuré sur les pages en ligne : la toile
+   garde entre 293 et 419 Mo d'images décodées selon la page et l'écran. C'est
+   énorme, et ce n'est pas de la mémoire vive ordinaire — `createImageBitmap`
+   rend des objets que le navigateur pose en MÉMOIRE GRAPHIQUE. Une carte
+   intégrée, qui partage la mémoire du système et dispose d'un budget de
+   textures bien plus étroit, doit alors en éjecter et les recharger à chaque
+   trame. C'est un mode de panne qui ressemble exactement à « ça rame », et
+   qu'AUCUNE mesure faite sur la machine de développement ne pouvait montrer :
+   sans carte graphique, tout tient en mémoire vive sans pression.
+
+   `?memoire=N` permet donc de le vérifier là où ça compte — sur la machine du
+   visiteur. Le plancher de 48 Mo garde de quoi tenir la fenêtre glissante. */
+const _memArg = parseInt(REGLAGES.get('memoire'), 10);
+const MEMOIRE_MAX = (Number.isFinite(_memArg) && _memArg > 0
+  ? borne(_memArg, 48, 1024)
+  : (innerWidth < 820 ? 144
+     : min(560, round((navigator.deviceMemory || 8) * 70)))) * 1048576;
 let octetsImage = 0;
 
 function reglerFenetre(){
@@ -1739,7 +1783,20 @@ if (new URLSearchParams(location.search).get('diag') === '1') {
       `décodeur   ${window.__POSEE < 0 ? 'IMAGE ABSENTE'
          : 'retard ' + abs(window.__POSEE - round(window.__VOULUE)) + ' image'}` +
       `   ${cache.size} en cache\n` +
-      `molette    ${molette ? 'lissée' : 'native'}`;
+      /* Ce que les images décodées occupent VRAIMENT. C'est le chiffre qui
+         manquait : une image n'est plus compressée une fois décodée, et le
+         navigateur la range en mémoire graphique. Sans ce relevé, on regarde
+         une cadence sans savoir ce qui l'étouffe. */
+      /* Le plafond affiché est le plafond EFFECTIF, pas celui demandé. La
+         fenêtre glissante garde un plancher de huit images de part et d'autre
+         — sans quoi le film sauterait — et ce plancher peut dépasser un budget
+         très bas. Afficher le budget demandé donnait « 119 Mo de 96 Mo », un
+         témoin qui se contredit et qu'on cesse aussitôt de croire. */
+      `mémoire    ${octetsImage
+         ? (cache.size * octetsImage / 1048576).toFixed(0) + ' Mo sur ' +
+           (SEQ.oubli * 2 * octetsImage / 1048576).toFixed(0) + ' Mo max' : '—'}\n` +
+      `molette    ${molette ? 'lissée' : 'native'}` +
+      `   toile ${ctx.getContextAttributes?.().alpha ? 'transparente' : 'opaque'}`;
   }, 250);
 }
 
