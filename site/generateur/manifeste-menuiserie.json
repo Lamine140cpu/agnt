@@ -1,0 +1,137 @@
+{
+  "site": "menuiserie",
+  "_": "TROISIÈME site, et une DÉMONSTRATION : il n'y a aucune entreprise derrière. C'est pour cela que la section « client » ne contient aucun fait — pas un SIREN, pas une adresse, pas un téléphone. Un site de démonstration n'a pas de faits à vérifier, il a une nature à déclarer, et la page le dit à trois endroits : le titre, l'en-tête, le premier bloc après le film.",
+  "film": {
+    "series": {
+      "accueil": {
+        "_": "Le maître : six plans de huit secondes générés puis enchaînés, 1152 images. L'ordre de la chaîne a été MESURÉ, pas supposé — on a comparé la dernière image de chaque plan à la première de tous les autres, sur les trente combinaisons. Les jointures tiennent entre 3,3 et 5,3 sur 255, c'est-à-dire au niveau du bruit de recompression.",
+        "dossier": {
+          "valeur": "menuiserie",
+          "origine": "choix"
+        },
+        "largeur": {
+          "valeur": 1920,
+          "origine": "mesure"
+        },
+        "hauteur": {
+          "valeur": 1080,
+          "origine": "mesure"
+        },
+        "images": {
+          "valeur": 791,
+          "origine": "mesure"
+        },
+        "rapport": {
+          "valeur": 1.778,
+          "origine": "mesure"
+        },
+        "course": "1440x900"
+      },
+      "accueil-etroit": {
+        "_": "LE MÊME cadre, moins large — pas un montage portrait, il n'y en a pas ici. Comme chez le premier client, c'est donc la hauteur donnée à la toile qui règle le cadrage sur téléphone, jamais le format de la pellicule.",
+        "dossier": {
+          "valeur": "menuiserie-etroit",
+          "origine": "choix"
+        },
+        "largeur": {
+          "valeur": 1440,
+          "origine": "mesure"
+        },
+        "hauteur": {
+          "valeur": 810,
+          "origine": "mesure"
+        },
+        "images": {
+          "valeur": 527,
+          "origine": "mesure"
+        },
+        "rapport": {
+          "valeur": 1.778,
+          "origine": "mesure"
+        },
+        "course": "390x844"
+      }
+    },
+    "qualite": {
+      "valeur": 45,
+      "origine": "choix"
+    },
+    "densite_visee": {
+      "valeur": 33,
+      "origine": "choix"
+    },
+    "_produit": {
+      "plans": [
+        "p4-etabli.mp4",
+        "p2-matiere.mp4",
+        "p3-rabot.mp4",
+        "p1-atelier.mp4",
+        "p5-escalier.mp4",
+        "p6-porte.mp4"
+      ],
+      "images_sources": 1152,
+      "definition": "1920x1080",
+      "_": "Écrit par la monteuse d'après le disque, pas d'après ce qu'elle comptait produire."
+    }
+  },
+  "page": {
+    "courses": {
+      "_": "prologue.offsetHeight - innerHeight, relevé dans la page servie. Elles changent dès qu'on touche à la hauteur des actes : les remesurer alors, sans quoi la densité ment.",
+      "1440x900": {
+        "valeur": 26100,
+        "origine": "mesure"
+      },
+      "1280x800": {
+        "valeur": 23200,
+        "origine": "mesure"
+      },
+      "900x800": {
+        "valeur": 23200,
+        "origine": "mesure"
+      },
+      "390x844": {
+        "valeur": 17386,
+        "origine": "mesure"
+      },
+      "360x740": {
+        "valeur": 15244,
+        "origine": "mesure"
+      }
+    },
+    "ancres": [
+      "ceci",
+      "pour-qui",
+      "parler"
+    ],
+    "serie_attendue": {
+      "_": "Une mauvaise série ne se voit pas à l'écran, elle se paye en octets — ou en film qui saute.",
+      "1440x900": "menuiserie",
+      "1280x800@2": "menuiserie",
+      "900x800": "menuiserie",
+      "390x844@3": "menuiserie-etroit",
+      "360x740@2": "menuiserie-etroit"
+    },
+    "toile_hauteur_telephone": {
+      "_": "Bande de 64 % sur téléphone, comme chez le premier client et pour la même raison : les deux pellicules montrent le même cadre 16:9, donc seul le rapport de la toile change ce qu'on en voit.",
+      "valeur": "64svh",
+      "origine": "choix"
+    }
+  },
+  "seuils": {
+    "images_par_seconde": 55,
+    "densite_max": 40,
+    "contraste_corps": 4.5,
+    "contraste_second_plan": 3.0,
+    "tailles_a_verifier": [
+      "1440x900",
+      "1280x800@2",
+      "900x800",
+      "390x844@3",
+      "360x740@2"
+    ]
+  },
+  "client": {
+    "_": "VIDE, et c'est le sujet. Une démonstration n'a pas de client : lui en inventer un — un nom, un SIREN, une adresse, une ancienneté — serait exactement la faute que ce dépôt s'interdit partout ailleurs. Le texte des six actes parle du métier de menuisier, jamais d'un atelier en particulier.",
+    "faits": []
+  }
+}

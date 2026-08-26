@@ -1,0 +1,147 @@
+{
+  "_": "LES VECTEURS DU GARDE-FOU DES FAITS, LUS PAR DEUX IMPLÉMENTATIONS. Le moteur le fait tourner en Python (architecte.py), l'application en TypeScript (console/lib/contrat.ts) pour filtrer ce que la cheffe écrit en direct. Deux codes qui jugent la même chose finissent toujours par diverger — sauf s'ils répondent au même questionnaire. Ajouter un cas ici le rend obligatoire des deux côtés, et le premier qui ne le passe plus le dit.",
+  "faits": [
+    {
+      "cle": "raison_sociale",
+      "valeur": "Atelier Martin",
+      "origine": "registre"
+    },
+    {
+      "cle": "telephone",
+      "valeur": "03 20 45 67 89",
+      "origine": "client"
+    },
+    {
+      "cle": "creation",
+      "valeur": "1998",
+      "origine": "registre"
+    },
+    {
+      "cle": "siege",
+      "valeur": "45 rue Jean Charcot, 93600 Aulnay-sous-Bois",
+      "origine": "registre"
+    },
+    {
+      "cle": "effectif",
+      "valeur": null,
+      "origine": null
+    }
+  ],
+  "cas": [
+    {
+      "quoi": "une ancienneté inventée",
+      "texte": "Vingt ans de savoir-faire.",
+      "mord": true,
+      "extrait": "Vingt ans"
+    },
+    {
+      "quoi": "une flotte inventée",
+      "texte": "Une trentaine de véhicules à votre service.",
+      "mord": true,
+      "extrait": "trentaine de véhicules"
+    },
+    {
+      "quoi": "une certification inventée",
+      "texte": "Atelier certifié ISO 9001.",
+      "mord": true,
+      "extrait": "ISO"
+    },
+    {
+      "quoi": "un téléphone inventé",
+      "texte": "Appelez le 01 42 86 33 10.",
+      "mord": true
+    },
+    {
+      "quoi": "un courriel inventé",
+      "texte": "Écrivez à contact@atelier-martin.fr",
+      "mord": true
+    },
+    {
+      "quoi": "une date inventée",
+      "texte": "Fondé en 1972 par le grand-père.",
+      "mord": true,
+      "extrait": "1972"
+    },
+    {
+      "quoi": "un chiffre inventé",
+      "texte": "Plus de 500 chantiers livrés.",
+      "mord": true,
+      "extrait": "500"
+    },
+    {
+      "quoi": "un SIREN inventé",
+      "texte": "SIREN 812 456 933",
+      "mord": true
+    },
+    {
+      "quoi": "trois générations inventées",
+      "texte": "Trois générations de menuisiers.",
+      "mord": true,
+      "extrait": "Trois générations"
+    },
+    {
+      "quoi": "une ancienneté au singulier",
+      "texte": "Un an de garantie sur chaque pose.",
+      "mord": true,
+      "extrait": "Un an"
+    },
+    {
+      "quoi": "un effectif chiffré qui emprunte un nombre déclaré",
+      "_": "45 figure dans le siège déclaré. C'est l'unité qui tranche, pas le nombre.",
+      "texte": "Nos 45 compagnons travaillent le chêne.",
+      "mord": true,
+      "extrait": "45 compagnons"
+    },
+    {
+      "quoi": "des horaires inventés",
+      "texte": "Ouvert de 8h à 18h du lundi au vendredi.",
+      "mord": true
+    },
+    {
+      "quoi": "le métier, sans chiffre",
+      "texte": "Le chêne se travaille lentement. On écoute la matière avant de la couper, et la main sait avant l'œil.",
+      "mord": false
+    },
+    {
+      "quoi": "un fait déclaré, écrit tel quel",
+      "texte": "Atelier Martin travaille le bois massif.",
+      "mord": false
+    },
+    {
+      "quoi": "le téléphone déclaré, autrement ponctué",
+      "texte": "Au bout du fil : 03.20.45.67.89",
+      "mord": false
+    },
+    {
+      "quoi": "l'année déclarée",
+      "texte": "Depuis 1998, le même établi.",
+      "mord": false
+    },
+    {
+      "quoi": "l'adresse déclarée, avec son numéro",
+      "texte": "Le siège est au 45 rue Jean Charcot, 93600 Aulnay-sous-Bois.",
+      "mord": false
+    },
+    {
+      "quoi": "les tournures ordinaires du français",
+      "texte": "Une porte, deux montants, et de la patience. Des heures à ajuster ce que personne ne verra.",
+      "mord": false
+    },
+    {
+      "quoi": "un article devant un lieu",
+      "texte": "Un atelier, une odeur de copeaux.",
+      "mord": false
+    },
+    {
+      "quoi": "la mention de copyright du bas de page",
+      "_": "L'année en cours suivie du nom de la marque se lisait « 2026 ateliers ». Une année n'est pas un compte.",
+      "texte": "© 2026 Atelier Martin — tous droits réservés.",
+      "mord": false
+    },
+    {
+      "quoi": "l'année en cours seule",
+      "texte": "Mis à jour en 2026.",
+      "mord": false
+    }
+  ]
+}

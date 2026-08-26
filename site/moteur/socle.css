@@ -1,0 +1,239 @@
+/* ============================================================================
+   LE SOCLE — les règles qui ne dépendent d'aucune direction artistique.
+
+   Comparées règle par règle entre les deux sites de ce dépôt, quatre-vingt-dix
+   des sélecteurs étaient communs et QUATRE-VINGTS avaient un corps identique
+   au caractère près. Les dix qui divergeaient étaient exactement ceux qui
+   doivent — la palette, l'en-tête, le pied, la hauteur des actes, les voiles,
+   le décalage d'ancre — sauf un : `.bloc`, qui divergeait parce qu'un
+   correctif fait sur la page client n'avait jamais été reporté. Résultat
+   mesuré : les quatre sections du bas de la vitrine avaient leur texte à 0 px
+   du bord de l'écran, sur téléphone.
+
+   C'est cette recopie-là que le socle supprime. Il contient la structure —
+   typographie, chapitres, actes, apparitions, écran d'attente — et rien de ce
+   qui fait qu'un site ressemble à son client.
+
+   Il est INSÉRÉ par la construction à la place du marqueur <!--SOCLE-->, en
+   tête de la feuille du site, qui garde ainsi le dernier mot sur tout ce
+   qu'elle redéclare.
+   ============================================================================ */
+*{box-sizing:border-box}
+html{scroll-behavior:auto;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
+  font-size:clamp(15px,1.05vw,17px);line-height:1.65;-webkit-font-smoothing:antialiased}
+::selection{background:var(--ambre);color:var(--noir)}
+:focus-visible{outline:2px solid var(--ambre);outline-offset:4px;border-radius:2px}
+
+/* ------------------------------------------------------------ la typographie
+   Trois rôles, trois familles. Le serif ne sert QUE aux grandes phrases : dès
+   qu'il descend au niveau du paragraphe il perd son tranchant. Le mono ne sert
+   qu'à ce qui se mesure — numéros, unités, libellés. Entre les deux, la sans
+   porte tout le reste sans se faire remarquer, ce qui est son travail. */
+.titre{font-family:var(--serif);font-weight:400;line-height:.98;letter-spacing:-.015em;
+  text-wrap:balance;margin:0}
+.t-xxl{font-size:clamp(3.1rem,10.5vw,9.5rem)}
+.t-xl{font-size:clamp(2.5rem,6.4vw,5.2rem)}
+.t-l{font-size:clamp(1.9rem,3.4vw,3rem)}
+.ital{font-style:italic}
+.corps{margin:0;color:var(--gris);max-width:62ch}
+.corps strong{color:var(--os);font-weight:500}
+.eti{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sourd);margin:0}
+.eti b{color:var(--ambre);font-weight:500}
+
+/* --------------------------------------------------------------- la structure
+   Une seule gouttière, une seule largeur maximale, partout. C'est ce qui tient
+   une page longue : le lecteur n'a jamais à retrouver le bord du texte. */
+.bande{max-width:var(--max);margin:0 auto;padding:0 var(--marge)}
+.regle{border-top:1px solid var(--ligne)}
+/* Le voile : fixe, plein écran, strictement horizontal. Un dégradé incliné
+   dans une boîte plus haute que large trace sa propre diagonale, et cette
+   diagonale se voit. Leçon payée sur le film précédent. */
+/* ================================================================== LE FILM
+   La toile est fixe et couvre son cadre ; le défilement ne la déplace pas, il
+   change l'image qu'elle affiche. Les sections du prologue sont transparentes
+   et passent par-dessus. La suite du site, elle, est opaque : elle recouvre la
+   toile sans qu'on ait à l'éteindre en JavaScript.
+
+   CETTE RÈGLE MANQUAIT AU SOCLE, et le troisième site l'a découvert de la pire
+   façon : sans elle, la toile reste à sa taille par défaut — 300 x 150 px, en
+   position statique — et la page s'affiche vide. Les deux premiers sites
+   avaient chacun leur copie, alors la page neuve n'en avait aucune. Un socle
+   qui ne déclare pas ce qu'il garantit ne garantit rien. */
+#toile{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:block;
+  background:var(--noir)}
+
+#prologue{position:relative;z-index:3}
+.tenir{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:0 var(--marge) clamp(76px,12vh,150px);
+  max-width:var(--max);margin:0 auto}
+
+/* Le voile suit le texte, il n'éclaire pas toujours le même côté.
+
+   Chaque acte porte le sien, fixe et plein écran, éteint par défaut et allumé
+   quand l'acte entre en scène — deux actes qui se croisent produisent donc un
+   fondu, pas une bascule. Un seul voile commun aurait obligé le texte à rester
+   au même endroit toute la descente, ce qui est exactement ce qu'on veut
+   éviter : quatre plans très différents méritent quatre compositions.
+
+   Fixe et strictement horizontal ou vertical : un dégradé incliné dans une
+   boîte plus haute que large trace sa propre diagonale, et cette diagonale se
+   voit. Leçon payée sur le film précédent. */
+#prologue section::before{content:"";position:fixed;inset:0;z-index:-1;
+  pointer-events:none;opacity:0;transition:opacity .7s ease}
+#prologue section.en-scene::before{opacity:1}
+
+/* ------------------------------------------------- la hiérarchie d'un acte
+
+   Le métier était en onze pixels gris pendant que la phrase d'accroche
+   occupait quatre-vingts pixels. Visuellement, la poésie dominait et le
+   commerce concerné passait pour une note de bas de page — l'inverse de ce
+   qu'une vitrine doit faire.
+
+   L'ordre de lecture est désormais : le numéro d'acte, le MÉTIER en très
+   grand, à qui il s'adresse, puis seulement l'argument. Un agent immobilier
+   sait en une seconde que la page lui parle. */
+.acte-num{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--ambre);margin:0 0 14px;
+  display:flex;align-items:center;gap:14px}
+.acte-num::after{content:"";flex:0 0 clamp(28px,5vw,64px);height:1px;background:var(--ligne)}
+.a-d .acte-num{flex-direction:row-reverse}
+.a-c .acte-num{justify-content:center}
+.a-c .acte-num::after{display:none}
+
+/* Le corps est calé sur le mot le PLUS LONG, pas sur le plus court :
+   « RESTAURATION » compte douze signes et touchait le bord de la colonne à
+   6,2 rem. On descend à 5,4 et on élargit la colonne du prologue — un métier
+   qui déborde du cadre se lit moins bien qu'un métier un peu plus petit. */
+.metier-titre{font-family:var(--serif);font-weight:400;text-transform:uppercase;
+  font-size:clamp(2.4rem,6.2vw,5.4rem);line-height:.94;letter-spacing:-.01em;
+  margin:0;text-wrap:balance}
+#prologue .mot{max-width:min(52ch,46vw)}
+
+/* À qui, nommément. En capitales étroites et espacées : ça se lit comme une
+   liste de destinataires, pas comme une phrase. */
+.cibles{font-family:var(--mono);font-size:clamp(10px,1.05vw,12px);font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--os);
+  margin:16px 0 0;line-height:1.9}
+.cibles em{font-style:normal;color:var(--sourd)}
+
+/* L'offre, en bas du bloc, précédée d'un filet : c'est la seule ligne de
+   l'acte qui promette quelque chose, elle a droit à son propre rang. */
+.offre{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ambre);margin:22px 0 0;
+  padding-top:16px;border-top:1px solid var(--ligne);display:inline-block}
+
+/* La colonne de texte se range du côté que le voile a éteint. */
+/* Le texte s'efface avec son acte, sinon deux actes se lisent en même temps
+   au moment de la charnière. */
+#prologue .mot{opacity:0;transform:translateY(14px);
+  transition:opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)}
+#prologue .en-scene .mot{opacity:1;transform:none}
+
+.a-g .mot{margin-right:auto}
+.a-d .tenir{align-items:flex-end;text-align:right}
+.a-d .mot{margin-left:auto}
+.a-d .defiler{justify-content:flex-end}
+.a-c .tenir{align-items:center;text-align:center}
+.a-c .mot{margin:0 auto}
+.a-c .corps{margin-left:auto;margin-right:auto}
+
+.mot{max-width:min(46ch,50vw)}
+.mot .corps{margin-top:20px}
+.mot .eti{margin-bottom:26px}
+
+/* Le reste du site : opaque, il recouvre la toile. */
+#suite{position:relative;z-index:4;background:var(--noir)}
+.defiler{display:flex;align-items:center;gap:12px;margin-top:38px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--sourd)}
+.defiler i{display:block;width:52px;height:1px;background:var(--sourd);
+  transform-origin:left;animation:tirer 2.6s cubic-bezier(.65,0,.35,1) infinite}
+
+/* ============================================================== LES CHAPITRES
+   Le numéro romain n'est pas un ornement : la page décrit une chaîne de
+   production, et une chaîne a un ordre. I précède II parce que la composition
+   précède le calcul, pas parce que ça fait sérieux. */
+.chapitre{display:grid;gap:clamp(28px,4vw,64px);align-items:start}
+.chapitre .corps + .corps{margin-top:18px}
+
+/* Trois variantes de chapitre, parce que quatre fois la même grille se lit
+   comme un gabarit. Elles ne sont pas décoratives : chacune sert son contenu.
+
+   `inverse` met le texte à gauche et le titre à droite — pour le procédé, dont
+   l'explication compte plus que l'intitulé.
+   `centre` supprime la colonne — pour les chiffres, qui n'ont pas besoin
+   d'être introduits sur le côté, et pour l'invitation, qui doit s'adresser à
+   quelqu'un et non se ranger dans une grille. */
+@media (min-width:900px){
+  .chapitre.inverse{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+  .chapitre.inverse > :first-child{order:2}
+  .chapitre.inverse > :last-child{order:1;align-self:end}
+}
+.metier{display:grid;gap:8px clamp(24px,4vw,64px);padding:clamp(26px,3.4vw,44px) 0;
+  border-top:1px solid var(--ligne)}
+.metier:last-child{border-bottom:1px solid var(--ligne)}
+.metier .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--sourd)}
+.metier h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,2.4vw,2rem);
+  line-height:1.05;margin:0}
+.metier .corps{font-size:.95em}
+
+/* Le procédé : trois étapes, séparées par des filets et non par des cartes.
+   Une carte suggère qu'on peut prendre les étapes dans le désordre. */
+.etapes{margin-top:clamp(40px,6vh,72px);display:grid;gap:0}
+.etape{display:grid;gap:10px clamp(24px,4vw,64px);padding:clamp(26px,3.4vw,44px) 0;
+  border-top:1px solid var(--ligne)}
+.etape:last-child{border-bottom:1px solid var(--ligne)}
+.etape .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ambre)}
+.etape h3{font-family:var(--serif);font-weight:400;font-size:clamp(1.4rem,2.4vw,2rem);
+  line-height:1.05;margin:0}
+
+/* Les chiffres. Tous mesurés — c'est la seule raison pour laquelle ils ont le
+   droit d'être écrits aussi gros. Chiffres tabulaires : sans ça les colonnes
+   dansent d'une ligne à l'autre. */
+.chiffres{margin-top:clamp(40px,6vh,72px);display:grid;gap:1px;background:var(--ligne);
+  border:1px solid var(--ligne)}
+.chiffre{background:var(--noir);padding:clamp(24px,3vw,40px);display:flex;
+  flex-direction:column;gap:8px}
+.chiffre .val{font-family:var(--serif);font-size:clamp(2.6rem,5.2vw,4.2rem);line-height:.9;
+  font-variant-numeric:tabular-nums;color:var(--os)}
+.chiffre .val u{text-decoration:none;font-size:.4em;color:var(--gris);margin-left:.15em}
+.chiffre .quoi{font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--sourd)}
+.chiffre .note{font-size:.88em;color:var(--gris);margin:0}
+
+/* L'invitation : le seul endroit ambre plein de la page. Sa rareté est ce qui
+   lui donne son poids. */
+.appel{display:inline-flex;align-items:center;gap:14px;margin-top:36px;
+  padding:17px 30px;background:var(--ambre);color:var(--noir);text-decoration:none;
+  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;pointer-events:auto;
+  transition:background .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
+.appel:hover{background:#DCA157;transform:translateY(-2px)}
+.appel span{transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.appel:hover span{transform:translateX(5px)}
+.sous{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--sourd)}
+
+/* L'apparition. Une seule, discrète, et coupée net si le visiteur a demandé
+   moins de mouvement — auquel cas tout est visible d'emblée. */
+.pose{opacity:0;transform:translateY(20px);
+  transition:opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)}
+.vu .pose{opacity:1;transform:none}
+.vu .pose:nth-child(2){transition-delay:.08s}
+.vu .pose:nth-child(3){transition-delay:.16s}
+
+/* Le chargement. Il porte un nom, parce qu'un chargement qui dit ce qu'il fait
+   fait déjà partie du film. */
+.voile{position:fixed;inset:0;z-index:90;background:var(--noir);
+  display:grid;place-content:center;justify-items:center;gap:22px;
+  transition:opacity .9s ease}
+.voile.parti{opacity:0;pointer-events:none}
+.voile em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--sourd)}
+.voile .jauge{width:min(230px,52vw);height:1px;background:var(--ligne);overflow:hidden}
+.voile .jauge b{display:block;height:100%;width:0;background:var(--ambre);
+  transition:width .3s ease}
+.voile .pct{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--os);
+  font-variant-numeric:tabular-nums}
