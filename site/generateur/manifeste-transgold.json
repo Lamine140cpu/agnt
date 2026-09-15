@@ -250,11 +250,18 @@
         "_": "Le client confirme le 24/08/2026 que ces sociétés ont donné leur accord pour FIGURER SUR LE SITE, c'est-à-dire être citées dans le texte. C'est l'étendue de ce qui est acquis, et c'est ce que l'acte 3 en fait."
       },
       {
-        "cle": "livree_jas_dans_le_film",
-        "valeur": "le plan 2 montre un avion-cargo portant le sigle JAS",
-        "source": "décision de l'atelier, 25/08/2026",
+        "cle": "livree_avion_dans_le_film",
+        "valeur": "le plan avion montre un avion-cargo portant le sigle JAS, images 640 à 920 environ",
+        "source": "décision de l'atelier, 25/08/2026 — RÉVOQUÉE par le client le 15/09/2026",
         "origine": "choix",
-        "_": "CHOIX ASSUMÉ, PAS UN FAIT SOURCÉ, et la distinction compte pour qui relira ce fichier. L'accord obtenu porte sur la citation dans le texte ; il ne porte pas sur l'apposition de la marque de JAS sur un appareil généré. La question a été posée deux fois et l'atelier a tranché de le faire quand même. Deux conséquences à connaître : le sigle est FABRIQUÉ par le modèle vidéo, qui ne connaît pas cette marque — ce n'est donc pas le logo de JAS mais une ressemblance ; et JAS est commissionnaire de transport, l'image lui prête une flotte aérienne qu'elle n'exploite pas. Pour rendre la chose sourcée il suffirait d'un accord écrit de JAS pour cet usage précis : l'ajouter ici avec sa date et repasser origine à « registre »."
+        "_": "À REFAIRE, ET LA VALEUR CI-DESSUS DÉCRIT CE QUI EST EN LIGNE, PAS CE QUI EST VOULU. Le client demande le 15/09/2026 que le fuselage porte « CARGO » au lieu de « JAS ». Tant que les plans ne sont pas régénérés, c'est encore JAS qui est publié ; écrire ici la livrée voulue ferait de ce fichier un registre de souhaits au lieu d'un relevé, et c'est exactement ce que ce manifeste existe pour empêcher. À basculer le jour où le film régénéré est en ligne, pas avant. CE QUE LA DEMANDE RÈGLE AU PASSAGE. L'atelier avait tranché le 25/08/2026 de faire porter le sigle JAS à l'appareil, en consignant que l'accord obtenu ne couvrait PAS cet usage : le client avait autorisé la citation de JAS, Rahand, WFS et SFS dans le TEXTE, pas l'apposition d'une marque sur un appareil généré. Deux réserves étaient notées — le sigle était fabriqué par le modèle vidéo, donc une ressemblance et non le logo de JAS ; et l'image prêtait à un commissionnaire de transport une flotte aérienne qu'il n'exploite pas. Un fuselage portant « CARGO », mot générique et descriptif, ne revendique aucune marque : la demande du client supprime l'exposition au lieu de la déplacer. Il n'y a donc plus d'accord écrit à aller chercher. RELEVÉ SUR LES IMAGES LIVRÉES, pas sur le découpage d'origine : l'entrée disait « plan 2 », ce qui venait du montage à six plans ; dans la série de 1200 images réellement publiée, le lettrage est lisible de l'image 640 environ — la sortie de soute — à l'image 920, la fin du vol. À 930 la caméra est dans les nuages et plus aucun lettrage n'est visible : c'est là que la régénération peut se raccorder."
+      },
+      {
+        "cle": "lettrage_avion_demande",
+        "valeur": "CARGO",
+        "source": "le client, demande du 15/09/2026",
+        "origine": "client",
+        "_": "Le mot exact à porter sur le fuselage, dans la livrée existante — lettres bleues sur fuselage blanc. Il est consigné ici parce qu'un modèle vidéo rend le texte de façon peu fiable : « CARG0 », « CAROG » et les lettres soudées sont des sorties courantes, et c'est la même classe de défaut que le logo apparu à l'image 164 du premier montage. Le mot est donc à VÉRIFIER image par image sur le plan rendu, pas à supposer. Le montage recommandé pour s'en affranchir : fabriquer l'image de référence du fuselage avec un modèle d'image — le rendu de texte y est fiable — puis la donner comme référence au modèle vidéo, qui anime au lieu d'écrire."
       },
       {
         "cle": "nature_capital",

@@ -373,6 +373,100 @@ INTERDIT. Coupe, fondu, transition ajoutée, rotation de caméra, panoramique, z
 
 ---
 
+# Les deux plans avion
+
+**Jamais écrits jusqu'ici, et c'est un trou du dossier.** Le montage d'origine
+comptait six plans ; le fret aérien a été ajouté au remontage à sept sans que
+ce document suive. Les prompts ont donc été tapés directement dans l'outil, et
+rien n'en est resté. Relevé sur les images publiées le 15/09/2026 : le lettrage
+du fuselage est lisible de l'image **640** environ — la sortie de soute — à
+l'image **920**, la fin du vol. À partir de 930 la caméra est dans les nuages
+et plus aucun lettrage n'est visible.
+
+**CE QUI CHANGE, ET POURQUOI.** Le fuselage portait le sigle **JAS**. Le client
+demande le 15/09/2026 qu'il porte **CARGO**. Ce n'est pas qu'une préférence : le
+manifeste consignait déjà que l'accord obtenu couvrait la citation de JAS dans
+le TEXTE, pas l'apposition de sa marque sur un appareil généré, et que l'image
+prêtait à un commissionnaire de transport une flotte aérienne qu'il n'exploite
+pas. Un mot générique règle les deux d'un coup.
+
+**LA COUTURE EST À L'IMAGE 930.** Chaque plan est amorcé par la dernière image
+du précédent : régénérer un plan oblige en principe à régénérer tous ceux qui
+suivent. Ici non — le plan des nuages ne montre ni avion ni lettrage, et sa
+première image est un ciel encombré sans repère. On peut donc reprendre à partir
+de lui sans le refaire, et seuls les deux plans ci-dessous sont à recommander.
+
+**LE MOT EST LE POINT FAIBLE.** Un modèle vidéo écrit mal : « CARG0 », « CAROG »,
+lettres soudées. C'est la même classe de défaut que le logo apparu à l'image 164
+du premier montage. Deux parades, à cumuler : joindre une image de référence du
+fuselage où le mot est correct — à fabriquer avec un modèle d'IMAGE, dont le
+rendu de texte est fiable, plutôt qu'à espérer du modèle vidéo — et vérifier le
+plan rendu image par image avant de monter.
+
+## Plan A — L'avion au sol
+
+```
+IMAGES JOINTES — deux rôles distincts.
+
+La première est L'IMAGE DE DÉPART : le plan commence exactement sur elle et poursuit le mouvement sans le moindre à-coup.
+
+Les autres sont les RÉFÉRENCES DE LA LIVRÉE. Elles ne donnent ni le décor, ni le cadrage, ni la lumière : elles fixent le marquage du fuselage — le mot, ses couleurs, sa typographie, son orthographe — et il doit être identique sur TOUTES les images du plan.
+
+L'image jointe est la première image de ce plan. Poursuis le mouvement sans le moindre à-coup.
+
+Un seul plan continu de huit secondes, sans aucune coupe, le long du flanc d'un avion-cargo à l'arrêt sur une aire de trafic.
+
+MOUVEMENT. Translation latérale pure, de l'avant vers l'arrière de l'appareil, à vitesse rigoureusement constante, axe strictement horizontal, à hauteur du fuselage. À la première image on est cadré sur la pointe avant et le poste de pilotage ; à la dernière on est parvenu au niveau du réacteur et de l'aile. Entre les deux, le flanc traverse le cadre d'un bord à l'autre, entièrement visible et parfaitement net. Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement, aucune variation de vitesse ni de distance.
+
+SUJET. Un avion-cargo gros-porteur bimoteur à fuselage blanc, immobile sur l'aire, train sorti. La grande porte cargo du pont principal est OUVERTE sur le haut du flanc, laissant voir la soute éclairée et des palettes filmées. Les seuls reliefs sont ceux de l'appareil : les hublots obturés, les lignes de panneaux, les rivets, la porte cargo et son encadrement, le train avant, le réacteur sous l'aile. AUCUNE PERSONNE, aucun véhicule de piste, aucun engin.
+
+DÉCOR. Aire de trafic en béton clair, marquages au sol jaunes et rouges usés, plat jusqu'à l'horizon. Ciel couvert, gris uniforme, sans soleil visible. Aucun bâtiment lisible, aucun panneau, aucun autre appareil, aucun texte au sol autre que les marquages de piste.
+
+LIVRÉE. Fuselage blanc. Sur le haut du flanc, entre le poste de pilotage et l'aile, un seul mot en grandes capitales italiques BLEUES : CARGO. Cinq lettres, dans cet ordre exact : C, A, R, G, O. Sous le mot, une double vague bleue effilée qui file vers l'arrière. La dérive est blanche et porte la même vague bleue, sans texte. Aucun autre marquage, aucun autre mot, aucun logo, aucune immatriculation lisible, aucun drapeau. L'orthographe est EXACTEMENT CARGO, lettre pour lettre, sur toutes les images du plan sans exception : aucune lettre ne change de forme, ne disparaît, ne s'ajoute ni ne se soude à sa voisine d'une image à l'autre.
+
+CAMÉRA. Objectif 50 mm, f/5.6, ISO 400, sur véhicule travelling parfaitement stabilisé, PERPENDICULAIRE au flanc, verticales parfaitement redressées. La distance au fuselage ne varie pas d'un bout à l'autre du plan : le mot CARGO conserve exactement la même taille dans le cadre. Nette de bout en bout. Obturateur 1/1000 s : chaque image parfaitement nette, AUCUN FILÉ.
+
+LUMIÈRE. Jour couvert, lumière diffuse et sans direction marquée. Le flanc blanc est éclairé de façon RIGOUREUSEMENT UNIFORME sur toute sa longueur : pas de dégradé, pas de reflet mobile qui court sur la tôle, pas d'ombre portée qui traverse. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+
+CADRE. Le mot CARGO reste dans le TIERS CENTRAL de l'image, en largeur, pendant la plus grande partie du plan. Sur téléphone, seule une bande verticale centrale reste visible : le fuselage doit occuper toute la hauteur utile du cadre, et rien d'important ne doit se trouver aux extrémités gauche et droite.
+
+RENDU. Prise de vue réelle, film documentaire aéronautique haut de gamme, qualité commerciale. Colorimétrie neutre et fidèle, blancs tenus et non brûlés, contraste doux. Grain photographique très fin. 30 images par seconde, 8 secondes, format 16:9 horizontal, résolution 3840x2160, 4K NATIVE (réglage de sortie au maximum, aucun agrandissement ultérieur), débit élevé, netteté jusque dans les textures fines : rivets, joints de panneaux, bords de la porte cargo.
+
+INTERDIT. Coupe, fondu, transition, rotation de caméra, panoramique, zoom, tremblement, variation de distance au fuselage, variation de vitesse, flou de mouvement, filé, reflet mobile sur la tôle, ombre portée qui traverse le flanc, dégradé de lumière le long du fuselage, caractère déformé, lettre inventée, lettre manquante, lettre soudée, orthographe modifiée, mot autre que CARGO, marque réelle de compagnie aérienne, sigle de transitaire, immatriculation lisible, drapeau, panneau, filigrane, deuxième appareil, véhicule de piste, personne, silhouette, animal, fumée, vapeur, poussière, particules, rendu 3D, image de synthèse.
+```
+
+## Plan B — Le décollage
+
+```
+IMAGES JOINTES — deux rôles distincts. Mêmes rôles qu'au plan précédent : la première est l'image de départ, les autres fixent le marquage du fuselage.
+
+L'image jointe est la première image de ce plan. Reprends exactement le même appareil, la même livrée, la même lumière, et poursuis le mouvement sans le moindre à-coup.
+
+Un seul plan continu de huit secondes, sans aucune coupe : le même avion-cargo quitte le sol et monte.
+
+MOUVEMENT. La caméra accompagne l'appareil à sa vitesse exacte : l'avion reste dans le cadre et c'est le sol qui s'éloigne sous lui, à vitesse rigoureusement constante. La caméra s'élève avec lui en translation pure, sans jamais tourner autour. À la première image le train quitte à peine le béton, l'appareil vu de trois quarts arrière ; à la dernière il est en montée, ailes à plat, le sol n'est plus qu'une nappe floue en bas du cadre. Aucune rotation, aucun panoramique, aucun zoom, aucun tremblement, aucune variation de vitesse.
+
+SUJET. Le même avion-cargo gros-porteur bimoteur à fuselage blanc, porte cargo maintenant FERMÉE et affleurante, train en cours de rentrée puis rentré. Les seuls reliefs sont ceux de l'appareil. AUCUNE PERSONNE, aucun autre aéronef.
+
+DÉCOR. Fin de piste puis campagne rase qui s'éloigne, ciel couvert gris uniforme qui occupe progressivement tout le cadre. Aucun bâtiment lisible, aucun panneau, aucun texte au sol.
+
+LIVRÉE. Identique au plan précédent, sans aucune dérive : fuselage blanc, le seul mot CARGO en grandes capitales italiques BLEUES sur le haut du flanc, cinq lettres dans cet ordre exact — C, A, R, G, O — la double vague bleue effilée dessous, la dérive blanche à vague bleue sans texte. Aucun autre marquage, aucun autre mot, aucun logo, aucune immatriculation lisible, aucun drapeau. L'orthographe est EXACTEMENT CARGO sur toutes les images du plan sans exception, quelle que soit l'inclinaison de l'appareil.
+
+CAMÉRA. Objectif 85 mm, f/5.6, ISO 400, suivi parfaitement stabilisé, verticales redressées tant que l'horizon est dans le cadre. Nette de bout en bout. Obturateur 1/1000 s : chaque image parfaitement nette, aucun filé sur le sol.
+
+LUMIÈRE. Même jour couvert, inchangé. Lumière diffuse et sans direction marquée. Le flanc blanc reste éclairé uniformément malgré la montée : pas de reflet mobile, pas de passage à contre-jour. Exposition et balance des blancs VERROUILLÉES du début à la fin.
+
+CADRE. L'appareil reste dans le TIERS CENTRAL de l'image, en largeur, et le mot CARGO reste lisible pendant la plus grande partie du plan. Rien d'important aux extrémités gauche et droite.
+
+RENDU. Prise de vue réelle, film documentaire aéronautique haut de gamme, qualité commerciale. Colorimétrie neutre, blancs tenus, contraste doux. Grain très fin. 30 images par seconde, 8 secondes, 16:9 horizontal, 3840x2160, 4K NATIVE, débit élevé.
+
+DERNIÈRE IMAGE. Le plan doit se terminer sur un ciel couvert encombré de nuages, l'appareil en haut de cadre ou déjà sorti du champ : c'est cette image qui amorce le plan des nuages, qui n'est pas régénéré.
+
+INTERDIT. Coupe, fondu, transition, rotation de caméra autour de l'appareil, panoramique, zoom, tremblement, variation de vitesse, flou de mouvement, filé, caractère déformé, lettre inventée, lettre manquante, lettre soudée, orthographe modifiée, mot autre que CARGO, marque réelle de compagnie aérienne, sigle de transitaire, immatriculation lisible, drapeau, traînée de condensation, fumée de réacteur, oiseau, deuxième aéronef, personne, filigrane, rendu 3D, image de synthèse.
+```
+
+---
+
 # Après la génération
 
 **Extraction.** `film_video.py` découpe les six plans en 1 440 images, format
