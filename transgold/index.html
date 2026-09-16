@@ -705,6 +705,30 @@ body{margin:0;background:var(--noir);color:var(--os);font-family:var(--sans);
        n'est plus un indice, c'est un défaut d'affichage. */
     -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);
     mask-image:linear-gradient(90deg,#000 88%,transparent)}
+
+  /* ------------------------------------- L'EN-TETE SE REPLIE SUR LE FILM
+
+     Sur telephone l en-tete tient sur deux rangees et recouvre le cinquieme
+     superieur de l ecran. Le film, lui, est cadre en 16:9 et compose dans tout
+     le cadre : le lettrage du fuselage tombe donc DERRIERE le menu. Releve sur
+     un vrai appareil — le mot peint sur l avion etait illisible.
+
+     La seconde rangee se replie donc pendant le prologue, et elle seule : le
+     logo et le numero restent, parce que le numero est ce que le visiteur doit
+     pouvoir toucher a tout moment. Elle revient en haut de page et une fois le
+     film passe, la ou le menu sert a quelque chose.
+
+     `overflow:hidden` et non `display:none` : la rangee doit pouvoir se replier
+     en glissant. Une rangee qui disparait d un coup se remarque plus que la
+     barre qu on voulait alleger. */
+  .tete .menu{max-height:2.4em;opacity:1;
+    transition:max-height .28s ease, opacity .2s ease, padding-bottom .28s ease}
+  .tete.replie{row-gap:0;padding-bottom:6px}
+  .tete.replie .menu{max-height:0;opacity:0;padding-bottom:0;overflow:hidden;
+    pointer-events:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .tete .menu,.tete.replie .menu{transition:none}
 }
 /* Pas de retour à la ligne. La rangée défile déjà horizontalement ; sans
    `nowrap`, chaque intitulé se coupait en trois — « COMMENT / ÇA / MARCHE » —
@@ -2787,6 +2811,60 @@ function acteCourant(){
   voile.classList.add('parti');
 })();
 
+</script>
+<script>
+/* Le repli de l'en-tête, décidé sur la POSITION et non sur la direction.
+
+   Un en-tête qui se replie quand on descend et revient quand on remonte est
+   l'usage courant. Il ne convient pas ici : le film se relit en remontant, et
+   la rangée surgirait alors en plein milieu d'un plan, ce qui est exactement
+   ce qu'on cherche à éviter.
+
+   On se règle donc sur l'endroit. Repliée pendant le prologue — là où le film
+   occupe l'écran et où personne ne navigue — dépliée en haut de page et une
+   fois le film passé, là où le menu sert. Deux états, aux mêmes endroits à
+   chaque visite.
+
+   TOUT SE JOUE SUR LE TÉLÉPHONE, et la garde est explicite : au-dessus de
+   899 px l'en-tête tient sur une rangée, il n'y a rien à replier et la classe
+   n'aurait aucun effet. On évite quand même de la poser, pour que l'état du
+   DOM dise la vérité.
+
+   Les mesures se prennent au chargement et au redimensionnement, jamais dans
+   l'écouteur de défilement : lire `offsetHeight` à chaque pixel parcouru
+   forcerait un recalcul de mise en page soixante fois par seconde, juste à
+   côté du dessin du film. C'est la faute que ce lecteur a déjà payée. */
+(function replierEnTete(){
+  const tete = document.querySelector('.tete');
+  const prologue = document.getElementById('prologue');
+  if (!tete || !prologue || !tete.querySelector('.menu')) return;
+
+  const etroit = matchMedia('(max-width:899px)');
+  let haut = 0, bas = 0;
+
+  function mesurer(){
+    /* Le repli s'engage après une hauteur d'écran : en haut de page, le
+       visiteur vient d'arriver et le menu doit être là. Il se relâche un écran
+       avant la fin du prologue, pour que la rangée soit déjà revenue quand le
+       premier bloc de texte arrive. */
+    haut = innerHeight * 0.5;
+    bas = Math.max(prologue.offsetTop + prologue.offsetHeight - innerHeight * 1.5, haut);
+  }
+
+  let pose = null;
+  function juger(){
+    const veut = etroit.matches && scrollY > haut && scrollY < bas;
+    if (veut === pose) return;          // on ne touche au DOM que si ça change
+    pose = veut;
+    tete.classList.toggle('replie', veut);
+  }
+
+  mesurer(); juger();
+  addEventListener('scroll', juger, { passive: true });
+  addEventListener('resize', () => { mesurer(); juger(); }, { passive: true });
+  addEventListener('load', () => { mesurer(); juger(); });
+  etroit.addEventListener('change', () => { mesurer(); juger(); });
+})();
 </script>
 </body>
 </html>
