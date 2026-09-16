@@ -809,8 +809,7 @@ footer{position:relative;z-index:4;background:var(--fond);color:var(--gris);
   'accueil-etroit': { chemin: 'assets/film/transgold-etroit/f',  images: 194, largeur: 720, hauteur: 1280, octets: 23003 },
 };
 </script>
-<script>
-/* ============================================================================
+<script>/* ============================================================================
    LE LECTEUR — la source unique.
 
    Ce fichier était recopié dans chaque page. Mesuré avant de l'extraire : six
@@ -1218,6 +1217,27 @@ function depuisBase64(str){
 }
 
 let fetchData = true;
+/* UNE REQUÊTE D'IMAGE DOIT POUVOIR MOURIR, et c'est ce qui manquait.
+ *
+ * Sans délai d'attente, une requête suspendue — le cas ordinaire d'une 4G qui
+ * faiblit — ne se termine JAMAIS. Son numéro reste dans `encours` à vie, et
+ * `fenetre()` ne lance rien tant que `encours.size < EN_VOL`. Les requêtes
+ * mortes s'accumulent donc une à une : le budget de chargement se réduit, le
+ * film avance de plus en plus mal, et à la vingt-quatrième le chargeur
+ * s'arrête DÉFINITIVEMENT. La page ne rend plus la main.
+ *
+ * Signalé par un visiteur sur iPhone en 4G : « plus on avance plus ça ralentit,
+ * puis c'est un freeze total ». Le symptôme décrit la panne exactement.
+ *
+ * Huit secondes : une image de trente kilo-octets qui n'est pas arrivée en huit
+ * secondes n'arrivera pas à temps de toute façon — la fenêtre glissante est
+ * passée à autre chose. Abandonner libère la place, et `lire` retire alors le
+ * numéro de `encours`, ce qui rend l'image REDEMANDABLE au tour suivant.
+ *
+ * `AbortController` et non `AbortSignal.timeout` : ce dernier n'existe qu'à
+ * partir de Safari 16, et ce lecteur porte déjà un repli pour Safari 14. */
+const DELAI_IMAGE = 8000;
+
 function source(i){
   if (SOURCES && SOURCES[NOM]) {
     const str = SOURCES[NOM][i];
@@ -1231,9 +1251,18 @@ function source(i){
     }
     return Promise.resolve(depuisBase64(str));
   }
-  return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`)
-    .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); });
+  const arret = new AbortController();
+  ARRETS.set(i, arret);
+  const minuteur = setTimeout(() => arret.abort(), DELAI_IMAGE);
+  return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`,
+               { signal: arret.signal })
+    .then((r) => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+    .finally(() => { clearTimeout(minuteur); ARRETS.delete(i); });
 }
+
+/* LES REQUÊTES EN VOL, PAR NUMÉRO D'IMAGE. Elles servent à en abandonner une
+   quand le défilement l'a dépassée — voir `elaguer`. */
+const ARRETS = new Map();
 
 /* Repli pour les navigateurs sans createImageBitmap — Safari ne l'a qu'à partir
    de la version 15. Sans lui, TOUTES les images échouaient et la page se
@@ -1392,7 +1421,29 @@ function reglerFenetre(){
   SEQ.avant = min(borne(round(AVANCE / parImage), 6, 120), oubli);
 }
 
+/* ON ABANDONNE CE QUE LE DÉFILEMENT A DÉPASSÉ.
+ *
+ * Le délai d'attente seul ne suffit pas, et c'est mesuré : avec une requête sur
+ * dix qui reste suspendue, huit secondes d'attente occupent en permanence une
+ * vingtaine des vingt-quatre créneaux, et le film ne suit plus. Le chargeur
+ * passe son temps à attendre des images dont personne ne veut plus.
+ *
+ * On coupe donc sur la PERTINENCE et non sur la montre : une image sortie de la
+ * fenêtre glissante n'a plus aucune chance d'être affichée, quelle que soit sa
+ * vitesse d'arrivée. L'abandonner rend son créneau tout de suite, et se règle
+ * tout seul — plus on défile vite, plus on renonce tôt.
+ *
+ * La marge est celle de la fenêtre, doublée : on ne veut pas abandonner une
+ * image que le visiteur rattraperait en remontant de quelques pixels. */
+function elaguer(centre){
+  if (!ARRETS.size) return;
+  const marge = max(SEQ.avant, SEQ.arriere) * 2 + 8;
+  for (const [i, arret] of ARRETS)
+    if (abs(i - centre) > marge) arret.abort();
+}
+
 function fenetre(centre){
+  elaguer(centre);
   for (let d = 0; d <= SEQ.avant && encours.size < EN_VOL; d++) {
     charger(centre + d);
     if (d <= SEQ.arriere && encours.size < EN_VOL) charger(centre - d);
@@ -2338,58 +2389,6 @@ function acteCourant(){
   voile.classList.add('parti');
 })();
 
-</script>
-
-<script>
-/* Le relevé et la barre d'avancement, pilotés par la MÊME progression que le
-   numéro d'image — `window.__VOULUE` — pour qu'ils ne puissent pas se
-   désynchroniser de ce qu'on voit.
-
-   Le relevé disparaît dès qu'on quitte le film : au-delà du prologue il
-   n'aurait plus rien à relever, et il masquerait le texte de la suite. */
-(function releve(){
-  const barre = document.getElementById('avance');
-  const bande = document.querySelector('.releve');
-  const prologue = document.getElementById('prologue');
-  const champs = { etape: document.getElementById('r-etape'),
-                   pos: document.getElementById('r-pos') };
-
-  const JALONS = [
-    [0.00, 'Chargement',      'Aulnay-sous-Bois'],
-    [0.14, 'Départ',          'Seine-Saint-Denis'],
-    [0.32, 'Grand axe',       'A1 · direction nord'],
-    [0.55, 'Longue distance', 'Autoroute'],
-    [0.76, 'Approche',        'Zone de livraison'],
-    [0.92, 'Livraison',       'Destinataire'],
-  ];
-
-  let derniere = -1, visible = true;
-  (function boucle(){
-    requestAnimationFrame(boucle);
-
-    const fin = prologue.offsetTop + prologue.offsetHeight - innerHeight * 0.4;
-    const doitVoir = scrollY < fin;
-    if (doitVoir !== visible) {
-      visible = doitVoir;
-      bande.style.opacity = visible ? '1' : '0';
-      bande.style.transition = 'opacity .4s ease';
-      bande.style.pointerEvents = 'none';
-    }
-
-    const total = window.__IMAGES || 0;
-    const voulue = window.__VOULUE;
-    if (!total || typeof voulue !== 'number') return;
-    const p = Math.min(Math.max(voulue / (total - 1), 0), 1);
-    if (Math.abs(p - derniere) < 0.0004) return;
-    derniere = p;
-
-    barre.style.width = (p * 100).toFixed(2) + '%';
-    let j = JALONS[0];
-    for (const x of JALONS) if (p >= x[0]) j = x;
-    champs.etape.textContent = j[1];
-    champs.pos.textContent = j[2];
-  })();
-})();
 </script>
 
 </body>
