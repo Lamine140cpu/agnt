@@ -1,0 +1,51 @@
+{
+  "nom": "gabarit",
+  "verifie": false,
+
+  "_": "LE GABARIT, PAS UN FOURNISSEUR. Copier ce fichier sous le nom du vrai fournisseur, remplir avec SA documentation, l'essayer sur UN plan, corriger ce qui ne colle pas, et seulement alors passer \"verifie\" à true. Tant qu'il est à false, `fournisseur.py` refuse de tourner — parce que six plans commandés sur des noms de champs devinés, ce sont six plans payés pour rien.",
+
+  "_jetons": "Ce qui est remplacé partout : {cle} la clé d'API, {prompt} le texte du plan, {duree} en secondes, {amorce_b64} la dernière image du plan précédent en base64, {tache} l'identifiant rendu par la soumission. Un champ qui vaut exactement un jeton garde son type — \"{duree}\" part comme le nombre 8, pas comme la chaîne \"8\".",
+
+  "soumettre": {
+    "_": "L'appel qui lance la génération. Il doit rendre un identifiant de tâche, pas la vidéo : tous les modèles vidéo sont asynchrones.",
+    "url": "https://api.exemple.com/v1/videos",
+    "entetes": {
+      "Authorization": "Bearer {cle}"
+    },
+    "corps": {
+      "_": "LE CHAMP QUI COMPTE EST L'IMAGE DE DÉPART. C'est lui, et lui seul, qui fait la continuité entre deux plans. Son nom change chez chacun — image, first_frame, start_image, init_image — et il faut le prendre dans la doc, jamais le deviner. Attention aussi à sa forme : certains veulent du base64 nu, d'autres une data-URI « data:image/jpeg;base64,… », d'autres une URL. Quand il n'y a pas d'amorce (le premier plan), le champ est retiré de la requête, pas envoyé vide.",
+      "model": "a-remplir",
+      "prompt": "{prompt}",
+      "duration": "{duree}",
+      "image": "{amorce_b64}"
+    },
+    "champ_tache": "data.task_id"
+  },
+
+  "interroger": {
+    "_": "L'appel répété jusqu'à ce que ce soit prêt. Les chemins de champs se notent avec des points, et un nombre traverse une liste : « result.0.url ».",
+    "url": "https://api.exemple.com/v1/videos/{tache}",
+    "entetes": {
+      "Authorization": "Bearer {cle}"
+    },
+    "champ_etat": "status",
+    "fini": ["succeeded"],
+    "echoue": ["failed", "canceled", "rejected"],
+    "champ_video": "output.video_url"
+  },
+
+  "attente": 10,
+  "plafond": 900,
+
+  "_reglages": "attente : secondes entre deux interrogations. plafond : au-delà on abandonne — sans lui, un fournisseur qui reste coincé bloque une chaîne censée tourner sans personne devant l'écran.",
+
+  "_a_verifier_sur_un_plan": [
+    "le nom exact du champ d'image de départ, et sa forme (base64 nu ? data-URI ? URL ?)",
+    "le chemin de l'identifiant de tâche dans la réponse de soumission",
+    "les valeurs d'état exactes — « succeeded » ou « completed » ou « done »",
+    "TOUTES les valeurs d'échec : une qui manque et la chaîne attend jusqu'au plafond au lieu de refuser tout de suite",
+    "le chemin du lien de la vidéo",
+    "la définition rendue : le lecteur veut du 1920x1080, et la série étroite s'en déduit",
+    "et surtout : le plan part-il VRAIMENT de l'image donnée, ou fait-il un pont puis une coupe comme « Extend » ? La monteuse le mesure et refusera, mais autant le savoir avant."
+  ]
+}

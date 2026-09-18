@@ -1,0 +1,68 @@
+{
+  "site": "ultra-motion",
+  "_": "Le contrat de la vitrine du studio. Deuxième site posé sur ce contrat, et c'est lui qui a montré ce qui était vraiment générique : ses deux séries ne montrent PAS le même cadre, contrairement à celles de Trans Gold, et la règle de choix a dû être refaite pour les traiter toutes les deux.",
+
+  "film": {
+    "series": {
+      "accueil": {
+        "_": "La série de bureau, en 16:9.",
+        "dossier": { "valeur": "accueil", "origine": "choix" },
+        "largeur": { "valeur": 1920, "origine": "mesure" },
+        "hauteur": { "valeur": 1080, "origine": "mesure" },
+        "images":  { "valeur": 464, "origine": "mesure" },
+        "rapport": { "valeur": 1.778, "origine": "mesure" },
+        "course":  "1440x900"
+      },
+      "accueil-etroit": {
+        "_": "UN VRAI MONTAGE PORTRAIT, pas un recadrage — c'est la différence avec Trans Gold, et elle est mesurée : écart de 43 à 54 sur 255 contre un rognage centré du maître reconstruit image par image, sur les quatre cinquièmes du film. Les plans y sont composés pour le format. D'où le choix de série par la FORME d'abord : servir ici la pellicule large à un téléphone lui donnerait des cadrages pensés pour un autre écran.",
+        "dossier": { "valeur": "accueil-etroit", "origine": "choix" },
+        "largeur": { "valeur": 720, "origine": "mesure" },
+        "hauteur": { "valeur": 1280, "origine": "mesure" },
+        "images":  { "valeur": 312, "origine": "mesure" },
+        "rapport": { "valeur": 0.563, "origine": "mesure" },
+        "course":  "390x844"
+      }
+    },
+    "qualite": { "valeur": 45, "origine": "choix" },
+    "densite_visee": {
+      "_": "33 px de défilement par image, comme le site de référence : à 1000 px/s cela fait 30 changements d'image par seconde, la cadence du cinéma.",
+      "valeur": 33, "origine": "choix"
+    }
+  },
+
+  "page": {
+    "courses": {
+      "_": "prologue.offsetHeight - innerHeight, relevé dans la page servie. Ces valeurs étaient les DÉFAUTS du script de construction — elles décrivaient la vitrine, et se sont retrouvées appliquées à Trans Gold, dont la course vaut 26 100. Un défaut global ne peut pas servir deux sites : chacun porte les siennes ici.",
+      "1440x900": { "valeur": 15300, "origine": "mesure" },
+      "1280x800": { "valeur": 13600, "origine": "mesure" },
+      "900x800":  { "valeur": 13600, "origine": "mesure" },
+      "390x844":  { "valeur": 10297, "origine": "mesure" },
+      "360x740":  { "valeur": 9028, "origine": "mesure" }
+    },
+    "serie_attendue": {
+      "_": "Une mauvaise série ne se voit pas à l'écran, elle se paye en octets — ou, ici, en cadrages composés pour un autre format.",
+      "1440x900": "accueil",
+      "1280x800@2": "accueil",
+      "900x800": "accueil",
+      "390x844@3": "accueil-etroit",
+      "360x740@2": "accueil-etroit"
+    },
+    "toile_hauteur_telephone": {
+      "_": "PAS de bande sur téléphone ici, contrairement à Trans Gold. Là-bas le film était un 16:9 rogné aux deux tiers par l'écran ; ici la série étroite est un montage portrait, composé pour occuper l'écran entier. Le correctif d'un site serait le défaut de l'autre.",
+      "valeur": "100%", "origine": "choix"
+    }
+  },
+
+  "seuils": {
+    "images_par_seconde": 55,
+    "densite_max": 40,
+    "contraste_corps": 4.5,
+    "contraste_second_plan": 3.0,
+    "tailles_a_verifier": ["1440x900", "1280x800@2", "900x800", "390x844@3", "360x740@2"]
+  },
+
+  "client": {
+    "_": "La vitrine est celle du studio lui-même : il n'y a pas de tiers dont il faudrait vérifier les dires.",
+    "faits": []
+  }
+}

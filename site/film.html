@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kilomètre</title>
+<style>
+/* Un seul thème, sombre, pour toute la page.
+
+   La version précédente basculait clair/sombre selon l'acte. Sur nos rendus
+   3D, très contrastés, ça marchait. Sur une prise de vue réelle, non : la
+   séquence tient entre 58 et 129 de luminance — du gris moyen partout, jamais
+   assez clair pour porter un texte sombre, jamais assez sombre pour s'en
+   passer. Basculer rendait les deux moitiés mauvaises au lieu d'une. */
+:root{
+  --ground:#0B0C0E; --ink:#F4F3F1; --ink-soft:#A3A2A7;
+  --line:rgba(244,243,241,.18); --accent:#6D9BFF;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --gut:clamp(20px,5vw,64px);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+
+/* La toile est fixe et couvre l'écran. Le défilement ne la déplace pas : il
+   change l'image qu'elle affiche. C'est toute l'idée. */
+#toile{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:block;background:var(--ground)}
+
+.bar{position:fixed;top:0;left:0;right:0;z-index:6;display:flex;justify-content:space-between;
+  align-items:center;padding:20px var(--gut);font-family:var(--mono);font-size:10px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);pointer-events:none}
+.bar b{font-weight:500;letter-spacing:.34em;color:var(--ink)}
+.rail{position:fixed;z-index:6;left:50%;transform:translateX(-50%);bottom:20px;
+  width:min(220px,42vw);height:2px;background:var(--line);border-radius:2px}
+.rail span{display:block;height:100%;width:0;background:var(--accent);border-radius:2px}
+
+main{position:relative;z-index:4}
+section{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:0 var(--gut) clamp(88px,14vh,170px);pointer-events:none}
+.mot{position:relative;max-width:min(34ch,44vw);pointer-events:auto}
+
+/* Le voile. C'est lui qui décide si la page est lisible ou pas, et il a été
+   refait deux fois.
+
+   D'abord un halo radial collé au bloc de texte : sur une image de gris
+   uniforme il ne mordait pas assez, le texte passait devant la voiture et
+   devenait illisible dès qu'elle traversait le cadre.
+
+   Puis le même dégradé, mais étendu et incliné pour couvrir l'écran. Erreur :
+   un dégradé incliné dans une boîte trois fois plus haute que large trace une
+   diagonale, et cette diagonale se voyait comme une couture au milieu de
+   chaque image.
+
+   Celui-ci est FIXE et plein écran, un seul pour toute la page, strictement
+   horizontal. Il n'a plus ni bord ni inclinaison, donc plus rien à trahir. On
+   ne voile pas l'image : on éteint un côté, et le sujet reste intact — c'est
+   le procédé d'Apple et de Ciao. */
+main::before,main::after{content:"";position:fixed;inset:0;z-index:-1;
+  pointer-events:none;transition:opacity .55s ease}
+main::before{background:linear-gradient(90deg,
+  rgba(6,7,9,.93) 0%, rgba(6,7,9,.86) 24%, rgba(6,7,9,.54) 46%,
+  rgba(6,7,9,.17) 66%, transparent 82%)}
+/* La carte de fin est centrée : un voile latéral la laisserait à cheval sur
+   un côté sombre et un côté clair. Les deux se croisent en fondu. */
+main::after{opacity:0;background:radial-gradient(60% 48% at 50% 46%,
+  rgba(6,7,9,.88) 0%, rgba(6,7,9,.62) 46%, rgba(6,7,9,.22) 72%, transparent 90%)}
+html.final main::before{opacity:0}
+html.final main::after{opacity:1}
+
+/* Sous 820 px, la colonne de texte prend toute la largeur : un dégradé
+   latéral n'a plus de côté où s'éteindre. Il passe donc par le bas, où le
+   texte est de toute façon posé. */
+@media (max-width:820px){
+  .mot{max-width:none}
+  main::before{background:linear-gradient(transparent 8%,
+    rgba(6,7,9,.42) 38%, rgba(6,7,9,.86) 68%, rgba(6,7,9,.94) 100%)}
+}
+h1,h2{font-weight:800;text-transform:uppercase;margin:0;line-height:.92;letter-spacing:-.035em;
+  text-wrap:balance}
+h1{font-size:clamp(2.4rem,7.6vw,5rem)}
+h2{font-size:clamp(1.9rem,5.4vw,3.4rem)}
+.lede{margin:14px 0 0;max-width:34ch;font-size:clamp(14px,1.6vw,17px);color:var(--ink-soft);line-height:1.55}
+.eyebrow{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--accent);margin:0 0 20px}
+.reveal{opacity:0;transform:translateY(16px);
+  transition:opacity .4s ease,transform .4s cubic-bezier(.22,1,.36,1)}
+.posed .reveal{opacity:1;transform:none}
+.posed h2.reveal{transition-delay:.12s}
+.posed .lede.reveal{transition-delay:.22s}
+
+/* La carte de fin. Le logo est centré, donc le dégradé latéral ne lui sert à
+   rien : il lui faut un voile centré, et plus dense que pour un titre — c'est
+   l'image sur laquelle le visiteur s'arrête, elle a le droit d'être calme. */
+section.fin{justify-content:center;align-items:center;padding-bottom:0;text-align:center}
+section.fin .mot{max-width:none}
+section.fin .lede{margin:22px auto 0;font-family:var(--mono);font-size:11px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--ink)}
+.marque{margin:0;font-weight:800;text-transform:uppercase;line-height:.9;
+  letter-spacing:-.03em;font-size:clamp(2.6rem,9vw,6.5rem)}
+
+/* La barre et la jauge flottent sur l'image sans bloc derrière elles : il leur
+   faut leur propre voile, sinon elles disparaissent dès qu'un aplat clair
+   passe dessous. Deux bandes très douces, en haut et en bas. */
+body::before,body::after{content:"";position:fixed;left:0;right:0;height:120px;
+  z-index:5;pointer-events:none}
+body::before{top:0;background:linear-gradient(rgba(6,7,9,.55),transparent)}
+body::after{bottom:0;background:linear-gradient(transparent,rgba(6,7,9,.5))}
+
+.charge{position:fixed;inset:0;z-index:9;display:grid;place-content:center;gap:18px;
+  justify-items:center;background:var(--ground);transition:opacity .7s ease}
+.charge.parti{opacity:0;pointer-events:none}
+.charge i{display:block;width:120px;height:2px;background:var(--line);overflow:hidden}
+.charge i b{display:block;height:100%;width:0;background:var(--accent);transition:width .25s ease}
+.charge em{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-soft)}
+@media (prefers-reduced-motion:reduce){*,*::before{transition-duration:.001ms!important}
+  .reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<canvas id="toile"></canvas>
+<div class="bar"><b>Kilomètre</b><span>Location · Bordeaux</span></div>
+<div class="rail"><span id="jauge-scroll"></span></div>
+<main id="scene"></main>
+<div class="charge" id="charge"><i><b id="jauge"></b></i><em id="etape">Chargement</em></div>
+
+<script>
+/* ============================================================================
+   Un film déroulé par le défilement.
+
+   Aucune 3D ici. Pas de three.js, pas de WebGL, pas de modèle : une toile en
+   deux dimensions sur laquelle on dessine une image, et le défilement décide
+   laquelle. C'est la technique des pages produit d'Apple, et celle de
+   velaarmon.com — dont le démontage a inspiré ce fichier : huit cents images,
+   cent quarante-neuf kilo-octets de code, et aucun moteur 3D.
+
+   Les images, elles, viennent de notre propre scène temps réel, calculée hors
+   ligne par film_rendu.mjs. On échange donc le calcul chez le visiteur contre
+   du transfert — et on gagne une qualité que le temps réel ne donnera jamais,
+   puisque rien n'oblige plus le rendu à tenir en seize millisecondes.
+
+   Les deux difficultés, et leurs réponses :
+
+   1. Une séquence complète pèse trop lourd pour être chargée d'un bloc. D'où
+      la FENÊTRE GLISSANTE : on ne garde en mémoire que les images proches de
+      celle qu'on regarde, on précharge devant, et on jette derrière.
+
+   2. Décoder un JPEG bloque le fil principal et fait saccader le défilement.
+      D'où createImageBitmap, qui décode ailleurs et rend un objet que la
+      toile dessine sans travail supplémentaire.
+   ============================================================================ */
+
+const canvas = document.getElementById('toile');
+/* alpha:false — la toile est opaque, le navigateur n'a donc pas à la composer
+   avec ce qu'il y a dessous. desynchronized:true — on renonce à la
+   synchronisation stricte avec le reste de la page, ce qui réduit la latence
+   entre le geste et l'image. Les deux réglages viennent de velaarmon.com. */
+const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+const charge = document.getElementById('charge');
+const jauge = document.getElementById('jauge');
+const etape = document.getElementById('etape');
+const { min, max, round, floor, abs } = Math;
+const borne = (v, a, b) => v < a ? a : (v > b ? b : v);
+
+/* ------------------------------------------------------------------ la page */
+/* Les actes sont calés sur la vidéo réelle. Attention : ce sont les SECTIONS
+   qui décident où un texte se pose — elles font toutes 100vh, donc l'acte n
+   sur N apparaît à n/(N-1) du défilement. Le champ `at` ne sert qu'à basculer
+   le thème. Les deux doivent rester d'accord, d'où les valeurs en tiers.
+
+   Depuis que le thème ne bascule plus, `at` ne pilote plus rien : il reste
+   comme documentation, il dit sur quelle image de la séquence chaque texte
+   est censé tomber. Si vous changez le nombre d'actes, changez-le aussi.
+
+   Sept actes, parce que la vidéo coupe à l'image 131 sur 200, soit p = 0,657,
+   et que 4/6 = 0,667 tombe à deux images près. La coupe se produit donc
+   exactement là où le texte change : ce qui serait un saut devient un
+   changement de chapitre. C'est le seul endroit du montage qui ne se déduit
+   pas de la vidéo mais s'y ajuste. */
+const ACTES = [
+  { at: 0.000, eyebrow: 'Location · à partir de 39 € la journée',
+    titre: 'La voiture<br>vient à vous.',
+    lede: 'Pas d’agence, pas de comptoir, pas de file. On vous remet les clés là où vous êtes, et vous partez.' },
+  { at: 0.167, eyebrow: 'Ce que vous louez',
+    titre: 'Cinq places,<br>et rien à discuter.',
+    lede: '250 km inclus par jour, boîte automatique, climatisation, régulateur. Le plein est fait, l’habitacle nettoyé entre chaque location.' },
+  { at: 0.333, eyebrow: 'Sous tous les angles',
+    titre: 'Rien n’est<br>hors champ.',
+    lede: 'Un seul mouvement, sans montage : vous faites le tour à votre rythme, et vous vous arrêtez où vous voulez.' },
+  { at: 0.500, eyebrow: 'Le poste de conduite',
+    titre: 'Et maintenant,<br>on entre.',
+    lede: 'La caméra avance, passe le pare-brise, et va s’asseoir à la place du conducteur.' },
+  { at: 0.667, eyebrow: 'Au volant',
+    titre: 'Volant en main,<br>pédales aux pieds.',
+    lede: 'Position de conduite réelle, à un mètre du sol. Vous voyez ce que vous verrez.' },
+  { at: 0.833, eyebrow: 'La planche de bord',
+    titre: 'Jusqu’au grain<br>du plastique.',
+    lede: 'Compteurs, commandes, boîte manuelle. C’est une image, pas un dessin : rien n’a été redressé après coup.' },
+  /* Le logo n'est PAS dans la vidéo : il est écrit ici, en texte. Un logo
+     généré est difforme et frémit d'une image à l'autre ; celui-ci est net à
+     toutes les tailles, sélectionnable, lu par un lecteur d'écran, et se
+     change sans rien régénérer. `dedans` reste vrai : la dernière image est à
+     94 de luminance, un texte sombre n'y tiendrait pas. */
+  { at: 1.000, fin: true, marque: 'Kilomètre',
+    lede: 'Réserver · Bordeaux · 05 56 00 00 00' },
+];
+
+/* ---------------------------------------------------------------- la séquence
+   Deux montages, comme chez velaarmon.com : un large pour les écrans en
+   paysage, un étroit recadré en portrait pour les téléphones. Ce n'est pas la
+   même image rétrécie — c'est un cadrage refait, parce qu'une composition
+   pensée en 16:9 ne tient pas debout en 9:16. */
+const SEQUENCES = {
+  large:  { images: 150, chemin: 'assets/film/large/f',  avant: 26, arriere: 8, oubli: 40 },
+  etroit: { images: 100, chemin: 'assets/film/etroit/f', avant: 14, arriere: 5, oubli: 22 },
+};
+/* D'où viennent les octets. En développement, du disque. Dans le fichier
+   replié, d'un tableau embarqué que la construction dépose ici. Le lecteur
+   n'a pas à savoir lequel des deux — d'où cette indirection. */
+const SOURCES = (typeof window.__FILM === 'object' && window.__FILM) || {};
+
+const portrait = matchMedia('(max-aspect-ratio: 4/5)').matches;
+const aEtroit = !!SOURCES.etroit || !SOURCES.large;   // sur disque, on suppose le dossier présent
+const SEQ = (portrait && aEtroit) ? SEQUENCES.etroit : SEQUENCES.large;
+
+/* Le compte ci-dessus n'est qu'un défaut pour le mode disque. Dès que la
+   construction a injecté les images, c'est elle qui a raison : sans ça, une
+   séquence de 180 images s'arrêterait à 150 et le dernier quart du
+   défilement resterait figé sur la même image. */
+for (const [nom, seq] of Object.entries(SEQUENCES))
+  if (SOURCES[nom]) seq.images = SOURCES[nom].length;
+
+/* Le type déclaré doit être le vrai. Il était écrit « image/jpeg » en dur
+   alors que la construction produit du WebP : la plupart des navigateurs
+   reniflent les octets et s'en accommodent, mais rien ne les y oblige, et un
+   navigateur strict rejette le lot entier — donc une page noire. On lit donc
+   la signature plutôt que de la supposer. */
+function typeDe(u){
+  if (u[0] === 0xFF && u[1] === 0xD8) return 'image/jpeg';
+  if (u[8] === 0x57 && u[9] === 0x45 && u[10] === 0x42 && u[11] === 0x50) return 'image/webp';
+  if (u[0] === 0x89 && u[1] === 0x50) return 'image/png';
+  return 'application/octet-stream';
+}
+
+function source(i){
+  const t = SOURCES[SEQ === SEQUENCES.etroit ? 'etroit' : 'large'];
+  if (t) {                                   // replié : base64 embarqué
+    const b = atob(t[i]), u = new Uint8Array(b.length);
+    for (let k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
+    return Promise.resolve(new Blob([u], { type: typeDe(u) }));
+  }
+  return fetch(`${SEQ.chemin}${String(i + 1).padStart(4, '0')}.jpg`).then((r) => r.blob());
+}
+
+/* ============================================================================
+   LE LECTEUR
+   ============================================================================ */
+const cache = new Map();      // index -> ImageBitmap
+const encours = new Set();    // index en cours de décodage
+let dessinee = -1;
+
+/* Repli pour les navigateurs sans createImageBitmap — Safari ne l'a eu qu'en
+   version 15. Sans lui, TOUTES les images échouaient : la page se révélait sur
+   une toile vide, donc noire. Un <img> décode sur le fil principal et se voit
+   au défilement, mais un site lent vaut mieux qu'un site noir. */
+function decoder(blob){
+  if (typeof createImageBitmap === 'function') return createImageBitmap(blob);
+  return new Promise((ok, non) => {
+    const im = new Image(), url = URL.createObjectURL(blob);
+    im.onload = () => { URL.revokeObjectURL(url); ok(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); non(new Error('décodage')); };
+    im.src = url;
+  });
+}
+
+let echecs = 0;
+async function charger(i){
+  if (i < 0 || i >= SEQ.images || cache.has(i) || encours.has(i)) return;
+  encours.add(i);
+  try {
+    /* createImageBitmap décode hors du fil principal et rend un objet que la
+       toile affiche sans retravail. Passer par <img> ferait décoder l'image
+       pendant le défilement, et ça se voit. */
+    cache.set(i, await decoder(await source(i)));
+  } catch (e) { echecs++; /* une image manquante n'arrête pas la séquence */ }
+  encours.delete(i);
+}
+
+/* La fenêtre glissante. On ne garde jamais toute la séquence : on demande ce
+   qui vient, on tolère un peu de ce qui précède — pour le défilement vers le
+   haut — et on libère le reste. C'est ce qui permet à velaarmon.com de servir
+   cent neuf mégaoctets d'images sans jamais en tenir plus de vingt. */
+function fenetre(centre){
+  for (let d = 0; d <= SEQ.avant; d++) {
+    charger(centre + d);
+    if (d <= SEQ.arriere) charger(centre - d);
+  }
+  if (cache.size > SEQ.oubli * 2) {
+    for (const i of cache.keys()) {
+      if (abs(i - centre) > SEQ.oubli) { cache.get(i).close?.(); cache.delete(i); }
+    }
+  }
+}
+
+/* Dessin en « couvrir » : l'image remplit la toile sans se déformer, quitte à
+   déborder. Recalculé à chaque dessin parce que la fenêtre peut changer. */
+function dessiner(i){
+  const im = cache.get(i);
+  if (!im) return false;
+  const cw = canvas.width, ch = canvas.height;
+  const k = max(cw / im.width, ch / im.height);
+  const w = im.width * k, h = im.height * k;
+  ctx.drawImage(im, (cw - w) / 2, (ch - h) / 2, w, h);
+  dessinee = i;
+  return true;
+}
+
+function redimensionner(){
+  /* On garde la pleine définition de l'écran même quand la source est plus
+     petite. Plafonner la toile à la largeur de la source paraît logique — on
+     n'invente pas de détail — mais c'est un piège : l'agrandissement se ferait
+     alors en deux fois, d'abord ici puis par le compositeur, et deux
+     interpolations enchaînées sont plus molles qu'une seule. */
+  const dpr = min(devicePixelRatio || 1, 2);
+  canvas.width = round(innerWidth * dpr);
+  canvas.height = round(innerHeight * dpr);
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  /* La toile perd tous ses réglages quand on change sa taille : à replacer
+     ici, jamais une seule fois au démarrage. Par défaut l'agrandissement est
+     bilinéaire ; « high » emploie un filtre à plusieurs passes, ce qui se voit
+     dès qu'on affiche une source plus petite que l'écran — exactement notre
+     cas. C'est le seul gain de netteté qui ne coûte pas un octet. */
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  if (dessinee >= 0) dessiner(dessinee);
+}
+addEventListener('resize', redimensionner, { passive: true });
+
+/* ---------------------------------------------------------------- la page */
+const main = document.getElementById('scene');
+ACTES.forEach((a, i) => {
+  const s = document.createElement('section');
+  if (a.fin) {
+    s.className = 'fin';
+    s.innerHTML = `<div class="mot">
+      <p class="marque reveal">${a.marque}</p>
+      <p class="lede reveal">${a.lede}</p></div>`;
+  } else {
+    s.innerHTML = `<div class="mot">
+      <p class="eyebrow reveal">${a.eyebrow}</p>
+      ${i === 0 ? '<h1' : '<h2'} class="reveal">${a.titre}${i === 0 ? '</h1>' : '</h2>'}
+      <p class="lede reveal">${a.lede}</p></div>`;
+  }
+  main.append(s);
+});
+document.querySelectorAll('main > section').forEach((s) => {
+  new IntersectionObserver(([e]) => {
+    e.target.classList.toggle('posed', e.isIntersecting);
+    /* Le voile latéral s'efface au profit du voile centré quand la carte de
+       fin entre en scène. C'est la seule chose que l'observateur pilote en
+       dehors de l'apparition des textes. */
+    if (e.target.classList.contains('fin'))
+      document.documentElement.classList.toggle('final', e.isIntersecting);
+  }, { rootMargin: '-25% 0px -25% 0px' }).observe(s);
+});
+
+const lent = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let vise = 0, courant = 0, dernier = performance.now();
+
+function progression(){
+  const course = max(document.body.scrollHeight - innerHeight, 1);
+  return borne(scrollY / course, 0, 1);
+}
+
+function boucle(now){
+  const dt = min((now - dernier) / 1000, 0.05); dernier = now;
+  const p = progression();
+  document.getElementById('jauge-scroll').style.width = (p * 100) + '%';
+  vise = p * (SEQ.images - 1);
+
+  /* Le rattrapage. Sauter directement à l'image visée donne un défilement
+     nerveux ; la rattraper à taux constant donne l'inertie d'une caméra. Le
+     même principe que la chorégraphie de la version 3D — et ce que GSAP
+     appelle « scrub ». */
+  courant = lent ? vise : courant + (vise - courant) * (1 - Math.exp(-9 * dt));
+  const i = borne(round(courant), 0, SEQ.images - 1);
+
+  fenetre(i);
+  /* Si l'image exacte n'est pas encore décodée, on garde la précédente
+     plutôt que de montrer du vide : mieux vaut un léger retard qu'un trou. */
+  if (i !== dessinee) dessiner(i);
+
+  requestAnimationFrame(boucle);
+}
+
+/* ------------------------------------------------------------- le démarrage
+   On ne montre la page qu'une fois les premières images prêtes. Une séquence
+   qui démarre sur du vide donne l'impression d'un site cassé, même si tout
+   arrive une seconde plus tard. */
+(async function demarrer(){
+  redimensionner();
+  const amorce = min(14, SEQ.images);
+  let faites = 0;
+  await Promise.all(Array.from({ length: amorce }, (v, i) =>
+    charger(i).then(() => { jauge.style.width = (++faites / amorce * 100) + '%'; })));
+
+  /* Si rien n'a pu être décodé, on le DIT. Auparavant la page se révélait
+     quand même, sur une toile vide : le visiteur voyait un écran noir sans
+     savoir si ça chargeait encore, si c'était cassé, ou si c'était voulu.
+     Un écran noir muet est le pire des états. */
+  if (!cache.size) {
+    etape.textContent = 'Images illisibles sur ce navigateur';
+    etape.style.color = 'var(--ink)';
+    return;
+  }
+  if (echecs) console.warn(`${echecs} image(s) non décodée(s)`);
+
+  etape.textContent = 'Prêt';
+  dessiner(0);
+  requestAnimationFrame(boucle);
+  charge.classList.add('parti');
+})();
+</script>
+</body>
+</html>

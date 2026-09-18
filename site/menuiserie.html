@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- ============================================================ CE QUE C'EST
+
+     UNE DÉMONSTRATION. Il n'y a derrière cette page aucune entreprise, et il
+     ne faut pas qu'on puisse s'y tromper une seule seconde — ni en arrivant
+     d'un moteur de recherche, ni en haut de page, ni en bas.
+
+     D'où trois marques explicites, à trois endroits où le regard passe :
+     le titre du résultat de recherche, l'en-tête de la page, et le premier
+     bloc après le film. Aucun numéro d'entreprise, aucune adresse, aucun
+     téléphone, aucune date de création : ces choses-là se vérifient au
+     registre, et inventer une société qui n'existe pas serait exactement la
+     faute que ce dépôt s'interdit partout ailleurs.
+
+     Le texte des actes parle du MÉTIER, jamais d'un atelier en particulier.
+     Un menuisier choisit son plateau avant de le couper : c'est vrai de la
+     profession, ça n'affirme rien sur personne.
+
+     Le film, lui, est généré. Six plans de huit secondes enchaînés, 1152
+     images — la même longueur que celui du premier client. -->
+<title>Menuiserie — démonstration de site à film défilant | Ultra Motion</title>
+<meta name="description" content="Démonstration : à quoi ressemble un site vitrine à film défilant pour une menuiserie. Aucune entreprise derrière cette page — c'est un exemple de mise en page réalisé par Ultra Motion.">
+<link rel="canonical" href="https://lamine140cpu.github.io/agnt/menuiserie/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#0d0b09">
+<meta name="author" content="Ultra Motion">
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Ultra Motion">
+<meta property="og:title" content="Menuiserie — démonstration de site à film défilant">
+<meta property="og:description" content="Un exemple, pas une entreprise : à quoi ressemble un site vitrine à film défilant pour un atelier de menuiserie.">
+<meta property="og:url" content="https://lamine140cpu.github.io/agnt/menuiserie/">
+
+<link rel="stylesheet" href="assets/fonts/ultra.css">
+<style>
+<!--SOCLE-->
+
+/* ============================================================================
+   MENUISERIE — la démonstration.
+
+   Ce qui suit est TOUT ce qu'une page nouvelle doit écrire : sa palette, son
+   en-tête, la hauteur de ses actes, ses voiles, son pied. Les soixante-dix-neuf
+   règles de structure viennent du socle, inséré ci-dessus par la construction.
+   C'est le premier site à le vérifier — les deux autres l'ont vu extraire de
+   leur propre feuille, celui-ci n'a jamais eu de copie à lui.
+
+   La palette : la même nuit que les deux autres sites, mais chaude. Le sujet
+   est le bois, et le bleu-nuit d'une cabine de projection lui allait mal — les
+   copeaux y viraient au gris. Le fond tire donc sur le brun, et l'accent est
+   celui d'un chêne fraîchement raboté, pas d'un or.
+   ============================================================================ */
+:root{
+  --noir:#0D0B09;        /* le fond, chaud */
+  --nuit:#191512;        /* la surface soulevée */
+  --os:#EDE7DE;          /* blanc chaud, jamais #fff */
+  --gris:#9A9088;        /* gris chaud, accordé au fond */
+  --sourd:#6B625A;       /* gris de second plan */
+  --ambre:#C08A4A;       /* chêne fraîchement raboté */
+  --ligne:rgba(237,231,222,.14);
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --marge:clamp(22px,6vw,110px);
+  --max:1380px;
+}
+
+/* Les ancres se décalent de la hauteur de l'en-tête, sinon leur première ligne
+   atterrit derrière lui. Mesuré ici : 54 px, arrondi à 84 pour la garde. */
+[id]{scroll-margin-top:84px}
+@media (max-width:899px){[id]{scroll-margin-top:104px}}
+
+/* `padding` en RACCOURCI écraserait la marge latérale posée par `.bande` sur
+   le même élément. Le défaut a été trouvé DEUX fois dans ce dépôt et ne se
+   voit que sur téléphone : on n'écrit que le vertical. */
+.bloc{padding-top:clamp(86px,13vh,170px);padding-bottom:clamp(86px,13vh,170px)}
+
+/* L'en-tête. Il dit ce qu'est cette page avant qu'on ait lu une ligne. */
+.tete{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;
+  justify-content:space-between;align-items:center;gap:16px;
+  padding:16px var(--marge);font-family:var(--mono);font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--gris);
+  background:linear-gradient(180deg,rgba(13,11,9,.95),rgba(13,11,9,.62) 70%,transparent)}
+.tete b{color:var(--os);font-weight:500;letter-spacing:.34em}
+.tete a{color:inherit;text-decoration:none}
+.tete a:hover b{color:var(--ambre)}
+.demo{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;
+  border:1px solid var(--ambre);border-radius:2px;color:var(--ambre);
+  letter-spacing:.18em;white-space:nowrap}
+.demo i{width:5px;height:5px;border-radius:50%;background:var(--ambre);flex:0 0 auto}
+@media (max-width:519px){.tete{font-size:10px}.demo{padding:5px 9px;letter-spacing:.1em}}
+
+/* Chaque acte dure CINQ écrans. C'est la longueur qui donne au film le temps
+   d'exister entre deux textes ; à trois, on lit plus qu'on ne regarde. */
+#prologue section{min-height:500svh;position:relative;z-index:0}
+/* Sur téléphone, deux écrans de moins par acte : douze écrans de prologue
+   suffisent à épuiser la patience de n'importe qui. */
+@media (max-width:820px){#prologue section{min-height:360svh}}
+
+/* Les voiles. Strictement horizontaux ou verticaux : un dégradé incliné dans
+   une boîte plus haute que large trace sa propre diagonale, et elle se voit. */
+.a-g::before{background:linear-gradient(90deg,rgba(13,11,9,.95) 0%,
+  rgba(13,11,9,.88) 26%,rgba(13,11,9,.5) 48%,rgba(13,11,9,.14) 68%,transparent 84%)}
+.a-d::before{background:linear-gradient(270deg,rgba(13,11,9,.95) 0%,
+  rgba(13,11,9,.88) 26%,rgba(13,11,9,.5) 48%,rgba(13,11,9,.14) 68%,transparent 84%)}
+.a-c::before{background:linear-gradient(180deg,transparent 18%,rgba(13,11,9,.3) 42%,
+  rgba(13,11,9,.78) 68%,rgba(13,11,9,.94) 100%)}
+
+/* SUR TÉLÉPHONE, LE FILM PREND UNE BANDE, PAS TOUT L'ÉCRAN.
+   La série étroite est ici le maître entier, moins large — pas un montage
+   portrait. En cadrage « couvrir » sur un écran de téléphone, un cadre 16:9
+   ne montrerait que 26 % de sa largeur : l'établi en sortirait. À 64 % de
+   hauteur, la toile passe au rapport 0,72 et le film en montre 41 %. */
+@media (max-width:820px){
+  #toile{height:64svh;bottom:auto}
+  .mot{max-width:none}
+  .a-d .tenir,.a-c .tenir{align-items:stretch;text-align:left}
+  .a-d .mot,.a-c .mot{margin:0}
+  .a-d .defiler{justify-content:flex-start}
+  .a-d .acte-num{flex-direction:row}
+  .a-c .acte-num{justify-content:flex-start}
+  .a-c .acte-num::after{display:block}
+  /* Le voile se cale sur le bas de la toile : il doit être plein AVANT
+     64 %, sinon le bord franc du film s'y voit comme un trait. */
+  #prologue section::before{background:linear-gradient(transparent 8%,
+    rgba(13,11,9,.4) 32%,rgba(13,11,9,.88) 52%,rgba(13,11,9,1) 62%)!important}
+}
+
+/* Le bas de page. Il ne vend pas une menuiserie : il explique ce qu'on vient
+   de voir et qui l'a fait. C'est le seul discours honnête possible ici. */
+#suite a{color:var(--ambre);text-decoration:none;
+  border-bottom:1px solid rgba(192,138,74,.42);
+  transition:border-color .25s ease,color .25s ease}
+#suite a:hover{border-bottom-color:var(--ambre)}
+.avis{border:1px solid var(--ambre);border-radius:2px;
+  padding:clamp(22px,3vw,34px);margin-bottom:clamp(34px,5vh,56px)}
+.avis p{margin:0;color:var(--os)}
+.avis p + p{margin-top:12px;color:var(--gris)}
+.grille{display:grid;gap:clamp(22px,3vw,38px);margin-top:clamp(30px,4vh,52px);
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.grille .eti{margin-bottom:8px}
+.pied{border-top:1px solid var(--ligne);
+  padding-top:clamp(40px,6vh,64px);padding-bottom:clamp(30px,4vh,48px);
+  display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:space-between;
+  align-items:baseline;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--sourd)}
+</style>
+</head>
+<body>
+
+<canvas id="toile"></canvas>
+
+<header class="tete">
+  <a href="#top"><b>Ultra Motion</b></a>
+  <span class="demo"><i></i>Démonstration</span>
+</header>
+
+<main>
+<div id="prologue"><span id="top"></span>
+
+  <section class="a-g" data-voile="g">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte I</p>
+        <h1 class="metier-titre">Menuiserie<br>sur mesure</h1>
+        <p class="cibles">Particuliers · Architectes · Agenceurs<br>
+          <em>Escaliers · Bibliothèques · Cuisines · Portes</em></p>
+        <p class="corps">Une pièce sur mesure ne s’achète pas, elle se dessine
+          puis se coupe. Entre les deux il y a un atelier, et c’est ce qu’on
+          filme ici.</p>
+        <p class="offre">Bois massif · Panneaux · Agencement</p>
+        <p class="defiler"><i></i> Défiler</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-d" data-voile="d">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte II</p>
+        <h2 class="metier-titre">Le bois<br>d’abord</h2>
+        <p class="cibles">Chêne · Frêne · Noyer<br>
+          <em>Le plateau se choisit avant d’être coupé</em></p>
+        <p class="corps">On regarde le fil, les nœuds, le sens du débit. Une
+          planche mal choisie travaille des années plus tard, et rien de ce
+          qu’on fait ensuite ne le rattrape.</p>
+        <p class="offre">Séché · Trié · Débité sur mesure</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-g" data-voile="g">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte III</p>
+        <h2 class="metier-titre">La main<br>et l’outil</h2>
+        <p class="cibles">Rabot · Ciseau · Racloir<br>
+          <em>Ce que la machine ne finit pas</em></p>
+        <p class="corps">Le copeau qui se lève dit tout : l’angle du fer, la
+          pression, le sens du fil. C’est le geste qui décide de la surface,
+          pas la ponceuse.</p>
+        <p class="offre">Finition à la main</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-d" data-voile="d">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte IV</p>
+        <h2 class="metier-titre">L’atelier<br>équipé</h2>
+        <p class="cibles">Scie à format · Dégauchisseuse · Toupie<br>
+          <em>Et le mur de serre-joints, qui sert tous les jours</em></p>
+        <p class="corps">Une machine coupe droit et vite ; c’est ce qui rend le
+          sur-mesure abordable. Le reste — l’ajustage, le collage, la reprise —
+          se fait à l’établi.</p>
+        <p class="offre">Usinage précis · Reprise à l’établi</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-g" data-voile="g">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte V</p>
+        <h2 class="metier-titre">L’assemblage<br>à blanc</h2>
+        <p class="cibles">Tenons · Mortaises · Lamelles<br>
+          <em>On monte tout avant de coller quoi que ce soit</em></p>
+        <p class="corps">L’ouvrage se monte à sec sur tréteaux, se mesure, se
+          démonte. C’est là qu’on voit ce qui ne tombe pas juste — pas une fois
+          la colle prise.</p>
+        <p class="offre">Assemblage traditionnel</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="a-c" data-voile="c">
+    <div class="tenir">
+      <div class="mot">
+        <p class="acte-num">Acte VI</p>
+        <h2 class="metier-titre">Puis ça sort<br>de l’atelier</h2>
+        <p class="cibles">Livraison · Pose · Réglage sur place</p>
+        <p class="corps">Une pièce sur mesure n’est finie qu’une fois posée et
+          réglée chez celui qui l’a commandée. La porte de l’atelier est la
+          moitié du travail.</p>
+        <p class="offre">Fabriqué ici · Posé chez vous</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div id="suite">
+
+  <section class="bloc bande" id="ceci">
+    <div class="avis">
+      <p><strong>Cette page est une démonstration. Il n’y a aucune entreprise
+        derrière.</strong></p>
+      <p>Aucun nom, aucun numéro SIREN, aucune adresse, aucun téléphone, aucune
+        date de création : ces choses-là se vérifient au registre national des
+        entreprises, et il n’était pas question d’en inventer. Le texte des six
+        actes parle du métier de menuisier, jamais d’un atelier en particulier.</p>
+    </div>
+    <div class="chapitre">
+      <div>
+        <p class="eti pose">Ce que vous venez de voir</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Un film que<br>
+          le défilement <span class="ital">déroule.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Ce n’est pas une vidéo qui se lance : c’est une
+          séquence d’images que votre défilement fait avancer, une par une. Vous
+          en êtes le projectionniste — remontez, la scène remonte avec vous.</p>
+        <p class="corps pose" style="margin-top:18px">Le film de cette page
+          compte <strong>1 152 images</strong>, six plans de huit secondes
+          enchaînés bout à bout. Il a été fabriqué pour cette démonstration.</p>
+        <div class="grille pose">
+          <div><p class="eti">33 px par image</p><p class="corps">La densité :
+            un changement d’image tous les 33 pixels de défilement. À vitesse
+            courante, cela fait trente images par seconde — la cadence du
+            cinéma.</p></div>
+          <div><p class="eti">Deux pellicules</p><p class="corps">Une large pour
+            les écrans, une plus légère pour les téléphones. La page choisit
+            selon la forme de sa toile, puis selon le poids.</p></div>
+          <div><p class="eti">Rien à installer</p><p class="corps">Pas de
+            bibliothèque, pas de moteur 3D. Une toile 2D, des images, et le
+            défilement.</p></div>
+          <div><p class="eti">Mesuré, pas supposé</p><p class="corps">Chaque
+            page livrée passe un contrôle automatique : débit d’images,
+            contrastes, cadrage, marges, sur cinq tailles d’écran.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc bande regle" id="pour-qui">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose">À qui ça sert</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Aux métiers<br>
+          qu’on <span class="ital">regarde.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Un artisan, un transporteur, un restaurateur, un
+          garagiste : tous font quelque chose qui se voit mieux en mouvement
+          qu’en photo. C’est là que ce format vaut le coup.</p>
+        <p class="corps pose" style="margin-top:18px">Pour un métier qui se
+          raconte en chiffres ou en formulaires, il ne vaut rien — et il vaut
+          mieux le dire avant qu’après.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bloc bande regle" id="parler">
+    <div class="chapitre">
+      <div>
+        <p class="eti pose">Parler du vôtre</p>
+        <p class="titre t-xl pose" style="margin-top:18px">Votre métier,<br>
+          <span class="ital">déroulé.</span></p>
+      </div>
+      <div>
+        <p class="corps pose">Le film se fabrique pour vous : six plans tournés
+          ou générés, enchaînés, calés sur les six chapitres de votre page.
+          Celui-ci a été fait en une soirée.</p>
+        <p class="corps pose" style="margin-top:18px">La vitrine du studio est
+          <a href="../">ici</a>, et un site client réellement en ligne
+          <a href="../transgold/">là</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bande pied">
+    <span>Démonstration — aucune entreprise derrière cette page</span>
+    <span>Film généré · 1 152 images</span>
+    <span><a href="../">Ultra Motion</a></span>
+  </footer>
+
+</div>
+</main>
+
+<div class="voile" id="voile">
+  <em id="etape">Composition du mouvement</em>
+  <div class="jauge"><b id="jauge"></b></div>
+  <p class="pct" id="pct">0 %</p>
+</div>
+
+<script>
+/* Les séries de CETTE page. Le lecteur est partagé : la construction l'insère
+   ci-dessous à partir de moteur/lecteur.js.
+
+   Les deux séries sont le MÊME cadre, à deux définitions — la seconde n'est
+   pas un recadrage portrait. C'est pourquoi la page donne au film une bande de
+   64 svh sur téléphone : c'est le seul levier qui change le cadrage quand les
+   deux pellicules montrent la même image.
+
+   Comptes et dimensions sont ceux du mode replié ; la construction les mesure
+   sur les images livrées et les remplace. */
+window.SERIES = {
+  accueil:          { chemin: 'assets/film/menuiserie/f',        images: 1152, largeur: 1920, hauteur: 1080 },
+  'accueil-etroit': { chemin: 'assets/film/menuiserie-etroit/f',  images: 1152, largeur: 1440, hauteur: 810 },
+};
+</script>
+<!--LECTEUR-->
+
+</body>
+</html>
